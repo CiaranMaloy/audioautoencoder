@@ -9,32 +9,31 @@ import gcsfs
 
 class HDF5DatasetGCS(Dataset):
     def __init__(self, bucket_name, file_path, output_time_length=86):
-        self.fs = gcsfs.GCSFileSystem()
         self.bucket_name = bucket_name
         self.file_path = file_path
         self.output_time_length = output_time_length
 
+    def init_worker(self):
+        self.fs = gcsfs.GCSFileSystem()
+        self.gcs_file = self.fs.open(f"{self.bucket_name}/{self.file_path}", 'rb')
+        self.h5_file = h5py.File(self.gcs_file, "r")
+        self.input_dataset = self.h5_file["input_images"]
+        self.target_dataset = self.h5_file["target_images"]
+
     def __len__(self):
-        with self.fs.open(f"{self.bucket_name}/{self.file_path}", 'rb') as f:
-            with h5py.File(f, "r") as h5_file:
-                return h5_file["input_images"].shape[0]
+        return self.input_dataset.shape[0]
 
     def __getitem__(self, idx):
         try:
-            # Open file for each sample
-            with self.fs.open(f"{self.bucket_name}/{self.file_path}", 'rb') as f:
-                with h5py.File(f, "r") as h5_file:
-                    input_dataset = h5_file["input_images"]
-                    target_dataset = h5_file["target_images"]
-                    input_image = torch.tensor(input_dataset[idx, :, :, :self.output_time_length], dtype=torch.float32)
-                    target_image = torch.tensor(target_dataset[idx, :, :, :self.output_time_length], dtype=torch.float32)
-                    return input_image, target_image
+            input_image = torch.tensor(self.input_dataset[idx, :, :, :self.output_time_length], dtype=torch.float32)
+            target_image = torch.tensor(self.target_dataset[idx, :, :, :self.output_time_length], dtype=torch.float32)
+            return input_image, target_image
         except Exception as e:
             print(f"\nError loading sample {idx}: {e}")
             input_placeholder = torch.zeros((3, 1024, self.output_time_length), dtype=torch.float32)
             target_placeholder = torch.zeros((3, 1024, self.output_time_length), dtype=torch.float32)
             return input_placeholder, target_placeholder
-
+        
 
 class HDF5Dataset(Dataset):
     def __init__(self, h5_file_path, output_time_length=86):
