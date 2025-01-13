@@ -1,0 +1,37 @@
+LICENSE
+
+Intellectual Property Rights License
+
+This software and its accompanying documentation (collectively referred to as the "Software") are the intellectual property of [Your Name or Organization], hereinafter referred to as the "Licensor."
+
+---
+
+1. Copyright Notice
+The Software is protected under copyright law in accordance with the Copyright, Designs and Patents Act 1988 of the United Kingdom. All rights, including copyright, are reserved by the Licensor.
+
+2. Permitted Use
+Subject to the terms of this license, the Licensor grants you a non-exclusive, non-transferable, and revocable license to:
+- Use the Software for personal or internal business purposes.
+- Modify the Software for your own use, provided that you retain the copyright notice and this license in any copies or derivative works.
+
+3. Restrictions
+You may not:
+- Redistribute, sell, sublicense, or commercialize the Software without prior written consent from the Licensor.
+- Use the Software to create derivative works for public distribution without acknowledgment of the original author.
+
+4. Attribution
+If you use the Software in a published work, research paper, or product, you must provide appropriate credit to the Licensor by citing:
+[Your Name or Organization]. [Software Name]. Available at [URL or Repository].
+
+5. Disclaimer of Warranty
+The Software is provided "AS IS," without warranty of any kind, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, and non-infringement. In no event shall the Licensor be liable for any claim, damages, or other liability arising from the use of the Software.
+
+6. Termination
+This license is effective until terminated. The Licensor reserves the right to terminate this license at any time if you violate its terms. Upon termination, you must destroy all copies of the Software in your possession.
+
+7. Governing Law
+This license shall be governed by and construed in accordance with the laws of the United Kingdom.
+
+---
+
+By using this Software, you acknowledge that you have read and agree to the terms of this license.
