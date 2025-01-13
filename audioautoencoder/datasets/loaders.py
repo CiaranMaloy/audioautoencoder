@@ -12,6 +12,8 @@ class HDF5DatasetGCS(Dataset):
         self.bucket_name = bucket_name
         self.file_path = file_path
         self.output_time_length = output_time_length
+        self.h5_file = h5py.File(self.gcs_file, "r")
+        self.input_dataset = self.h5_file["input_images"]
 
     def init_worker(self):
         self.fs = gcsfs.GCSFileSystem()
