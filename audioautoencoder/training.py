@@ -65,12 +65,12 @@ class EarlyStopping:
 ## Training, testing and calling examples
 
 # Training loop
-def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, early_stopping, epochs=5, max_val_batches=30, verbose=False, checkpoint_filename='checkpoint.pth', scheduler_loss=False):
+def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, early_stopping, starting_epoch=0, epochs=5, max_val_batches=30, verbose=False, checkpoint_filename='checkpoint.pth', scheduler_loss=False):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Training on device: {device}")
 
     model.train()
-    for epoch in range(epochs):
+    for epoch in range(starting_epoch, epochs):
         # Print the current learning rate
         current_lr = scheduler.get_last_lr()
         print(f"Epoch {epoch + 1}, Current Learning Rate: {current_lr}")
@@ -144,7 +144,8 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'epoch': epoch,
-            'loss': loss
+            'loss': loss,
+            'total_epochs': epochs
         }
         torch.save(checkpoint, checkpoint_filename)
         print('Saved to Drive...')
