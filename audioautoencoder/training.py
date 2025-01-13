@@ -24,7 +24,7 @@ class EarlyStopping:
         if mode not in ['min', 'max']:
             raise ValueError("Mode should be 'min' or 'max'")
 
-    def __call__(self, current_score, model, optimizer, epoch, loss):
+    def __call__(self, current_score, model, optimizer, epoch, total_epochs, loss):
         """
         Checks if early stopping should trigger.
 
@@ -34,7 +34,7 @@ class EarlyStopping:
         """
         if self.best_score is None:
             self.best_score = current_score
-            self.save_checkpoint(model, optimizer, epoch, loss)
+            self.save_checkpoint(model, optimizer, epoch, total_epochs, loss)
         else:
             improvement = current_score - self.best_score if self.mode == 'max' else self.best_score - current_score
             if improvement > self.min_delta:
@@ -47,13 +47,14 @@ class EarlyStopping:
                 if self.counter >= self.patience:
                     self.early_stop = True
 
-    def save_checkpoint(self, model, optimizer, epoch, loss):
+    def save_checkpoint(self, model, optimizer, epoch, total_epochs, loss):
         """Saves the model when the validation score improves."""
         print(f"Validation score improved. Saving model to {self.save_path}.")
         checkpoint = {
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'epoch': epoch,
+            'total_epochs': total_epochs,
             'loss': loss
         }
         torch.save(checkpoint, self.save_path)
@@ -102,9 +103,6 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             i += 1
             progress_bar.set_postfix(loss=f"{running_loss / (progress_bar.n + 1):.4f}")
 
-        #scheduler.step()
-        #scheduler.step(validation_loss)
-
         # Validation step
         model.eval()
         progress_bar = tqdm(val_loader, desc="Validating", unit="batch")
@@ -133,7 +131,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
         print(f"Epoch {epoch + 1}, Validation Loss: {val_loss:.4f}")
 
         # Check early stopping
-        early_stopping(val_loss, model, optimizer, epoch, running_loss)
+        early_stopping(val_loss, model, optimizer, epoch, epochs, running_loss)
         if early_stopping.early_stop:
             print("Early stopping triggered. Stopping training.")
             print("-"*50)
