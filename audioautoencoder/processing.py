@@ -5,6 +5,38 @@ import matplotlib.pyplot as plt
 from scipy.signal import butter, sosfilt
 import random
 
+# Parameters
+def generate_input_audio():
+  # Parameters
+  t = 1  # Duration in seconds
+  sr = 44100  # Sampling rate
+  T = np.linspace(0, t, int(sr * t), endpoint=False)
+
+  # Randomize frequencies
+  f = random.uniform(100, 2000)  # Random fundamental frequency
+  f2 = random.uniform(50, 500)   # Random secondary frequency
+  f3 = random.uniform(10000, 20000)  # Random secondary frequency
+
+  # Random amplitude modulation for each frequency component
+  amp_f1 = np.sin(2 * np.pi * random.uniform(0.5, 1.5) * T) # Amplitude modulation factor for f
+  amp_f2 = np.sin(2 * np.pi * random.uniform(0.5, 2) * T) # Amplitude modulation factor for f
+  amp_f4 = np.sin(2 * np.pi * random.uniform(0.5, 1.5) * T) # Amplitude modulation factor for f
+  amp_f2_secondary = np.sin(2 * np.pi * random.uniform(0.1, 0.5) * T) # Amplitude modulation factor for f
+  amp_f2_3 = np.sin(2 * np.pi * random.uniform(0.5, 4) * T) # Amplitude modulation factor for f
+  amp_f3_3 = np.sin(2 * np.pi * random.uniform(0.5, 4) * T) # Amplitude modulation factor for f
+
+  # Generate audio signal with amplitude modulation
+  audio = (amp_f1 * np.sin(2 * np.pi * f * T) +
+          amp_f2 * np.sin(2 * np.pi * 2 * f * T) +
+          amp_f4 * np.sin(2 * np.pi * 4 * f * T) +
+          amp_f2_secondary * np.sin(2 * np.pi * f2 * T) +
+          amp_f2_3 * np.sin(2 * np.pi * 10 * f2 * T) * 0.5 +
+          amp_f3_3 * np.sin(2 * np.pi * f3 * T) * 0.2)
+
+  # Normalize audio to [-1, 1]
+  audio = audio / np.max(np.abs(audio))
+  return audio, sr
+
 def bandpass_filter(data, lowcut, highcut, sample_rate, order=1):
     """
     Applies a bandpass filter to the input signal.
