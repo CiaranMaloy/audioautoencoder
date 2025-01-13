@@ -87,10 +87,11 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             if verbose:
               print('in loop')
               progress_bar.set_description(f"Epoch {epoch + 1}, Batch {i}")
-            noisy_imgs = noisy_imgs.to(device)
-            clean_imgs = clean_imgs.to(device)
+            noisy_imgs = noisy_imgs.to(device, non_blocking=True)
+            clean_imgs = clean_imgs.to(device, non_blocking=True)
             if verbose:
               print('moving to device')
+            
             optimizer.zero_grad()
             if verbose:
               print('training model')
