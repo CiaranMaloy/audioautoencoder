@@ -65,7 +65,7 @@ class EarlyStopping:
 ## Training, testing and calling examples
 
 # Training loop
-def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, early_stopping, epochs=5, max_val_batches=30, verbose=False, checkpoint_filename='checkpoint.pth'):
+def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, early_stopping, epochs=5, max_val_batches=30, verbose=False, checkpoint_filename='checkpoint.pth', scheduler_loss=False):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Training on device: {device}")
 
@@ -122,8 +122,12 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
                 else:
                   break
         val_loss /= val_batch
+        
+        if scheduler_loss:
+            scheduler.step(val_loss)
+        else:
+            scheduler.step()
 
-        scheduler.step(val_loss)
 
         print("-"*50)
         print(f"Epoch {epoch + 1}, Validation Loss: {val_loss:.4f}")
