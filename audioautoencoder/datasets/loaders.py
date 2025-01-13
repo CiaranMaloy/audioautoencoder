@@ -12,26 +12,51 @@ import torch
 from torch.utils.data import Dataset
 import gcsfs
 
+import h5py
+import gcsfs
+import torch
+from torch.utils.data import Dataset
+
 class HDF5DatasetGCS(Dataset):
     def __init__(self, bucket_name, file_path, output_time_length=84):
         self.bucket_name = bucket_name
         self.file_path = file_path
         self.output_time_length = output_time_length
-        self.fs = gcsfs.GCSFileSystem()
+        self.fs = None  # Initialize GCSFileSystem as None
         self.input_key = "input_images"
         self.target_key = "target_images"
-    
+        self.num_samples = None  # Cache the dataset length for efficiency
+
+    def _initialize_filesystem(self):
+        """
+        Initialize the GCS filesystem and fetch the dataset length if not already done.
+        This ensures each worker process has its own GCSFileSystem instance.
+        """
+        if self.fs is None:
+            self.fs = gcsfs.GCSFileSystem()
+        
+        if self.num_samples is None:
+            with self.fs.open(f"{self.bucket_name}/{self.file_path}", 'rb') as f:
+                with h5py.File(f, "r") as h5_file:
+                    self.num_samples = h5_file[self.input_key].shape[0]
+
+    def __len__(self):
+        # Initialize the filesystem and fetch the dataset length
+        self._initialize_filesystem()
+        return self.num_samples
+
     def __getitem__(self, idx):
+        # Ensure the filesystem is initialized in the worker process
+        self._initialize_filesystem()
         with self.fs.open(f"{self.bucket_name}/{self.file_path}", 'rb') as f:
             with h5py.File(f, "r") as h5_file:
                 input_image = h5_file[self.input_key][idx, :, :, :self.output_time_length]
                 target_image = h5_file[self.target_key][idx, :, :, :self.output_time_length]
-                return torch.tensor(input_image, dtype=torch.float32), torch.tensor(target_image, dtype=torch.float32)
-    
-    def __len__(self):
-        with self.fs.open(f"{self.bucket_name}/{self.file_path}", 'rb') as f:
-            with h5py.File(f, "r") as h5_file:
-                return h5_file[self.input_key].shape[0]       
+                return (
+                    torch.tensor(input_image, dtype=torch.float32),
+                    torch.tensor(target_image, dtype=torch.float32),
+                )
+     
 
 class HDF5Dataset(Dataset):
     def __init__(self, h5_file_path, output_time_length=86):
