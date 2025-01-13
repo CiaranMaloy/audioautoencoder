@@ -3,8 +3,9 @@ import torch
 from torch.utils.data import Dataset
 
 class HDF5Dataset(Dataset):
-    def __init__(self, h5_file_path):
+    def __init__(self, h5_file_path, output_time_length=86):
         self.h5_file_path = h5_file_path
+        self.output_time_length = output_time_length
         self.h5_file = h5py.File(self.h5_file_path, "r")  # Open the file once
         self.input_dataset = self.h5_file["input_images"]
         self.target_dataset = self.h5_file["target_images"]
@@ -25,8 +26,8 @@ class HDF5Dataset(Dataset):
     def __getitem__(self, idx):
         try:
 
-          input_image = torch.tensor(self.input_dataset[idx], dtype=torch.float32)
-          target_image = torch.tensor(self.target_dataset[idx], dtype=torch.float32)
+          input_image = torch.tensor(self.input_dataset[idx, :, :, :self.output_time_length], dtype=torch.float32)
+          target_image = torch.tensor(self.target_dataset[idx, :, :, :self.output_time_length], dtype=torch.float32)
           return input_image, target_image
 
         except Exception as e:
