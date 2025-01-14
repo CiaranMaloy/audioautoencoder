@@ -39,7 +39,7 @@ class EarlyStopping:
             improvement = current_score - self.best_score if self.mode == 'max' else self.best_score - current_score
             if improvement > self.min_delta:
                 self.best_score = current_score
-                self.save_checkpoint(model, optimizer, epoch, loss)
+                self.save_checkpoint(model, optimizer, epoch, total_epochs, loss)
                 self.counter = 0
             else:
                 self.counter += 1
