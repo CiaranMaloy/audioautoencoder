@@ -95,7 +95,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             optimizer.zero_grad()
             if verbose:
               print('training model')
-            outputs = model(noisy_imgs)
+            outputs, mask = model(noisy_imgs)
             loss = criterion(outputs, clean_imgs)
             loss.backward()
             optimizer.step()
@@ -112,7 +112,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             val_batch = 0
             for inputs, targets in progress_bar:
                 inputs, targets = inputs.to(device), targets.to(device)
-                outputs = model(inputs)
+                outputs, mask = model(inputs)
                 loss = criterion(outputs, targets)
                 val_loss += loss.item()
                 progress_bar.set_postfix(loss=f"{val_loss / (progress_bar.n + 1):.4f}")
@@ -161,7 +161,7 @@ def test_model(model, test_loader, criterion):
         for inputs, targets in progress_bar:
 
           inputs, targets = inputs.to(device), targets.to(device)
-          outputs = model(inputs)
+          outputs, mask = model(inputs)
           loss = criterion(outputs, targets)
           progress_bar.set_postfix(loss=f"{loss.item():.4f}")
           test_loss += loss.item()
@@ -179,7 +179,7 @@ def test_examples(model, test_loader):
             noisy_imgs = noisy_imgs.to(device)
             #input_features = input_features.to(device)
             clean_imgs = clean_imgs.to(device)
-            outputs = model(noisy_imgs)
+            outputs, mask = model(noisy_imgs)
             break  # Display only the first batch
 
     return noisy_imgs.cpu(), outputs.cpu(), clean_imgs.cpu()
