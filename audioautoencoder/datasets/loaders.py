@@ -55,8 +55,7 @@ class HDF5DatasetGCS(Dataset):
                 return (
                     torch.tensor(input_image, dtype=torch.float32),
                     torch.tensor(target_image, dtype=torch.float32),
-                )
-     
+                )     
 
 class HDF5Dataset(Dataset):
     def __init__(self, h5_file_path, output_time_length=86):
