@@ -483,7 +483,7 @@ def process_and_save_noisy_dataset(
         return
 
     # Load checkpoint to resume processing
-    if manual_checkpoint:
+    if manual_checkpoint is not None:
       start_batch_idx = manual_checkpoint
     else:
       start_batch_idx = load_checkpoint(checkpoint_file)
