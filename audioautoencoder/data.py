@@ -263,7 +263,50 @@ def process_and_save_dataset(data_dir, output_file, checkpoint_file, sr_target=4
 
   # Usage example
 
-def process_audio_and_noise_to_image(audio, noise, sr, plot=False, random_noise_level=0, background_noise_level=0):
+import numpy as np
+
+def calculate_snr(signal, noise):
+    """
+    Calculate the Signal-to-Noise Ratio (SNR) in dB.
+    
+    Args:
+        signal (numpy.ndarray): The clean signal array.
+        noise (numpy.ndarray): The noise array.
+        
+    Returns:
+        float: The calculated SNR in decibels (dB).
+    """
+    signal_power = np.mean(signal**2)
+    noise_power = np.mean(noise**2)
+    snr = 10 * np.log10(signal_power / noise_power)
+    return snr
+
+def combine_signal_noise(signal, noise, target_snr_db):
+    """
+    Combine signal and noise at a specific target SNR (dB).
+    
+    Args:
+        signal (numpy.ndarray): The clean signal array.
+        noise (numpy.ndarray): The noise array.
+        target_snr_db (float): Desired SNR in decibels.
+        
+    Returns:
+        numpy.ndarray: The combined signal with the specified SNR.
+    """
+    # Calculate current SNR
+    current_snr_db = calculate_snr(signal, noise)
+    print(f"Current SNR: {current_snr_db:.2f} dB")
+    
+    # Calculate scaling factor for noise to achieve target SNR
+    scaling_factor = 10**((current_snr_db - target_snr_db) / 20)
+    
+    # Scale noise and combine
+    scaled_noise = noise * scaling_factor
+    combined_signal = signal + scaled_noise
+    
+    return combined_signal, current_snr_db
+
+def process_audio_and_noise_to_image(audio, noise, sr, plot=False, random_noise_level=0, background_noise_level=0, SNRdB=None):
   # Parameters
   T = np.linspace(0, len(audio)/sr, len(audio), endpoint=False)
   # --
@@ -293,20 +336,26 @@ def process_audio_and_noise_to_image(audio, noise, sr, plot=False, random_noise_
   else:
     noise = (noise/np.max(abs(noise))) * 0
 
-  random_number = random.uniform(0, 1)
-  if random_number > 0.7:
-    noisy_audio = np.clip(audio + s + noise, -1, 1)
-  elif random_number > 0.2:
-    noisy_audio = np.clip(audio + noise, -1, 1)
-  else:
-    noisy_audio = audio
+  if SNRdB is None:
+    random_number = random.uniform(0, 1)
+    if random_number > 0.7:
+      noisy_audio = np.clip(audio + s + noise, -1, 1)
+    elif random_number > 0.2:
+      noisy_audio = np.clip(audio + noise, -1, 1)
+    else:
+      noisy_audio = audio
 
+  else:
+     noise = noise + s
+     target_snr_db = random.uniform(target_snr_db, 40)
+     noisy_audio, _ = combine_signal_noise(audio, noise, target_snr_db)
+     
   if plot:
     plt.plot(noisy_audio)
     plt.xlim((4000, 8000))
     plt.show()
 
-  noisy_audio = bandpass_filter(noisy_audio, 80, 16000, sr, order=1)
+  #noisy_audio = bandpass_filter(noisy_audio, 80, 16000, sr, order=1)
 
   input_image = audio_to_image(noisy_audio, sr)
   target_image = audio_to_image(audio, sr)
@@ -377,7 +426,7 @@ def close_file_handles(file_path):
             print(f"Closing file handle: {handle.path}")
             os.close(handle.fd)
 
-def process_file(file_path, noise_file, background_noise_level, random_noise_level):
+def process_file(file_path, noise_file, background_noise_level, random_noise_level, SNRdB):
     """
     Process a single audio file and return the input and target images.
     """
@@ -393,13 +442,25 @@ def process_file(file_path, noise_file, background_noise_level, random_noise_lev
 
 
       # Process audio to input and target images
-      input_image, target_image = process_audio_and_noise_to_image(audio, noise, sr, background_noise_level=background_noise_level, random_noise_level=random_noise_level)
+      input_image, target_image = process_audio_and_noise_to_image(audio, noise, sr, background_noise_level=background_noise_level, random_noise_level=random_noise_level, SNRdB=SNRdB)
       return input_image, target_image
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
         return None
 
-def process_and_save_noisy_dataset(data_dir, noise_data_dir, output_file, checkpoint_file, sr_target=44100, background_noise_level=0.01, random_noise_level=0.001, batch_size=10, max_length=1024, process_pool=True, manual_checkpoint=None):
+def process_and_save_noisy_dataset(
+      data_dir, 
+      noise_data_dir, 
+      output_file, 
+      checkpoint_file, 
+      sr_target=44100, 
+      background_noise_level=0.01, 
+      random_noise_level=0.001, 
+      batch_size=10, 
+      max_length=1024, 
+      process_pool=True, 
+      manual_checkpoint=None, 
+      SNRdB=None):
     """
     Process all .wav files in a folder and save the input-output image pairs.
     use this to train a denoising autoencoder 
@@ -467,7 +528,7 @@ def process_and_save_noisy_dataset(data_dir, noise_data_dir, output_file, checkp
             # Process files in parallel
             if process_pool:
               with ProcessPoolExecutor() as executor:
-                  futures = [executor.submit(process_file, audio_file, noise_file, background_noise_level, random_noise_level) for audio_file, noise_file in np.array([batch_files, noise_files]).T]
+                  futures = [executor.submit(process_file, audio_file, noise_file, background_noise_level, random_noise_level, SNRdB) for audio_file, noise_file in np.array([batch_files, noise_files]).T]
                   results = [future.result() for future in futures if future.result() is not None]
 
               # Collect batch results
