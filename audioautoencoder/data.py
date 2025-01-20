@@ -295,7 +295,6 @@ def combine_signal_noise(signal, noise, target_snr_db):
     """
     # Calculate current SNR
     current_snr_db = calculate_snr(signal, noise)
-    print(f"Current SNR: {current_snr_db:.2f} dB")
     
     # Calculate scaling factor for noise to achieve target SNR
     scaling_factor = 10**((current_snr_db - target_snr_db) / 20)
