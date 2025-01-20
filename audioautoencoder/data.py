@@ -101,7 +101,7 @@ def process_file(file_path, sr_target, noise_level):
         print(f"Error processing {file_path}: {e}")
         return None
 
-def load_checkpoint(checkpoint_file, default_value=None):
+def load_checkpoint(checkpoint_file, default_value=0):
 
   # Step 2: Specify the path to the file using pathlib
   file_path = Path(checkpoint_file)
@@ -115,7 +115,7 @@ def load_checkpoint(checkpoint_file, default_value=None):
           return checkpoint
   except Exception as e:
       print(f"Error reading file: {e}")
-      return None
+      return default_value
 
 
   """
