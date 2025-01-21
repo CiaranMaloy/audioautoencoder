@@ -140,7 +140,7 @@ def denormalise(image):
     image[2] = image[2] * (2 * np.pi) - np.pi
     return image
 
-def image_to_waveform(image, sr):
+def image_to_waveform(image, length=43008):
     """
     Converts a spectrogram image back into an audio waveform.
 
@@ -155,4 +155,4 @@ def image_to_waveform(image, sr):
     magnitude = image[0]
     phase = image[2]
     stft = magnitude * np.exp(1j * phase)
-    return librosa.istft(stft)
+    return librosa.istft(stft, length=length)
