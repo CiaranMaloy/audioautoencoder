@@ -54,7 +54,7 @@ def bandpass_filter(data, lowcut, highcut, sample_rate, order=1):
     sos = butter(order, [lowcut, highcut], btype='band', fs=sample_rate, output='sos')
     return sosfilt(sos, data)
 
-def audio_to_image(audio, sr, length=86, verbose=False):
+def audio_to_image(audio, sr, verbose=False, n_fft=2048, audio_length=44100):
     """
     Converts audio signal into a 3-channel image representation.
 
@@ -67,9 +67,14 @@ def audio_to_image(audio, sr, length=86, verbose=False):
     Returns:
         np.array: A 3D array (3, 1024, length) representing the spectrogram.
     """
-    stft = librosa.stft(audio, n_fft=2048)
-    magnitude, phase = np.abs(stft)[:1024, :length], np.angle(stft)[:1024, :length]
+    n = len(audio)
+    assert(n == audio_length)
+    audio_pad = librosa.util.fix_length(audio, size=n + n_fft // 2)
+    stft = librosa.stft(audio_pad, n_fft=n_fft)
+    magnitude, phase = np.abs(stft), np.angle(stft) 
     logmagnitude = 10 * np.log10(magnitude + 1e-8)
+
+    print(np.shape(logmagnitude))
 
     if verbose:
         print('Log magnitude max and min:', np.max(logmagnitude), np.min(logmagnitude))
@@ -140,7 +145,7 @@ def denormalise(image):
     image[2] = image[2] * (2 * np.pi) - np.pi
     return image
 
-def image_to_waveform(image, length=43008):
+def image_to_waveform(image, audio_length=44100):
     """
     Converts a spectrogram image back into an audio waveform.
 
@@ -155,4 +160,4 @@ def image_to_waveform(image, length=43008):
     magnitude = image[0]
     phase = image[2]
     stft = magnitude * np.exp(1j * phase)
-    return librosa.istft(stft, length=length)
+    return librosa.istft(stft, length=audio_length)
