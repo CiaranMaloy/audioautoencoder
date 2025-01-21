@@ -540,8 +540,8 @@ def process_and_save_noisy_dataset(
 
             # process files as a loop
             else:
-              for audio_file, noise_file in np.array([batch_files, noise_files]).T:
-                output = process_file(audio_file, noise_file, background_noise_level, random_noise_level)
+              for audio_file, noise_file in zip(batch_files, noise_files):
+                output = process_file(audio_file, noise_file, background_noise_level, random_noise_level, SNRdB)
 
                 # collect batch results
                 if output is not None:

@@ -70,6 +70,13 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Training on device: {device}")
 
+    if scheduler_loss:
+        pass
+    else:
+        if starting_epoch > 0:
+            for _ in range(starting_epoch):
+                scheduler.step()
+
     model.train()
     for epoch in range(starting_epoch, epochs):
         # Print the current learning rate
