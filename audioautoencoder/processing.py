@@ -80,7 +80,7 @@ def audio_to_image(audio, sr, verbose=False, n_fft=2048, audio_length=44100):
         print('Log magnitude max and min:', np.max(logmagnitude), np.min(logmagnitude))
 
     # Normalise magnitude by frequency
-    freqs = np.linspace(0, sr // 2, 1024)
+    freqs = np.linspace(0, sr // 2, 1025)
     weights = freqs.copy()
     weights[weights == 0] = 1  # Avoid division by zero for DC component
     normalised_magnitude = (magnitude.T * weights).T
