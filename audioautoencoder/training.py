@@ -75,7 +75,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
     else:
         if starting_epoch > 0:
             for i in range(starting_epoch):
-                print(f'Step {i}')
+                print(f'Step {i+1}')
                 scheduler.step()
 
     model.train()
