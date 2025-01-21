@@ -527,7 +527,10 @@ def process_and_save_noisy_dataset(
             # Process files in parallel
             if process_pool:
               with ProcessPoolExecutor() as executor:
-                  futures = [executor.submit(process_file, audio_file, noise_file, background_noise_level, random_noise_level, SNRdB) for audio_file, noise_file in np.array([batch_files, noise_files]).T]
+                  futures = [
+                     executor.submit(process_file, audio_file, noise_file, background_noise_level, random_noise_level, SNRdB) 
+                     for audio_file, noise_file in zip(batch_files, noise_files)
+                     ]
                   results = [future.result() for future in futures if future.result() is not None]
 
               # Collect batch results
