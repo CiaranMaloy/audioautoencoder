@@ -552,6 +552,7 @@ def process_and_save_noisy_dataset(
 
         print('checking for file existance....')
         check_file_exists(output_file)
+        print('processing batches...')
         # Process in batches
         for i in tqdm(range(start_batch_idx, total_files, batch_size), desc="Processing batches", unit="batch"):
             batch_files = wav_files[i:i + batch_size]
