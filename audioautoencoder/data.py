@@ -446,6 +446,43 @@ def process_file(file_path, noise_file, background_noise_level, random_noise_lev
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
         return None
+    
+def ensure_directory_exists(file_path):
+    """
+    Creates all directories in the provided file path if they do not exist.
+
+    Parameters:
+    - file_path (str): The full file path where directories need to be created.
+
+    Returns:
+    None
+    """
+    # Extract the directory part of the file path
+    directory = os.path.dirname(file_path)
+
+    # Check if the directory exists, and create it if it doesn't
+    if directory and not os.path.exists(directory):
+        os.makedirs(directory)
+        print(f"Created directory: {directory}")
+    else:
+        print(f"Directory already exists: {directory}")
+
+def check_file_exists(filepath):
+    """
+    Checks if a file exists at the given path and prints a statement.
+
+    Parameters:
+        filepath (str): The path to the file to check.
+
+    Returns:
+        bool: True if the file exists, False otherwise.
+    """
+    if os.path.exists(filepath):
+        print(f"The file '{filepath}' exists.")
+        return True
+    else:
+        print(f"ERROR! The file '{filepath}' does not exist.")
+        return False
 
 def process_and_save_noisy_dataset(
       data_dir, 
@@ -513,6 +550,8 @@ def process_and_save_noisy_dataset(
         else:
           target_dataset = h5f["target_images"]
 
+        print('checking for file existance....')
+        check_file_exists(output_file)
         # Process in batches
         for i in tqdm(range(start_batch_idx, total_files, batch_size), desc="Processing batches", unit="batch"):
             batch_files = wav_files[i:i + batch_size]
