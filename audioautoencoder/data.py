@@ -496,7 +496,8 @@ def process_and_save_noisy_dataset(
       max_length=1024, 
       process_pool=True, 
       manual_checkpoint=None, 
-      SNRdB=None):
+      SNRdB=None, 
+      verbose=False):
     """
     Process all .wav files in a folder and save the input-output image pairs.
     use this to train a denoising autoencoder 
@@ -597,6 +598,9 @@ def process_and_save_noisy_dataset(
             input_dataset[-len(input_images):] = np.stack(input_images)
             target_dataset[-len(target_images):] = np.stack(target_images)
 
+            if verbose:
+               print('input dataset shape:', input_dataset.shape)
+               print('target dataset shape:', target_dataset.shape)
             # Save checkpoint after each batch
             save_checkpoint(checkpoint_file, i + batch_size)
 
