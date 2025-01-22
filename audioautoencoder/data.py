@@ -494,8 +494,8 @@ def process_and_save_noisy_dataset(
         if "input_images" not in h5f:
           input_dataset = h5f.create_dataset(
               "input_images",
-              shape=(0, 3, 1024, 86),  # Initially empty along the first dimension
-              maxshape=(None, 3, 1024, 86),  # Unlimited along the first dimension
+              shape=(0, 3, 1025, 89),  # Initially empty along the first dimension
+              maxshape=(None, 3, 1025, 89),  # Unlimited along the first dimension
               dtype=np.float32,
               compression="gzip"
           )
@@ -505,8 +505,8 @@ def process_and_save_noisy_dataset(
         if "target_images" not in h5f:
           target_dataset = h5f.create_dataset(
               "target_images",
-              shape=(0, 3, 1024, 86),  # Initially empty along the first dimension
-              maxshape=(None, 3, 1024, 86),  # Unlimited along the first dimension
+              shape=(0, 3, 1025, 89),  # Initially empty along the first dimension
+              maxshape=(None, 3, 1025, 89),  # Unlimited along the first dimension
               dtype=np.float32,
               compression="gzip"
           )

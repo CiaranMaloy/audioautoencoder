@@ -74,7 +74,7 @@ def audio_to_image(audio, sr, verbose=False, n_fft=2048, audio_length=44100):
     magnitude, phase = np.abs(stft), np.angle(stft) 
     logmagnitude = 10 * np.log10(magnitude + 1e-8)
 
-    print(np.shape(logmagnitude))
+    #print(np.shape(logmagnitude))
 
     if verbose:
         print('Log magnitude max and min:', np.max(logmagnitude), np.min(logmagnitude))
