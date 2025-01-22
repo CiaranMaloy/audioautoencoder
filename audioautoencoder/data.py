@@ -484,6 +484,8 @@ def check_file_exists(filepath):
         print(f"ERROR! The file '{filepath}' does not exist.")
         return False
 
+import traceback
+
 def process_and_save_noisy_dataset(
       data_dir, 
       noise_data_dir, 
@@ -503,106 +505,115 @@ def process_and_save_noisy_dataset(
     use this to train a denoising autoencoder 
     This should be used within an if __name__ == '__main__' function for speed
     """
-    # Get the list of .wav files in the directory
-    print('Gathering wav files....')
-    wav_files = get_all_wav_files(data_dir)
-    total_files = len(wav_files)
-    if total_files == 0:
-        print("No .wav files found in the specified directory.")
-        return
+    try:
+      # Get the list of .wav files in the directory
+      print('Gathering wav files....')
+      wav_files = get_all_wav_files(data_dir)
+      total_files = len(wav_files)
+      if total_files == 0:
+          print("No .wav files found in the specified directory.")
+          return
 
-    # get noise files
-    print('Gathering noise files....')
-    noise_wav_files = get_all_wav_files(noise_data_dir)
-    total_noise_files = len(noise_wav_files)
-    if total_noise_files == 0:
-        print("No .wav files found in the specified directory.")
-        return
+      # get noise files
+      print('Gathering noise files....')
+      noise_wav_files = get_all_wav_files(noise_data_dir)
+      total_noise_files = len(noise_wav_files)
+      if total_noise_files == 0:
+          print("No .wav files found in the specified directory.")
+          return
 
-    # Load checkpoint to resume processing
-    if manual_checkpoint is not None:
-      start_batch_idx = manual_checkpoint
-    else:
-      start_batch_idx = load_checkpoint(checkpoint_file)
-    print(f"Resuming from batch index: {start_batch_idx}")
+      # Load checkpoint to resume processing
+      if manual_checkpoint is not None:
+        start_batch_idx = manual_checkpoint
+      else:
+        start_batch_idx = load_checkpoint(checkpoint_file)
+      print(f"Resuming from batch index: {start_batch_idx}")
 
-    # Create HDF5 file for saving
-    print('Creating HDF5 file....')
-    with h5py.File(output_file, 'a') as h5f:
-        if "input_images" not in h5f:
-          input_dataset = h5f.create_dataset(
-              "input_images",
-              shape=(0, 3, 1025, 89),  # Initially empty along the first dimension
-              maxshape=(None, 3, 1025, 89),  # Unlimited along the first dimension
-              dtype=np.float32,
-              compression="gzip"
-          )
-        else:
-          input_dataset = h5f["input_images"]
+      # Create HDF5 file for saving
+      print('Creating HDF5 file....')
+      with h5py.File(output_file, 'a') as h5f:
+          if "input_images" not in h5f:
+            input_dataset = h5f.create_dataset(
+                "input_images",
+                shape=(0, 3, 1025, 89),  # Initially empty along the first dimension
+                maxshape=(None, 3, 1025, 89),  # Unlimited along the first dimension
+                dtype=np.float32,
+                compression="gzip"
+            )
+          else:
+            input_dataset = h5f["input_images"]
 
-        if "target_images" not in h5f:
-          target_dataset = h5f.create_dataset(
-              "target_images",
-              shape=(0, 3, 1025, 89),  # Initially empty along the first dimension
-              maxshape=(None, 3, 1025, 89),  # Unlimited along the first dimension
-              dtype=np.float32,
-              compression="gzip"
-          )
-        else:
-          target_dataset = h5f["target_images"]
+          if "target_images" not in h5f:
+            target_dataset = h5f.create_dataset(
+                "target_images",
+                shape=(0, 3, 1025, 89),  # Initially empty along the first dimension
+                maxshape=(None, 3, 1025, 89),  # Unlimited along the first dimension
+                dtype=np.float32,
+                compression="gzip"
+            )
+          else:
+            target_dataset = h5f["target_images"]
 
-        print('checking for file existance....')
-        check_file_exists(output_file)
-        print('processing batches...')
-        # Process in batches
-        for i in tqdm(range(start_batch_idx, total_files, batch_size), desc="Processing batches", unit="batch"):
-            batch_files = wav_files[i:i + batch_size]
-            noise_files = random.sample(noise_wav_files, batch_size)
+          print('checking for file existance....')
+          check_file_exists(output_file)
+          print('processing batches...')
+          # Process in batches
+          for i in tqdm(range(start_batch_idx, total_files, batch_size), desc="Processing batches", unit="batch"):
+              batch_files = wav_files[i:i + batch_size]
+              noise_files = random.sample(noise_wav_files, batch_size)
 
-            # Initialize lists to store input and target images for the batch
-            input_images = []
-            target_images = []
+              # Initialize lists to store input and target images for the batch
+              input_images = []
+              target_images = []
 
-            #print(np.array([batch_files, noise_files]).T[:5])
+              #print(np.array([batch_files, noise_files]).T[:5])
 
-            # Process files in parallel
-            if process_pool:
-              with ProcessPoolExecutor() as executor:
-                  futures = [
-                     executor.submit(process_file, audio_file, noise_file, background_noise_level, random_noise_level, SNRdB) 
-                     for audio_file, noise_file in zip(batch_files, noise_files)
-                     ]
-                  results = [future.result() for future in futures if future.result() is not None]
+              # Process files in parallel
+              if process_pool:
+                with ProcessPoolExecutor() as executor:
+                    futures = [
+                      executor.submit(process_file, audio_file, noise_file, background_noise_level, random_noise_level, SNRdB) 
+                      for audio_file, noise_file in zip(batch_files, noise_files)
+                      ]
+                    results = [future.result() for future in futures if future.result() is not None]
 
-              # Collect batch results
-              for input_image, target_image in results:
-                  input_images.append(input_image)
-                  target_images.append(target_image)
+                # Collect batch results
+                for input_image, target_image in results:
+                    input_images.append(input_image)
+                    target_images.append(target_image)
 
-            # process files as a loop
-            else:
-              for audio_file, noise_file in zip(batch_files, noise_files):
-                output = process_file(audio_file, noise_file, background_noise_level, random_noise_level, SNRdB)
+              # process files as a loop
+              else:
+                for audio_file, noise_file in zip(batch_files, noise_files):
+                  output = process_file(audio_file, noise_file, background_noise_level, random_noise_level, SNRdB)
 
-                # collect batch results
-                if output is not None:
-                  input_image, target_image = output
-                  input_images.append(input_image)
-                  target_images.append(target_image)
-                else:
-                  print(f"Error processing {audio_file}")
+                  # collect batch results
+                  if output is not None:
+                    input_image, target_image = output
+                    input_images.append(input_image)
+                    target_images.append(target_image)
+                  else:
+                    print(f"Error processing {audio_file}")
 
-            # Append batch to datasets
-            input_dataset.resize(input_dataset.shape[0] + len(input_images), axis=0)
-            target_dataset.resize(target_dataset.shape[0] + len(target_images), axis=0)
-            input_dataset[-len(input_images):] = np.stack(input_images)
-            target_dataset[-len(target_images):] = np.stack(target_images)
+              # Append batch to datasets
+              input_dataset.resize(input_dataset.shape[0] + len(input_images), axis=0)
+              target_dataset.resize(target_dataset.shape[0] + len(target_images), axis=0)
+              input_dataset[-len(input_images):] = np.stack(input_images)
+              target_dataset[-len(target_images):] = np.stack(target_images)
 
-            if verbose:
-               print('input dataset shape:', input_dataset.shape)
-               print('target dataset shape:', target_dataset.shape)
-            # Save checkpoint after each batch
-            save_checkpoint(checkpoint_file, i + batch_size)
+              if verbose:
+                print('input dataset shape:', input_dataset.shape)
+                print('target dataset shape:', target_dataset.shape)
+              # Save checkpoint after each batch
+              save_checkpoint(checkpoint_file, i + batch_size)
+
+    except Exception as e:
+        # Log the exception
+        print("An error occurred:")
+        traceback.print_exc()
+    finally:
+        # Ensure the HDF5 file is flushed and closed properly
+        print("Processing complete. HDF5 file saved and closed.")
 
     print(f"Dataset saved to {output_file}")
 
