@@ -565,6 +565,11 @@ def process_and_save_noisy_dataset(
 
             print('checking for file existance....')
             check_file_exists(output_file)
+
+            if os.path.exists(output_file):
+                  current_size = os.path.getsize(output_file)
+                  print(f'Current file size: {current_size / 1024**3}')
+                  
             print('processing batches...')
             # Process in batches
             for i in tqdm(range(start_batch_idx, total_files, batch_size), desc="Processing batches", unit="batch"):
