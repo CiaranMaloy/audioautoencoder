@@ -485,6 +485,7 @@ def check_file_exists(filepath):
         return False
 
 import traceback
+import time
 
 def process_and_save_noisy_dataset(
       data_dir, 
@@ -569,7 +570,7 @@ def process_and_save_noisy_dataset(
             if os.path.exists(output_file):
                   current_size = os.path.getsize(output_file)
                   print(f'Current file size: {current_size / 1024**3}')
-                  
+
             print('processing batches...')
             # Process in batches
             for i in tqdm(range(start_batch_idx, total_files, batch_size), desc="Processing batches", unit="batch"):
@@ -609,11 +610,16 @@ def process_and_save_noisy_dataset(
                     else:
                       print(f"Error processing {audio_file}")
 
+                input_images = np.array(input_images, dtype=np.float32)
+                target_images = np.array(target_images, dtype=np.float32)
+
                 # Append batch to datasets
                 input_dataset.resize(input_dataset.shape[0] + len(input_images), axis=0)
                 target_dataset.resize(target_dataset.shape[0] + len(target_images), axis=0)
                 input_dataset[-len(input_images):] = np.stack(input_images)
                 target_dataset[-len(target_images):] = np.stack(target_images)
+
+                h5f.flush()
 
                 if verbose:
                   print('input dataset shape:', input_dataset.shape)
@@ -630,6 +636,7 @@ def process_and_save_noisy_dataset(
 
                 if i > start_batch_idx + checkpoint_file_size:
                   print('Checkpointing file......')
+                  time.sleep(20)
                   break
 
     except Exception as e:
