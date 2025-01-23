@@ -622,6 +622,7 @@ def process_and_save_noisy_dataset(
                     LOGIC = False
 
                 if i > checkpoint_file_size:
+                  print('Checkpointing file......')
                   break
 
     except Exception as e:
