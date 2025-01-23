@@ -620,6 +620,7 @@ def process_and_save_noisy_dataset(
                   current_size = os.path.getsize(output_file)
                   if current_size >= max_file_size_bytes:
                     LOGIC = False
+                    break
 
                 if i > start_batch_idx + checkpoint_file_size:
                   print('Checkpointing file......')
