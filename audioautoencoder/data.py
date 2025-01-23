@@ -486,6 +486,7 @@ def check_file_exists(filepath):
 
 import traceback
 import time
+from threading import Lock
 
 def process_and_save_noisy_dataset(
       data_dir, 
@@ -512,6 +513,7 @@ def process_and_save_noisy_dataset(
       random.seed(42)
       LOGIC = True
       max_file_size_bytes = max_file_size_gb * 1024**3
+      write_lock = Lock()
 
       while LOGIC:
         # Get the list of .wav files in the directory
@@ -614,10 +616,11 @@ def process_and_save_noisy_dataset(
                 target_images = np.array(target_images, dtype=np.float32)
 
                 # Append batch to datasets
-                input_dataset.resize(input_dataset.shape[0] + len(input_images), axis=0)
-                target_dataset.resize(target_dataset.shape[0] + len(target_images), axis=0)
-                input_dataset[-len(input_images):] = np.stack(input_images)
-                target_dataset[-len(target_images):] = np.stack(target_images)
+                with write_lock:
+                  input_dataset.resize(input_dataset.shape[0] + len(input_images), axis=0)
+                  target_dataset.resize(target_dataset.shape[0] + len(target_images), axis=0)
+                  input_dataset[-len(input_images):] = np.stack(input_images)
+                  target_dataset[-len(target_images):] = np.stack(target_images)
 
                 h5f.flush()
 
