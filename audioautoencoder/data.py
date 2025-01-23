@@ -618,6 +618,7 @@ def process_and_save_noisy_dataset(
 
                 if os.path.exists(output_file):
                   current_size = os.path.getsize(output_file)
+                  print(f'Current file size: {current_size / 1024**3}')
                   if current_size >= max_file_size_bytes:
                     LOGIC = False
                     break
