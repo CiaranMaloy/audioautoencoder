@@ -193,6 +193,7 @@ def process_and_save_noisy_dataset(
 import h5py
 import os
 import numpy as np
+import math
 
 def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1):
     # Convert max file size to bytes
@@ -217,13 +218,14 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1):
     current_file_index = 0
     current_file_samples = 0
     current_file_size = 0
+    previous_size = 0
     combined_file = None
     input_dataset = None
     target_dataset = None
     
     def create_new_file():
         """Helper function to create a new HDF5 file."""
-        nonlocal current_file_index, current_file_samples, current_file_size, combined_file, input_dataset, target_dataset
+        nonlocal current_file_index, current_file_samples, current_file_size, combined_file, input_dataset, target_dataset, previous_size
         # Close the current file if open
         if combined_file is not None:
             combined_file.close()
@@ -235,6 +237,7 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1):
         target_dataset = combined_file.create_dataset("target_images", shape=(0, *target_shape), maxshape=(None, *target_shape), dtype="float32")
         current_file_samples = 0
         current_file_size = 0
+        previous_size = 0
         current_file_index += 1
         print(f"Created new file: {file_path}")
     
@@ -259,7 +262,10 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1):
                     print('Done....')
                     break
                 
-                print((current_file_size + sample_size)/ 1024**3, h5_file)
+                current_size_gb = (current_file_size + sample_size)/1024**3
+                if math.floor(previous_size) != math.floor(current_size_gb):
+                    print(current_size_gb, h5_file)
+                previous_size = current_size_gb
                 # Append the sample to the current dataset
                 input_dataset.resize((current_file_samples + 1, *input_shape))
                 target_dataset.resize((current_file_samples + 1, *target_shape))
@@ -268,6 +274,11 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1):
                 
                 current_file_samples += 1
                 current_file_size += sample_size
+
+        # Check if adding this sample exceeds the max file size
+        if current_file_size + sample_size > max_file_size_bytes:
+            print('Done.... - no more files')
+            break
     
     # Close the last file
     if combined_file is not None:
