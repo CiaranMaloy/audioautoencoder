@@ -274,4 +274,4 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1):
     print(f"Finished combining files into {current_file_index} output files in {output_folder_path}")
 
 # Example usage
-combine_h5_files("path/to/h5_folder", "path/to/output_folder", max_file_size_gb=1)
+#combine_h5_files("path/to/h5_folder", "path/to/output_folder", max_file_size_gb=1)
