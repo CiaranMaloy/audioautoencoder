@@ -103,7 +103,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             optimizer.zero_grad()
             if verbose:
               print('training model')
-            #outputs = model(noisy_imgs)
+            outputs = model(noisy_imgs)
             #print(outputs.shape)
             print(clean_imgs.shape)
             loss = criterion(outputs, clean_imgs)
@@ -189,7 +189,7 @@ def test_examples(model, test_loader):
             noisy_imgs = noisy_imgs.to(device)
             #input_features = input_features.to(device)
             clean_imgs = clean_imgs.to(device)
-            outputs, mask = model(noisy_imgs)
+            outputs = model(noisy_imgs)
             break  # Display only the first batch
 
     return noisy_imgs.cpu(), outputs.cpu(), clean_imgs.cpu()

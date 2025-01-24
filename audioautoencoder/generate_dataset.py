@@ -256,8 +256,10 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1):
                 # Check if adding this sample exceeds the max file size
                 if current_file_size + sample_size > max_file_size_bytes:
                     create_new_file()
+                    print('Done....')
                     break
                 
+                print((current_file_size + sample_size)/ 1024**3, h5_file)
                 # Append the sample to the current dataset
                 input_dataset.resize((current_file_samples + 1, *input_shape))
                 target_dataset.resize((current_file_samples + 1, *target_shape))
