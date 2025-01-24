@@ -247,8 +247,8 @@ def process_and_save_dataset(data_dir, output_file, checkpoint_file, sr_target=4
                 input_images.append(input_image)
                 target_images.append(target_image)
 
-            print(input_images[0].shape)
-            print(target_images[0].shape)
+            #print(input_images[0].shape)
+            #print(target_images[0].shape)
 
             # Append batch to datasets
             input_dataset.resize(input_dataset.shape[0] + len(input_images), axis=0)
@@ -641,7 +641,7 @@ def process_and_save_noisy_dataset(
                     time.sleep(20)
                     break
 
-                if i > start_batch_idx + checkpoint_file_size:
+                if i > checkpoint_file_size:
                   LOGIC = False
                   print('Checkpointing file......')
                   time.sleep(20)
