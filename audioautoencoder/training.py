@@ -103,8 +103,8 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             optimizer.zero_grad()
             if verbose:
               print('training model')
-            outputs = model(noisy_imgs)
-            print(outputs.shape)
+            #outputs = model(noisy_imgs)
+            #print(outputs.shape)
             print(clean_imgs.shape)
             loss = criterion(outputs, clean_imgs)
             loss.backward()
@@ -122,7 +122,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             val_batch = 0
             for inputs, targets in progress_bar:
                 inputs, targets = inputs.to(device), targets.to(device)
-                outputs, mask = model(inputs)
+                outputs = model(inputs)
                 loss = criterion(outputs, targets)
                 val_loss += loss.item()
                 progress_bar.set_postfix(loss=f"{val_loss / (progress_bar.n + 1):.4f}")
