@@ -103,7 +103,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             optimizer.zero_grad()
             if verbose:
               print('training model')
-            outputs, mask = model(noisy_imgs)
+            outputs = model(noisy_imgs)
             loss = criterion(outputs, clean_imgs)
             loss.backward()
             optimizer.step()
