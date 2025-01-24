@@ -95,7 +95,7 @@ def audio_to_image(audio, sr, verbose=False, n_fft=2048, audio_length=44100):
 
     # Stack as 3 channels: log magnitude, normalised magnitude, and phase
     output = np.stack([logmagnitude, normalised_magnitude, phase], axis=0)
-    print('output_size: ', np.shape(output))
+    assert(np.shape(output) == (3, 1025, 89))
     return output
 
 def process_audio_to_image(audio, sr, plot=False, noise_level=0):
