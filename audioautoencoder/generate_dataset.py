@@ -222,6 +222,7 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1):
     combined_file = None
     input_dataset = None
     target_dataset = None
+    flag = False
     
     def create_new_file():
         """Helper function to create a new HDF5 file."""
@@ -260,6 +261,7 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1):
                 if current_file_size + sample_size > max_file_size_bytes:
                     create_new_file()
                     print('Done....')
+                    flag = True
                     break
                 
                 current_size_gb = (current_file_size + sample_size)/1024**3
@@ -276,7 +278,7 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1):
                 current_file_size += sample_size
 
         # Check if adding this sample exceeds the max file size
-        if current_file_size + sample_size > max_file_size_bytes:
+        if flag:
             print('Done.... - no more files')
             break
     
