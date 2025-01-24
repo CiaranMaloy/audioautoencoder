@@ -215,7 +215,7 @@ def process_and_save_dataset(data_dir, output_file, checkpoint_file, sr_target=4
               shape=(0, 3, 1024, 86),  # Initially empty along the first dimension
               maxshape=(None, 3, 1024, 86),  # Unlimited along the first dimension
               dtype=np.float32,
-              compression="gzip"
+              compression="lzf"
           )
         else:
           input_dataset = h5f["input_images"]
@@ -226,7 +226,7 @@ def process_and_save_dataset(data_dir, output_file, checkpoint_file, sr_target=4
               shape=(0, 3, 1024, 86),  # Initially empty along the first dimension
               maxshape=(None, 3, 1024, 86),  # Unlimited along the first dimension
               dtype=np.float32,
-              compression="gzip"
+              compression="lzf"
           )
         else:
           target_dataset = h5f["target_images"]
@@ -550,7 +550,7 @@ def process_and_save_noisy_dataset(
                   shape=(0, 3, 1025, 89),  # Initially empty along the first dimension
                   maxshape=(None, 3, 1025, 89),  # Unlimited along the first dimension
                   dtype=np.float32,
-                  compression="gzip"
+                  compression="zlf"
               )
             else:
               input_dataset = h5f["input_images"]
@@ -561,7 +561,7 @@ def process_and_save_noisy_dataset(
                   shape=(0, 3, 1025, 89),  # Initially empty along the first dimension
                   maxshape=(None, 3, 1025, 89),  # Unlimited along the first dimension
                   dtype=np.float32,
-                  compression="gzip"
+                  compression="zlf"
               )
             else:
               target_dataset = h5f["target_images"]
@@ -635,7 +635,7 @@ def process_and_save_noisy_dataset(
 
                 if os.path.exists(output_file):
                   current_size = os.path.getsize(output_file)
-                  i.set_postfix(loss=f"{current_size / 1024**3}")
+                  #i.set_postfix(loss=f"{current_size / 1024**3}")
                   if current_size >= max_file_size_bytes:
                     LOGIC = False
                     time.sleep(20)
