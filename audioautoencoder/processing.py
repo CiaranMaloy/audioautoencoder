@@ -74,6 +74,8 @@ def audio_to_image(audio, sr, verbose=False, n_fft=2048, audio_length=44100):
     magnitude, phase = np.abs(stft), np.angle(stft) 
     logmagnitude = 10 * np.log10(magnitude + 1e-8)
 
+    print('stft size:', np.shape(stft))
+
     #print(np.shape(logmagnitude))
 
     if verbose:
@@ -92,7 +94,9 @@ def audio_to_image(audio, sr, verbose=False, n_fft=2048, audio_length=44100):
     phase = np.clip((phase + np.pi) / (2 * np.pi), 0, 1)
 
     # Stack as 3 channels: log magnitude, normalised magnitude, and phase
-    return np.stack([logmagnitude, normalised_magnitude, phase], axis=0)
+    output = np.stack([logmagnitude, normalised_magnitude, phase], axis=0)
+    print('output_size: ', np.shape(output))
+    return output
 
 def process_audio_to_image(audio, sr, plot=False, noise_level=0):
     """
