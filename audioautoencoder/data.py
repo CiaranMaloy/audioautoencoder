@@ -343,10 +343,9 @@ def process_audio_and_noise_to_image(audio, noise, sr, plot=False, random_noise_
       noisy_audio = np.clip(audio + noise, -1, 1)
     else:
       noisy_audio = audio
-
   else:
      noise = noise + s
-     target_snr_db = random.uniform(SNRdB, 40)
+     target_snr_db = random.uniform(SNRdB[0], SNRdB[1])
      noisy_audio, _ = combine_signal_noise(audio, noise, target_snr_db)
      
   if plot:
