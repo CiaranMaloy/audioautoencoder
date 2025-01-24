@@ -615,6 +615,9 @@ def process_and_save_noisy_dataset(
                 input_images = np.array(input_images, dtype=np.float32)
                 target_images = np.array(target_images, dtype=np.float32)
 
+                if np.isnan(np.stack(input_images)).any() or np.isinf(np.stack(input_images)).any():
+                  raise ValueError("Input images contain NaN or Inf values.")
+
                 # Append batch to datasets
                 with write_lock:
                   input_dataset.resize(input_dataset.shape[0] + len(input_images), axis=0)
