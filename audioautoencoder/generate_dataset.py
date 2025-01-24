@@ -141,10 +141,6 @@ def process_and_save_noisy_dataset(
                 print('checking for file existance....')
                 check_file_exists(sub_output_file)
 
-                if os.path.exists(sub_output_file):
-                    current_size = os.path.getsize(sub_output_file)
-                    print(f'Current file size: {current_size / 1024**3}')
-
                 print('processing batches...')
                 # Process in batches
                 # Append batch to datasets
@@ -178,6 +174,11 @@ def process_and_save_noisy_dataset(
                   time.sleep(20)
                   break
 
+            if os.path.exists(sub_output_file):
+                current_size = os.path.getsize(sub_output_file)
+                print(f'Current file size: {current_size / 1024**3}')
+            print(f'Done {sub_output_file}')
+
     except Exception as e:
         # Log the exception
         print("An error occurred:")
@@ -187,3 +188,90 @@ def process_and_save_noisy_dataset(
         print("Processing complete. HDF5 file saved and closed.")
 
     print(f"Dataset saved to {output_file}")
+
+
+import h5py
+import os
+import numpy as np
+
+def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1):
+    # Convert max file size to bytes
+    max_file_size_bytes = max_file_size_gb * 1024**3
+    
+    # List all HDF5 files in the folder
+    h5_files = [os.path.join(h5_folder_path, f) for f in os.listdir(h5_folder_path) if f.endswith(".h5")]
+    
+    # Open the first file to get the dataset shape
+    with h5py.File(h5_files[0], "r") as first_file:
+        input_shape = first_file["input_images"].shape[1:]  # Exclude the batch dimension
+        target_shape = first_file["target_images"].shape[1:]
+        sample_size_bytes = (
+            np.prod(input_shape) * np.dtype("float32").itemsize +
+            np.prod(target_shape) * np.dtype("float32").itemsize
+        )
+    
+    # Create output folder if it doesn't exist
+    os.makedirs(output_folder_path, exist_ok=True)
+    
+    # Variables for tracking file splitting
+    current_file_index = 0
+    current_file_samples = 0
+    current_file_size = 0
+    combined_file = None
+    input_dataset = None
+    target_dataset = None
+    
+    def create_new_file():
+        """Helper function to create a new HDF5 file."""
+        nonlocal current_file_index, current_file_samples, current_file_size, combined_file, input_dataset, target_dataset
+        # Close the current file if open
+        if combined_file is not None:
+            combined_file.close()
+        
+        # Create a new file
+        file_path = os.path.join(output_folder_path, f"combined_{current_file_index:03d}.h5")
+        combined_file = h5py.File(file_path, "w")
+        input_dataset = combined_file.create_dataset("input_images", shape=(0, *input_shape), maxshape=(None, *input_shape), dtype="float32")
+        target_dataset = combined_file.create_dataset("target_images", shape=(0, *target_shape), maxshape=(None, *target_shape), dtype="float32")
+        current_file_samples = 0
+        current_file_size = 0
+        current_file_index += 1
+        print(f"Created new file: {file_path}")
+    
+    # Start with the first file
+    create_new_file()
+    
+    # Copy data from each file into the combined datasets
+    for h5_file in h5_files:
+        with h5py.File(h5_file, "r") as source_file:
+            input_data = source_file["input_images"][:]
+            target_data = source_file["target_images"][:]
+            num_samples = input_data.shape[0]
+            
+            for i in range(num_samples):
+                sample_input = input_data[i:i+1]  # Get one sample at a time
+                sample_target = target_data[i:i+1]
+                sample_size = sample_size_bytes
+                
+                # Check if adding this sample exceeds the max file size
+                if current_file_size + sample_size > max_file_size_bytes:
+                    create_new_file()
+                    break
+                
+                # Append the sample to the current dataset
+                input_dataset.resize((current_file_samples + 1, *input_shape))
+                target_dataset.resize((current_file_samples + 1, *target_shape))
+                input_dataset[current_file_samples] = sample_input
+                target_dataset[current_file_samples] = sample_target
+                
+                current_file_samples += 1
+                current_file_size += sample_size
+    
+    # Close the last file
+    if combined_file is not None:
+        combined_file.close()
+    
+    print(f"Finished combining files into {current_file_index} output files in {output_folder_path}")
+
+# Example usage
+combine_h5_files("path/to/h5_folder", "path/to/output_folder", max_file_size_gb=1)
