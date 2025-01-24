@@ -637,12 +637,13 @@ def process_and_save_noisy_dataset(
                   #i.set_postfix(loss=f"{current_size / 1024**3}")
                   if current_size >= max_file_size_bytes:
                     LOGIC = False
+                    print('File maximum size met....')
                     time.sleep(20)
                     break
 
                 if i > checkpoint_file_size:
                   LOGIC = False
-                  print('Checkpointing file......')
+                  print('File maximum samples file......')
                   time.sleep(20)
                   break
 
