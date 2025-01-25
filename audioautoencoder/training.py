@@ -116,7 +116,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             running_loss += loss.item()
             recon_loss += r_loss.item()
             i += 1
-            progress_bar.set_postfix(loss=f"joint loss: {val_loss / (progress_bar.n + 1):.4f} -- mse loss: {recon_loss / (progress_bar.n + 1):.4f}")
+            progress_bar.set_postfix(loss=f"joint loss: {running_loss / (progress_bar.n + 1):.4f} -- mse loss: {recon_loss / (progress_bar.n + 1):.4f}")
 
         # Validation step
         model.eval()
