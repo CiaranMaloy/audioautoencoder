@@ -28,11 +28,13 @@ class MelWeightedMSELoss(nn.Module):
         return torch.mean(loss)
     
 class MelWeightedMSELossVAE(nn.Module):
-    def __init__(self, device, height=1025, min_value=0.3, verbose=False):
+    def __init__(self, device, height=1025, min_value=0.3, verbose=False, beta=0.1):
         super(MelWeightedMSELossVAE, self).__init__()
         self.verbose = verbose
         if self.verbose:
             print('loss initialised...')
+
+        self.beta = beta
 
         self.height = height
         self.min_value = min_value
@@ -58,14 +60,14 @@ class MelWeightedMSELossVAE(nn.Module):
         recon_loss = torch.mean(((input - target) ** 2) * weights)
 
         # kl loss 
-        kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1).mean()
         kl_loss /= input.size(0)
 
         if self.verbose:
             print('kl loss:', kl_loss)
             print('recon_loss:', recon_loss)
 
-        return recon_loss + kl_loss
+        return recon_loss + kl_loss * self.beta
     
 def vae_loss_function(recon_x, x, mu, logvar):
     # Reconstruction loss (e.g., MSE)
