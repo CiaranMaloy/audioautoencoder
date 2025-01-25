@@ -57,6 +57,9 @@ class MelWeightedMSELossVAE(nn.Module):
         kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         kl_loss /= input.size(0)
 
+        print('kl loss:', kl_loss)
+        print('recon_loss:', recon_loss)
+
         return recon_loss + kl_loss
     
 def vae_loss_function(recon_x, x, mu, logvar):
