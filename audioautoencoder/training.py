@@ -133,7 +133,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
                 recon_loss += r_loss.item()
                 progress_bar.set_postfix(loss=f"joint loss: {val_loss / (progress_bar.n + 1):.4f} -- mse loss: {recon_loss / (progress_bar.n + 1):.4f}")
 
-        val_loss /= val_batch
+        val_loss /= len(progress_bar)
         
         if scheduler_loss:
             scheduler.step(val_loss)
