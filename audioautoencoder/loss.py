@@ -64,6 +64,7 @@ class MelWeightedMSELossVAE(nn.Module):
         # kl loss 
         kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1).mean()
         kl_loss /= input.size(0)
+        kl_loss = torch.clamp(kl_loss, min=1e-6) 
 
         if self.verbose:
             print('kl loss:', kl_loss)
