@@ -28,8 +28,11 @@ class MelWeightedMSELoss(nn.Module):
         return torch.mean(loss)
     
 class MelWeightedMSELossVAE(nn.Module):
-    def __init__(self, device, height=1025, min_value=0.3):
+    def __init__(self, device, height=1025, min_value=0.3, verbose=False):
         super(MelWeightedMSELossVAE, self).__init__()
+        self.verbose = verbose
+        if self.verbose:
+            print('loss initialised...')
 
         self.height = height
         self.min_value = min_value
@@ -57,8 +60,9 @@ class MelWeightedMSELossVAE(nn.Module):
         kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         kl_loss /= input.size(0)
 
-        print('kl loss:', kl_loss)
-        print('recon_loss:', recon_loss)
+        if self.verbose:
+            print('kl loss:', kl_loss)
+            print('recon_loss:', recon_loss)
 
         return recon_loss + kl_loss
     
