@@ -51,6 +51,7 @@ class MelWeightedMSELossVAE(nn.Module):
     def forward(self, arguments, target):
         # extract arguments
         input, mu, logvar = arguments
+        logvar = torch.clamp(logvar, min=-10, max=10)
         # Ensure weights are on the same device as input
         weights = self.weights.to(input.device)
         # perceptual loss
