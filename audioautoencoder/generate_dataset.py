@@ -266,7 +266,7 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1):
                 
                 current_size_gb = (current_file_size + sample_size)/1024**3
                 if math.floor(previous_size) != math.floor(current_size_gb):
-                    print(current_size_gb, h5_file)
+                    print(np.round(current_size_gb), h5_file)
                 previous_size = current_size_gb
                 # Append the sample to the current dataset
                 input_dataset.resize((current_file_samples + 1, *input_shape))
