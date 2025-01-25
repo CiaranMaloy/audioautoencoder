@@ -88,6 +88,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
         model.train()
         progress_bar = tqdm(train_loader, desc="Training", unit="batch")
         running_loss = 0.0
+        recon_loss = 0.0
         i = 0
         if verbose:
           print('starting progress....')
@@ -104,30 +105,33 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             if verbose:
               print('training model')
             outputs = model(noisy_imgs)
-            
+
             if verbose:
                 print(outputs.shape)
                 print(clean_imgs.shape)
-            loss = criterion(outputs, clean_imgs)
+            loss, r_loss = criterion(outputs, clean_imgs)
             loss.backward()
             optimizer.step()
 
             running_loss += loss.item()
+            recon_loss += r_loss.item()
             i += 1
-            progress_bar.set_postfix(loss=f"{running_loss / (progress_bar.n + 1):.4f}")
+            progress_bar.set_postfix(loss=f"joint loss: {val_loss / (progress_bar.n + 1):.4f} -- mse loss: {recon_loss / (progress_bar.n + 1):.4f}")
 
         # Validation step
         model.eval()
         progress_bar = tqdm(val_loader, desc="Validating", unit="batch")
         val_loss = 0.0
+        recon_loss = 0.0
         with torch.no_grad():
             val_batch = 0
             for inputs, targets in progress_bar:
                 inputs, targets = inputs.to(device), targets.to(device)
                 outputs = model(inputs)
-                loss = criterion(outputs, targets)
+                loss, r_loss = criterion(outputs, targets)
                 val_loss += loss.item()
-                progress_bar.set_postfix(loss=f"{val_loss / (progress_bar.n + 1):.4f}")
+                recon_loss += r_loss.item()
+                progress_bar.set_postfix(loss=f"joint loss: {val_loss / (progress_bar.n + 1):.4f} -- mse loss: {recon_loss / (progress_bar.n + 1):.4f}")
                 if val_batch <= max_val_batches:
                   val_batch += 1
                 else:

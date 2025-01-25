@@ -50,7 +50,9 @@ class MelWeightedMSELossVAE(nn.Module):
         # Calculate weights
         self.weights = (n_mel + self.min_value) / torch.max(n_mel + self.min_value)
 
-    def forward(self, arguments, target):
+    def forward(self, arguments, target, beta=None):
+        if beta is not None:
+            self.beta = beta
         # extract arguments
         input, mu, logvar = arguments
         logvar = torch.clamp(logvar, min=-10, max=10)
@@ -67,7 +69,7 @@ class MelWeightedMSELossVAE(nn.Module):
             print('kl loss:', kl_loss)
             print('recon_loss:', recon_loss)
 
-        return recon_loss + kl_loss * self.beta
+        return recon_loss + kl_loss * self.beta, recon_loss
     
 def vae_loss_function(recon_x, x, mu, logvar):
     # Reconstruction loss (e.g., MSE)
