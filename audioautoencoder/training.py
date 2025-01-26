@@ -89,6 +89,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
         progress_bar = tqdm(train_loader, desc="Training", unit="batch")
         running_loss = 0.0
         recon_loss = 0.0
+        benchark_loss = 0.0
         i = 0
         if verbose:
           print('starting progress....')
@@ -109,15 +110,17 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             if verbose:
                 print(outputs.shape)
                 print(clean_imgs.shape)
-            loss  = criterion(outputs, clean_imgs)
+            loss = criterion(outputs, clean_imgs)
             loss.backward()
             optimizer.step()
+
+            benchark_loss += criterion(noisy_imgs, clean_imgs).item()
 
             running_loss += loss.item()
             #recon_loss += r_loss.item()
             i += 1
             #progress_bar.set_postfix(loss=f"joint loss: {running_loss / (progress_bar.n + 1):.4f} -- mse loss: {recon_loss / (progress_bar.n + 1):.4f}")
-            progress_bar.set_postfix(loss=f"{running_loss / (progress_bar.n + 1):.4f}")
+            progress_bar.set_postfix(loss=f"{running_loss / (progress_bar.n + 1):.4f}, bl:{benchark_loss / (progress_bar.n + 1):.4f}")
 
         # Validation step
         model.eval()
@@ -129,7 +132,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             for inputs, targets in progress_bar:
                 inputs, targets = inputs.to(device), targets.to(device)
                 outputs = model(inputs)
-                loss  = criterion(outputs, targets)
+                loss = criterion(outputs, targets)
                 val_loss += loss.item()
                 #recon_loss += r_loss.item()
                 #progress_bar.set_postfix(loss=f"joint loss: {val_loss / (progress_bar.n + 1):.4f} -- mse loss: {recon_loss / (progress_bar.n + 1):.4f}")
