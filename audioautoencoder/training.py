@@ -86,7 +86,7 @@ def train_model(model,
     print(f"Training on device: {device}")
 
     # reference loss
-    reference_loss = MelWeightedMSELoss(min_value=ref_min_value)
+    reference_loss = MelWeightedMSELoss(device, min_value=ref_min_value)
 
     if scheduler_loss:
         pass
