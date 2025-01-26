@@ -1,5 +1,6 @@
 import torch
 from tqdm import tqdm
+from loss import *
 
 # Early Stopping
 class EarlyStopping:
@@ -66,9 +67,26 @@ class EarlyStopping:
 ## Training, testing and calling examples
 
 # Training loop
-def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, early_stopping, starting_epoch=0, epochs=5, verbose=False, checkpoint_filename='checkpoint.pth', scheduler_loss=False):
+def train_model(model, 
+                train_loader, 
+                val_loader, 
+                criterion, 
+                optimizer, 
+                scheduler, 
+                early_stopping, 
+                starting_epoch=0, 
+                epochs=5, 
+                verbose=False, 
+                checkpoint_filename='checkpoint.pth', 
+                scheduler_loss=False, 
+                ref_min_value=0.4
+                ):
+    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Training on device: {device}")
+
+    # reference loss
+    reference_loss = MelWeightedMSELoss(ref_min_value=0.4)
 
     if scheduler_loss:
         pass
@@ -89,7 +107,8 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
         progress_bar = tqdm(train_loader, desc="Training", unit="batch")
         running_loss = 0.0
         recon_loss = 0.0
-        benchark_loss = 0.0
+        ref_loss = 0.0
+
         i = 0
         if verbose:
           print('starting progress....')
@@ -110,7 +129,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             if verbose:
                 print(outputs.shape)
                 print(clean_imgs.shape)
-            loss, r_loss = criterion(outputs, clean_imgs)
+            loss, r_loss = criterion(outputs, clean_imgs, beta=epoch/epochs)
             loss.backward()
             optimizer.step()
 
@@ -118,8 +137,9 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
 
             running_loss += loss.item()
             recon_loss += r_loss.item()
+            ref_loss += reference_loss(noisy_imgs, clean_imgs).item()
             i += 1
-            progress_bar.set_postfix(loss=f"joint loss: {running_loss / (progress_bar.n + 1):.4f} -- mse loss: {recon_loss / (progress_bar.n + 1):.4f}")
+            progress_bar.set_postfix(loss=f"loss: {running_loss / (progress_bar.n + 1):.4f} mse: {recon_loss / (progress_bar.n + 1):.4f}, ref:{ref_loss / (progress_bar.n + 1):.4f}")
             #progress_bar.set_postfix(loss=f"{running_loss / (progress_bar.n + 1):.4f}, bl:{benchark_loss / (progress_bar.n + 1):.4f}")
 
         # Validation step
@@ -138,7 +158,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
                 progress_bar.set_postfix(loss=f"joint loss: {val_loss / (progress_bar.n + 1):.4f} -- mse loss: {recon_loss / (progress_bar.n + 1):.4f}")
                 #progress_bar.set_postfix(loss=f"{val_loss / (progress_bar.n + 1):.4f}")
 
-        val_loss /= len(progress_bar)
+        val_loss /= (len(progress_bar) + 1)
         
         if scheduler_loss:
             scheduler.step(val_loss)
