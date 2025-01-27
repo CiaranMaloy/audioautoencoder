@@ -195,7 +195,7 @@ import os
 import numpy as np
 import math
 
-def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1):
+def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128):
     # Convert max file size to bytes
     max_file_size_bytes = max_file_size_gb * 1024**3
     
@@ -226,7 +226,7 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1):
     
     def create_new_file():
         """Helper function to create a new HDF5 file."""
-        nonlocal current_file_index, current_file_samples, current_file_size, combined_file, input_dataset, target_dataset, previous_size
+        nonlocal current_file_index, current_file_samples, current_file_size, combined_file, input_dataset, target_dataset, previous_size, chunk_size
         # Close the current file if open
         if combined_file is not None:
             combined_file.close()
@@ -234,8 +234,8 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1):
         # Create a new file
         file_path = os.path.join(output_folder_path, f"combined_{current_file_index:03d}.h5")
         combined_file = h5py.File(file_path, "w")
-        input_dataset = combined_file.create_dataset("input_images", shape=(0, *input_shape), maxshape=(None, *input_shape), dtype="float32")
-        target_dataset = combined_file.create_dataset("target_images", shape=(0, *target_shape), maxshape=(None, *target_shape), dtype="float32")
+        input_dataset = combined_file.create_dataset("input_images", shape=(0, *input_shape), chunks=(chunk_size, *input_shape), maxshape=(None, *input_shape), dtype="float32")
+        target_dataset = combined_file.create_dataset("target_images", shape=(0, *target_shape), chunks=(chunk_size, *input_shape), maxshape=(None, *target_shape), dtype="float32")
         current_file_samples = 0
         current_file_size = 0
         previous_size = 0

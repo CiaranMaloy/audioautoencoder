@@ -88,6 +88,7 @@ def train_model(model,
     # reference loss
     reference_loss = MelWeightedMSELoss(device, min_value=ref_min_value)
 
+    # step scheduler to correct training schedule
     if scheduler_loss:
         pass
     else:
@@ -109,6 +110,10 @@ def train_model(model,
         recon_loss = 0.0
         ref_loss = 0.0
 
+        # set loss beta
+        beta = epoch/epochs
+        print(f'New kl loss beta: {beta}')
+
         i = 0
         if verbose:
           print('starting progress....')
@@ -129,7 +134,7 @@ def train_model(model,
             if verbose:
                 print(outputs.shape)
                 print(clean_imgs.shape)
-            loss, r_loss = criterion(outputs, clean_imgs, beta=epoch/epochs)
+            loss, r_loss = criterion(outputs, clean_imgs, beta=beta)
             loss.backward()
             optimizer.step()
 
@@ -152,7 +157,7 @@ def train_model(model,
             for inputs, targets in progress_bar:
                 inputs, targets = inputs.to(device), targets.to(device)
                 outputs = model(inputs)
-                loss, r_loss = criterion(outputs, targets)
+                loss, r_loss = criterion(outputs, targets, beta=beta)
                 val_loss += loss.item()
                 recon_loss += r_loss.item()
                 progress_bar.set_postfix(loss=f"joint loss: {val_loss / (progress_bar.n + 1):.4f} -- mse loss: {recon_loss / (progress_bar.n + 1):.4f}")
