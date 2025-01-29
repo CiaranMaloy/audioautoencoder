@@ -683,8 +683,8 @@ def generate_audio_files(input_path, output_path, t=1, sr=44100):
         for file in all_files:
             # Load audio file using librosa
             audio, sr = librosa.load(file, sr=sr)  # 44.1kHz resampling
-            print(f'sr: {sr}')
-            print(f'audio_shape: {np.shape(audio)}')
+            #print(f'sr: {sr}')
+            #print(f'audio_shape: {np.shape(audio)}')
 
             # Get the length of the audio in seconds
             total_duration = librosa.get_duration(y=audio, sr=sr)
