@@ -54,6 +54,7 @@ def bandpass_filter(data, lowcut, highcut, sample_rate, order=1):
     sos = butter(order, [lowcut, highcut], btype='band', fs=sample_rate, output='sos')
     return sosfilt(sos, data)
 
+
 def audio_to_image(audio, sr, verbose=False, n_fft=2048, audio_length=44100):
     """
     Converts audio signal into a 3-channel image representation.
@@ -95,10 +96,10 @@ def audio_to_image(audio, sr, verbose=False, n_fft=2048, audio_length=44100):
 
     # Stack as 3 channels: log magnitude, normalised magnitude, and phase
     output = np.stack([logmagnitude, normalised_magnitude, phase], axis=0)
-    assert(np.shape(output) == (3, 1025, 89))
+    #assert(np.shape(output) == (3, 1025, 89))
     return output
 
-def process_audio_to_image(audio, sr, plot=False, noise_level=0):
+def process_audio_to_image(audio, sr, plot=False, noise_level=0, audio_length=44100):
     """
     Processes an audio signal into input and target image pairs.
 
@@ -117,8 +118,8 @@ def process_audio_to_image(audio, sr, plot=False, noise_level=0):
     s = (s / np.max(np.abs(s))) * noise_level if noise_level != 0 else s
 
     noisy_audio = np.clip(audio + s, -1, 1) if random.uniform(0, 1) > 0.2 else audio
-    input_image = audio_to_image(noisy_audio, sr)
-    target_image = audio_to_image(audio, sr)
+    input_image = audio_to_image(noisy_audio, sr, audio_length=audio_length)
+    target_image = audio_to_image(audio, sr, audio_length=audio_length)
 
     if plot:
         for i, (img, title) in enumerate(zip(

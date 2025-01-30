@@ -71,36 +71,6 @@ def gather_valid_audio_files(data_dir):
 
     return valid_files
 
-def process_file(file_path, sr_target, noise_level):
-    """
-    Process a single audio file and return the input and target images.
-    """
-    # Load the audio file
-    try:
-      waveform, sr = torchaudio.load(file_path)
-      waveform = waveform.cpu().numpy()
-
-      print('File path: ', file_path)
-
-      if sr != sr_target:
-          raise ValueError(f"Sample rate mismatch: {sr} != {sr_target}")
-
-      # Convert stereo to mono if needed
-      if waveform.shape[0] == 2:
-          audio = waveform.mean(axis=0)
-      else:
-          audio = waveform[0]
-
-      # Add channel dimension
-      #audio = audio[np.newaxis, :]
-
-      # Process audio to input and target images
-      input_image, target_image = process_audio_to_image(audio, sr, noise_level=noise_level)
-      return input_image, target_image
-    except Exception as e:
-        print(f"Error processing {file_path}: {e}")
-        return None
-
 def load_checkpoint(checkpoint_file, default_value=0):
 
   # Step 2: Specify the path to the file using pathlib
@@ -188,79 +158,6 @@ def get_all_wav_files(data_dir, batch_size=100):
       except OSError as e:
           print(f"Error accessing directory: {e}")
 
-def process_and_save_dataset(data_dir, output_file, checkpoint_file, sr_target=44100, noise_level=0.001, batch_size=10, max_length=1024):
-    """
-    Process all .wav files in a folder and save the input-output image pairs.
-    Use this to train an autoencoder (with a small amount of added noise)
-    This should be used within an if __name__ == '__main__' function for speed
-    """
-    # Get the list of .wav files in the directory
-    print('Gathering wav files....')
-    wav_files = get_all_wav_files(data_dir)
-    total_files = len(wav_files)
-    if total_files == 0:
-        print("No .wav files found in the specified directory.")
-        return
-
-    # Load checkpoint to resume processing
-    start_batch_idx = load_checkpoint(checkpoint_file)
-    print(f"Resuming from batch index: {start_batch_idx}")
-
-    # Create HDF5 file for saving
-    print('Creating HDF5 file....')
-    with h5py.File(output_file, 'a') as h5f:
-        if "input_images" not in h5f:
-          input_dataset = h5f.create_dataset(
-              "input_images",
-              shape=(0, 3, 1024, 86),  # Initially empty along the first dimension
-              maxshape=(None, 3, 1024, 86),  # Unlimited along the first dimension
-              dtype=np.float32,
-              compression="lzf"
-          )
-        else:
-          input_dataset = h5f["input_images"]
-
-        if "target_images" not in h5f:
-          target_dataset = h5f.create_dataset(
-              "target_images",
-              shape=(0, 3, 1024, 86),  # Initially empty along the first dimension
-              maxshape=(None, 3, 1024, 86),  # Unlimited along the first dimension
-              dtype=np.float32,
-              compression="lzf"
-          )
-        else:
-          target_dataset = h5f["target_images"]
-
-        # Process in batches
-        for i in tqdm(range(start_batch_idx, total_files, batch_size), desc="Processing batches", unit="batch"):
-            batch_files = wav_files[i:i + batch_size]
-            input_images = []
-            target_images = []
-
-            # Process files in parallel
-            with ProcessPoolExecutor() as executor:
-                futures = [executor.submit(process_file, file, sr_target, noise_level) for file in batch_files]
-                results = [future.result() for future in futures if future.result() is not None]
-
-            # Collect batch results
-            for input_image, target_image in results:
-                input_images.append(input_image)
-                target_images.append(target_image)
-
-            #print(input_images[0].shape)
-            #print(target_images[0].shape)
-
-            # Append batch to datasets
-            input_dataset.resize(input_dataset.shape[0] + len(input_images), axis=0)
-            target_dataset.resize(target_dataset.shape[0] + len(target_images), axis=0)
-            input_dataset[-len(input_images):] = np.stack(input_images)
-            target_dataset[-len(target_images):] = np.stack(target_images)
-
-            # Save checkpoint after each batch
-            save_checkpoint(checkpoint_file, i + batch_size)
-
-    print(f"Dataset saved to {output_file}")
-
   # Usage example
 
 import numpy as np
@@ -305,7 +202,7 @@ def combine_signal_noise(signal, noise, target_snr_db):
     
     return combined_signal, current_snr_db
 
-def process_audio_and_noise_to_image(audio, noise, sr, plot=False, random_noise_level=0, background_noise_level=0, SNRdB=None):
+def process_audio_and_noise_to_image(audio, noise, sr, plot=False, random_noise_level=0, background_noise_level=0, SNRdB=None, audio_length=44100):
   # Parameters
   T = np.linspace(0, len(audio)/sr, len(audio), endpoint=False)
   # --
@@ -355,8 +252,8 @@ def process_audio_and_noise_to_image(audio, noise, sr, plot=False, random_noise_
 
   #noisy_audio = bandpass_filter(noisy_audio, 80, 16000, sr, order=1)
 
-  input_image = audio_to_image(noisy_audio, sr)
-  target_image = audio_to_image(audio, sr)
+  input_image = audio_to_image(noisy_audio, sr, audio_length=audio_length)
+  target_image = audio_to_image(audio, sr, audio_length=audio_length)
 
   if plot:
     # Display the array as an image
@@ -424,7 +321,7 @@ def close_file_handles(file_path):
             print(f"Closing file handle: {handle.path}")
             os.close(handle.fd)
 
-def process_file(file_path, noise_file, background_noise_level, random_noise_level, SNRdB):
+def process_file(file_path, noise_file, background_noise_level, random_noise_level, SNRdB, audio_length):
     """
     Process a single audio file and return the input and target images.
     """
@@ -440,7 +337,7 @@ def process_file(file_path, noise_file, background_noise_level, random_noise_lev
 
 
       # Process audio to input and target images
-      input_image, target_image = process_audio_and_noise_to_image(audio, noise, sr, background_noise_level=background_noise_level, random_noise_level=random_noise_level, SNRdB=SNRdB)
+      input_image, target_image = process_audio_and_noise_to_image(audio, noise, sr, background_noise_level=background_noise_level, random_noise_level=random_noise_level, SNRdB=SNRdB, audio_length=audio_length)
       return input_image, target_image
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
@@ -492,13 +389,12 @@ def process_and_save_noisy_dataset_legacy(
       noise_data_dir, 
       output_file, 
       checkpoint_file, 
-      sr_target=44100, 
       background_noise_level=0.01, 
       random_noise_level=0.001, 
       batch_size=10, 
-      max_length=1024, 
       process_pool=True, 
       manual_checkpoint=None, 
+      audio_length=44100,
       SNRdB=None, 
       verbose=False, 
       checkpoint_file_size=100, 
@@ -588,7 +484,7 @@ def process_and_save_noisy_dataset_legacy(
                 if process_pool:
                   with ProcessPoolExecutor() as executor:
                       futures = [
-                        executor.submit(process_file, audio_file, noise_file, background_noise_level, random_noise_level, SNRdB) 
+                        executor.submit(process_file, audio_file, noise_file, background_noise_level, random_noise_level, SNRdB, audio_length) 
                         for audio_file, noise_file in zip(batch_files, noise_files)
                         ]
                       results = [future.result() for future in futures if future.result() is not None]
@@ -601,7 +497,7 @@ def process_and_save_noisy_dataset_legacy(
                 # process files as a loop
                 else:
                   for audio_file, noise_file in zip(batch_files, noise_files):
-                    output = process_file(audio_file, noise_file, background_noise_level, random_noise_level, SNRdB)
+                    output = process_file(audio_file, noise_file, background_noise_level, random_noise_level, SNRdB, audio_length)
 
                     # collect batch results
                     if output is not None:
