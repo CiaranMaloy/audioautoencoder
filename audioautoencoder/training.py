@@ -66,6 +66,8 @@ class EarlyStopping:
 
 ## Training, testing and calling examples
 
+import os
+import csv
 # Training loop
 def train_model(model, 
                 train_loader, 
@@ -87,6 +89,19 @@ def train_model(model,
 
     # reference loss
     reference_loss = MelWeightedMSELoss(device, min_value=ref_min_value)
+
+    # Extract the directory and filename for saving logs
+    checkpoint_dir = os.path.dirname(checkpoint_filename)
+    # Create the directory if it doesn't exist
+    if checkpoint_dir and not os.path.exists(checkpoint_dir):
+        os.makedirs(checkpoint_dir, exist_ok=True)
+    log_filename = os.path.join(checkpoint_dir, "training_log.csv")
+
+    # If the log file doesn't exist, create it and write headers
+    if not os.path.exists(log_filename):
+        with open(log_filename, mode='w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(["Epoch", "Learning Rate", "Train Loss", "Validation Loss", "Ref Loss", "KL Beta"])
 
     # step scheduler to correct training schedule
     if scheduler_loss:
@@ -173,6 +188,11 @@ def train_model(model,
 
         print("-"*50)
         print(f"Epoch {epoch + 1}, Validation Loss: {val_loss:.4f}")
+
+        # Save training stats to CSV
+        with open(log_filename, mode='a', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow([epoch + 1, current_lr, running_loss / len(train_loader), val_loss, ref_loss / len(train_loader), beta])
 
         # Check early stopping
         early_stopping(val_loss, model, optimizer, epoch, epochs, running_loss)

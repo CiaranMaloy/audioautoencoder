@@ -348,12 +348,17 @@ def process_audio_and_noise_to_image(audio, noise, sr, plot=False, random_noise_
 
   return input_image, target_image
 
-def load_audio_file(file_path):
+import torchaudio.transforms as T
+
+def load_audio_file(file_path, target_sr=44100):
   waveform, sr = torchaudio.load(file_path)
   waveform = waveform.cpu().numpy()
 
-  if sr != 44100:
-      raise ValueError(f"Sample rate mismatch: {sr} != {44100}")
+  # Resample if needed
+  if sr != target_sr:
+      resampler = T.Resample(orig_freq=sr, new_freq=target_sr)
+      waveform = resampler(waveform)
+      sr = target_sr  # Update sample rate
 
   # Convert stereo to mono if needed
   if waveform.shape[0] == 2:
