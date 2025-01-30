@@ -134,17 +134,17 @@ def train_model(model,
             if verbose:
                 print(outputs.shape)
                 print(clean_imgs.shape)
-            loss, r_loss = criterion(outputs, clean_imgs, beta=beta)
+            loss = criterion(outputs, clean_imgs, beta=beta)
             loss.backward()
             optimizer.step()
 
             #benchark_loss += criterion(noisy_imgs, clean_imgs).item()
 
             running_loss += loss.item()
-            recon_loss += r_loss.item()
-            ref_loss += reference_loss(noisy_imgs, clean_imgs).item()
+            #recon_loss += r_loss.item()
+            ref_loss += reference_loss(noisy_imgs[:, 0:1, :, :], clean_imgs[:, 0:1, :, :]).item()
             i += 1
-            progress_bar.set_postfix(loss=f"loss: {running_loss / (progress_bar.n + 1):.4f} mse: {recon_loss / (progress_bar.n + 1):.4f}, ref:{ref_loss / (progress_bar.n + 1):.4f}")
+            progress_bar.set_postfix(loss=f"loss: {running_loss / (progress_bar.n + 1):.4f}, ref:{ref_loss / (progress_bar.n + 1):.4f}")
             #progress_bar.set_postfix(loss=f"{running_loss / (progress_bar.n + 1):.4f}, bl:{benchark_loss / (progress_bar.n + 1):.4f}")
 
         # Validation step
@@ -157,10 +157,10 @@ def train_model(model,
             for inputs, targets in progress_bar:
                 inputs, targets = inputs.to(device), targets.to(device)
                 outputs = model(inputs)
-                loss, r_loss = criterion(outputs, targets, beta=beta)
+                loss = criterion(outputs, targets, beta=beta)
                 val_loss += loss.item()
-                recon_loss += r_loss.item()
-                progress_bar.set_postfix(loss=f"joint loss: {val_loss / (progress_bar.n + 1):.4f} -- mse loss: {recon_loss / (progress_bar.n + 1):.4f}")
+                #recon_loss += r_loss.item()
+                progress_bar.set_postfix(loss=f"joint loss: {val_loss / (progress_bar.n + 1):.4f}")
                 #progress_bar.set_postfix(loss=f"{val_loss / (progress_bar.n + 1):.4f}")
 
         val_loss /= (len(progress_bar) + 1)
