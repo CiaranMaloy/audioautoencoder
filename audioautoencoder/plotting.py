@@ -81,3 +81,65 @@ def process_and_reconstruct_audio(
         plot_waveform(noisy_audio, "Noisy Audio")
 
         return clean_audio, noisy_audio, new_audio
+    
+
+def plot_specgrams_separate(
+    noisy_imgs, clean_imgs, sr=44100, i=0, cmap='twilight'
+):
+    """
+    Processes spectrogram images and reconstructs audio for visualization and comparison.
+
+    Parameters:
+    - denoised_imgs: Array of denoised spectrogram images [shape: (N, 2, H, W)].
+    - noisy_imgs: Array of noisy spectrogram images [shape: (N, 2, H, W)].
+    - clean_imgs: Array of clean spectrogram images [shape: (N, 2, H, W)].
+    - image_to_waveform: Function to convert spectrogram images to waveform audio.
+    - sr: Sample rate for spectrograms (default: 44100).
+    - i: Index of the image to process (default: 0).
+    - cmap: Colormap for visualization (default: 'twilight').
+
+    Returns:
+    - clean_audio: Reconstructed clean audio waveform.
+    - noisy_audio: Reconstructed noisy audio waveform.
+    - new_audio: Reconstructed denoised audio waveform.
+    """
+    # Extract images
+    image_noisy = noisy_imgs[i]
+    image_clean = clean_imgs[i]
+
+    print("Noisy Image:")
+    print(f"Max: {np.max(image_noisy[0])}, Min: {np.min(image_noisy[0])}")
+    print(f"Mean: {np.mean(image_noisy[0])}, Std: {np.std(image_noisy[0])}")
+
+    print("\nClean Image:")
+    print(f"Max: {np.max(image_clean[0])}, Min: {np.min(image_clean[0])}")
+    print(f"Mean: {np.mean(image_clean[0])}, Std: {np.std(image_clean[0])}")
+
+    print("\nNoise Image:")
+    print(f"Max: {np.max(image_clean[1])}, Min: {np.min(image_clean[1])}")
+    print(f"Mean: {np.mean(image_clean[1])}, Std: {np.std(image_clean[1])}")
+
+    # Plotting spectrograms
+    def plot_spectrograms(images, title_prefix):
+        plt.figure(figsize=(12, 8))
+        for idx, img in enumerate(images):
+            plt.subplot(3, 1, idx + 1)
+            librosa.display.specshow(img, sr=sr, y_axis='log', x_axis='time', cmap=cmap)
+            plt.colorbar(format='%+2.0f dB')
+            plt.title(f'{title_prefix} - {["1", "2"][idx]} Spectrogram')
+        plt.tight_layout()
+        plt.show()
+
+    #plot_spectrograms(image, "Denoised")
+    plot_spectrograms(image_noisy, "Noisy")
+    plot_spectrograms(image_clean, "Clean")
+
+    # Plot mean values along the frequency axis
+    def plot_mean_along_frequency_axis(image_data, label):
+        plt.plot(np.mean(image_data[0], axis=1), label=f'{label} - 1')
+        plt.plot(np.mean(image_data[1], axis=1), label=f'{label} - 2')
+        plt.legend()
+        plt.show()
+
+    plot_mean_along_frequency_axis(image_noisy, "Noisy")
+    plot_mean_along_frequency_axis(image_clean, "Clean")
