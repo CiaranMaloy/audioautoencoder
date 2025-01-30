@@ -157,7 +157,7 @@ def train_model(model,
             for inputs, targets in progress_bar:
                 inputs, targets = inputs.to(device), targets.to(device)
                 outputs = model(inputs)
-                loss = criterion(outputs, targets, beta=beta)
+                loss = criterion(outputs, targets)
                 val_loss += loss.item()
                 #recon_loss += r_loss.item()
                 progress_bar.set_postfix(loss=f"joint loss: {val_loss / (progress_bar.n + 1):.4f}")
