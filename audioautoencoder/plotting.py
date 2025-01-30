@@ -57,26 +57,27 @@ def process_and_reconstruct_audio(
     plot_mean_along_frequency_axis(image_clean, "Clean")
 
     # Reconstruct audio from images
-    new_audio = image_to_waveform(image, sr)
-    new_audio = new_audio / np.max(np.abs(new_audio))
-    noisy_audio = image_to_waveform(image_noisy, sr)
-    noisy_audio = noisy_audio / np.max(np.abs(noisy_audio))
-    clean_audio = image_to_waveform(image_clean, sr)
-    clean_audio = clean_audio / np.max(np.abs(clean_audio))
+    if image_to_waveform:
+        new_audio = image_to_waveform(image, sr)
+        new_audio = new_audio / np.max(np.abs(new_audio))
+        noisy_audio = image_to_waveform(image_noisy, sr)
+        noisy_audio = noisy_audio / np.max(np.abs(noisy_audio))
+        clean_audio = image_to_waveform(image_clean, sr)
+        clean_audio = clean_audio / np.max(np.abs(clean_audio))
 
-    print("Audio processed!")
+        print("Audio processed!")
 
-    # Plot waveforms
-    n = 0
-    c = len(clean_audio)
-    def plot_waveform(audio, title):
-        plt.plot(audio)
-        plt.xlim((n, n + c))
-        plt.title(title)
-        plt.show()
+        # Plot waveforms
+        n = 0
+        c = len(clean_audio)
+        def plot_waveform(audio, title):
+            plt.plot(audio)
+            plt.xlim((n, n + c))
+            plt.title(title)
+            plt.show()
 
-    plot_waveform(clean_audio, "Clean Audio")
-    plot_waveform(new_audio, "Denoised Audio")
-    plot_waveform(noisy_audio, "Noisy Audio")
+        plot_waveform(clean_audio, "Clean Audio")
+        plot_waveform(new_audio, "Denoised Audio")
+        plot_waveform(noisy_audio, "Noisy Audio")
 
-    return clean_audio, noisy_audio, new_audio
+        return clean_audio, noisy_audio, new_audio
