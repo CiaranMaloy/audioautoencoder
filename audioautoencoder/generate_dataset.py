@@ -283,8 +283,8 @@ def process_and_save_separation_dataset(
             sub_output_file = add_datetime_to_filename(output_file)
 
             with h5py.File(sub_output_file, 'a') as h5f:
-                input_dataset = create_dataset("input_images", h5f, c=2)
-                target_dataset = create_dataset("target_images", h5f, c=2)
+                input_dataset = create_dataset("input_images", h5f, c=2, w=175)
+                target_dataset = create_dataset("target_images", h5f, c=2, w=175)
 
                 print('checking for file existance....')
                 check_file_exists(sub_output_file)
