@@ -200,7 +200,7 @@ def combine_signal_noise(signal, noise, target_snr_db):
     scaled_noise = noise * scaling_factor
     combined_signal = signal + scaled_noise
     
-    return combined_signal, current_snr_db
+    return combined_signal, scaled_noise, current_snr_db
 
 def process_audio_separation_to_image(audio, noise, sr, plot=False, random_noise_level=0, background_noise_level=0, SNRdB=None, audio_length=44100):
   # Parameters
@@ -243,7 +243,7 @@ def process_audio_separation_to_image(audio, noise, sr, plot=False, random_noise
   else:
      noise = noise + s
      target_snr_db = random.uniform(SNRdB[0], SNRdB[1])
-     noisy_audio, _ = combine_signal_noise(audio, noise, target_snr_db)
+     noisy_audio, scaled_noise, _ = combine_signal_noise(audio, noise, target_snr_db)
      
   if plot:
     plt.plot(noisy_audio)
@@ -254,7 +254,7 @@ def process_audio_separation_to_image(audio, noise, sr, plot=False, random_noise
 
   input_image = audio_to_image(noisy_audio, sr, audio_length=audio_length, features=False)
   target_image = audio_to_image(audio, sr, audio_length=audio_length, features=False)
-  noise_image = audio_to_image(noise, sr, audio_length=audio_length, features=False)
+  noise_image = audio_to_image(scaled_noise, sr, audio_length=audio_length, features=False)
 
   return input_image, target_image, noise_image
 
