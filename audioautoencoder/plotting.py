@@ -147,6 +147,6 @@ def plot_specgrams_separate(
 
     mix_waveform = magphase_to_waveform(image_noisy[0], image_noisy[1], audio_length=44100*2)
     clean_waveform = magphase_to_waveform(image_clean[0], image_noisy[1], audio_length=44100*2)
-    noise_waveform = magphase_to_waveform(image_noisy[1], image_noisy[1], audio_length=44100*2)
+    noise_waveform = magphase_to_waveform(image_clean[1], image_noisy[1], audio_length=44100*2)
 
     return mix_waveform, clean_waveform, noise_waveform
