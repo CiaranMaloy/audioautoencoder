@@ -47,11 +47,10 @@ def process_and_save_noisy_dataset(
       noise_data_dir, 
       output_file, 
       checkpoint_file, 
-      sr_target=44100, 
+      audio_length=44100,
       background_noise_level=0.01, 
       random_noise_level=0.001, 
       batch_size=10, 
-      max_length=1024, 
       process_pool=True, 
       manual_checkpoint=None, 
       SNRdB=None, 
@@ -99,7 +98,7 @@ def process_and_save_noisy_dataset(
             if process_pool:
                 with ProcessPoolExecutor() as executor:
                     futures = [
-                    executor.submit(process_file, audio_file, noise_file, background_noise_level, random_noise_level, SNRdB) 
+                    executor.submit(process_file, audio_file, noise_file, background_noise_level, random_noise_level, SNRdB, audio_length) 
                     for audio_file, noise_file in zip(batch_files, noise_files)
                     ]
                     results = [future.result() for future in futures if future.result() is not None]
