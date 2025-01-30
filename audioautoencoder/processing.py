@@ -55,7 +55,7 @@ def bandpass_filter(data, lowcut, highcut, sample_rate, order=1):
     return sosfilt(sos, data)
 
 
-def audio_to_image(audio, sr, verbose=False, n_fft=2048, audio_length=44100):
+def audio_to_image(audio, sr, verbose=False, n_fft=2048, audio_length=44100, features=True):
     """
     Converts audio signal into a 3-channel image representation.
 
@@ -91,11 +91,14 @@ def audio_to_image(audio, sr, verbose=False, n_fft=2048, audio_length=44100):
 
     # Clip and normalise ranges
     logmagnitude = np.clip((logmagnitude + 30) / 60, 0, 1)
-    normalised_magnitude = np.clip((normalised_magnitude - 20) / 20, 0, 1)
     phase = np.clip((phase + np.pi) / (2 * np.pi), 0, 1)
 
     # Stack as 3 channels: log magnitude, normalised magnitude, and phase
-    output = np.stack([logmagnitude, normalised_magnitude, phase], axis=0)
+    if features:
+        normalised_magnitude = np.clip((normalised_magnitude - 20) / 20, 0, 1)
+        output = np.stack([logmagnitude, normalised_magnitude, phase], axis=0)
+    else:
+        output = np.stack([logmagnitude, phase], axis=0)
     #assert(np.shape(output) == (3, 1025, 89))
     return output
 
