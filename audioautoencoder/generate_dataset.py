@@ -239,7 +239,6 @@ def process_and_save_separation_dataset(
             # Initialize lists to store input and target images for the batch
             input_images = []
             target_images = []
-            noise_images = []
 
             # Process files in parallel
             if process_pool:
