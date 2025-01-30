@@ -251,8 +251,8 @@ def process_and_save_separation_dataset(
 
                 # Collect batch results
                 for input_image, target_image, noise_image in results:
-                    print(np.shape(input_image))
-                    print(np.shape([target_image[0], noise_image[0]]))
+                    #print(np.shape(input_image))
+                    #print(np.shape([target_image[0], noise_image[0]]))
                     input_images.append(input_image)
                     target_images.append([target_image[0], noise_image[0]])
 
