@@ -2,6 +2,7 @@ import numpy as np
 import librosa
 import librosa.display
 import matplotlib.pyplot as plt
+from processing import *
 
 def process_and_reconstruct_audio(
     denoised_imgs, noisy_imgs, clean_imgs, image_to_waveform, sr=44100, i=0, cmap='twilight'
@@ -143,3 +144,9 @@ def plot_specgrams_separate(
 
     plot_mean_along_frequency_axis(image_noisy, "Noisy")
     plot_mean_along_frequency_axis(image_clean, "Clean")
+
+    mix_waveform = magphase_to_waveform(image_noisy[0], image_noisy[1], audio_length=44100*2)
+    clean_waveform = magphase_to_waveform(image_clean[0], image_noisy[1], audio_length=44100*2)
+    noise_waveform = magphase_to_waveform(image_noisy[1], image_noisy[1], audio_length=44100*2)
+
+    return mix_waveform, clean_waveform, noise_waveform

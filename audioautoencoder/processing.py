@@ -153,6 +153,14 @@ def denormalise(image):
     image[2] = image[2] * (2 * np.pi) - np.pi
     return image
 
+def denormalise_mag(image):
+    image = 10 ** ((image * 60 - 30) / 10)
+    return image
+
+def denormalise_phase(image):
+    image = image * (2 * np.pi) - np.pi
+    return image
+
 def image_to_waveform(image, audio_length=44100):
     """
     Converts a spectrogram image back into an audio waveform.
@@ -167,5 +175,21 @@ def image_to_waveform(image, audio_length=44100):
     image = denormalise(image)
     magnitude = image[0]
     phase = image[2]
+    stft = magnitude * np.exp(1j * phase)
+    return librosa.istft(stft, length=audio_length)
+
+def magphase_to_waveform(magnitude, phase, audio_length=44100):
+    """
+    Converts a spectrogram image back into an audio waveform.
+
+    Parameters:
+        image (np.array): Spectrogram image (3 channels).
+        sr (int): Sampling rate.
+
+    Returns:
+        np.array: Reconstructed audio waveform.
+    """
+    magnitude = denormalise_mag(magnitude)
+    phase = denormalise_phase(phase)
     stft = magnitude * np.exp(1j * phase)
     return librosa.istft(stft, length=audio_length)
