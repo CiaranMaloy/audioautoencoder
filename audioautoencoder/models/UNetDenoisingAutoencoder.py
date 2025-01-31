@@ -102,7 +102,7 @@ class UNetDenoisingAutoencoder(nn.Module):
 
         raw_output = self.output_layer(d1)  # Final output
         if verbose:
-            print('output', output.shape)
+            print('output', raw_output.shape)
         output = F.interpolate(raw_output, size=(1025, 175), mode='bilinear', align_corners=False)
         if verbose:
             print('output post interpolation', output.shape)
