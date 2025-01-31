@@ -58,9 +58,10 @@ class HDF5DatasetGCS(Dataset):
                 )     
 
 class HDF5Dataset(Dataset):
-    def __init__(self, h5_file_path, output_time_length=86):
+    def __init__(self, h5_file_path, output_time_length=86, channels=2):
         self.h5_file_path = h5_file_path
         self.output_time_length = output_time_length
+        self.channels = channels
         self.h5_file = h5py.File(self.h5_file_path, "r")  # Open the file once
         self.input_dataset = self.h5_file["input_images"]
         self.target_dataset = self.h5_file["target_images"]
@@ -81,9 +82,14 @@ class HDF5Dataset(Dataset):
     def __getitem__(self, idx):
         try:
 
-          input_image = torch.tensor(self.input_dataset[idx, :, :, :self.output_time_length], dtype=torch.float32)
-          target_image = torch.tensor(self.target_dataset[idx, :, :, :self.output_time_length], dtype=torch.float32)
-          return input_image, target_image
+            input_image = torch.tensor(self.input_dataset[idx, :, :, :self.output_time_length], dtype=torch.float32)
+
+            if self.channels == 1:
+                target_image = torch.tensor(self.target_dataset[idx, 0:1, :, :self.output_time_length], dtype=torch.float32)
+            else:
+                target_image = torch.tensor(self.target_dataset[idx, :, :, :self.output_time_length], dtype=torch.float32)
+              
+            return input_image, target_image
 
         except Exception as e:
           # Log the error and index
