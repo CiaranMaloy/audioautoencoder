@@ -81,7 +81,8 @@ def train_model(model,
                 verbose=False, 
                 checkpoint_filename='checkpoint.pth', 
                 scheduler_loss=False, 
-                ref_min_value=0.4
+                ref_min_value=0.4, 
+                accumulation_steps=4
                 ):
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -132,6 +133,8 @@ def train_model(model,
         i = 0
         if verbose:
           print('starting progress....')
+        
+        optimizer.zero_grad()
         for noisy_imgs, clean_imgs in progress_bar:
             if verbose:
               print('in loop')
@@ -141,7 +144,6 @@ def train_model(model,
             if verbose:
               print('moving to device')
             
-            optimizer.zero_grad()
             if verbose:
               print('training model')
             outputs = model(noisy_imgs)
@@ -149,18 +151,23 @@ def train_model(model,
             if verbose:
                 print(outputs.shape)
                 print(clean_imgs.shape)
-            loss = criterion(outputs, clean_imgs)
+            loss = criterion(outputs, clean_imgs) / accumulation_steps
             loss.backward()
-            optimizer.step()
+
+            if (i + 1) % accumulation_steps == 0 or i == len(train_loader) - 1:
+                optimizer.step()
+                optimizer.zero_grad()
 
             #benchark_loss += criterion(noisy_imgs, clean_imgs).item()
 
             running_loss += loss.item()
             #recon_loss += r_loss.item()
             ref_loss += criterion(noisy_imgs[:, 0:1, :, :], clean_imgs[:, 0:1, :, :]).item()
-            i += 1
             progress_bar.set_postfix(loss=f"loss: {running_loss / (progress_bar.n + 1):.4f}, ref:{ref_loss / (progress_bar.n + 1):.4f}")
             #progress_bar.set_postfix(loss=f"{running_loss / (progress_bar.n + 1):.4f}, bl:{benchark_loss / (progress_bar.n + 1):.4f}")
+            
+            # i++
+            i += 1
 
         # Validation step
         model.eval()
