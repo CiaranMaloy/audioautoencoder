@@ -43,12 +43,12 @@ class UNetDenoisingAutoencoder(nn.Module):
             nn.LeakyReLU()
         )
         self.decoder2 = nn.Sequential(
-            nn.ConvTranspose2d(64 + 64, 64, kernel_size=2, stride=2),
+            nn.ConvTranspose2d(128 + 64, 64, kernel_size=2, stride=2),
             nn.BatchNorm2d(64),
             nn.LeakyReLU()
         )
         self.decoder1 = nn.Sequential(
-            nn.Conv2d(32 + 32, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(64 + 32, 32, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(32),
             nn.LeakyReLU()
         )
