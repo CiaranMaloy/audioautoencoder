@@ -95,7 +95,7 @@ class UNetDenoisingAutoencoder(nn.Module):
             print('d2', d2.shape)
 
         d2 = F.pad(d2, (0, 0, 0, 0))
-        e1 = F.pad(e1, (0, 0, 0, 0))
+        e1 = F.pad(e1, (0, 0, 0, 2))
         d1 = self.decoder1(torch.cat((d2, e1), dim=1))  # Concatenate d2 and e1
         if verbose:
             print('d1', d1.shape)
