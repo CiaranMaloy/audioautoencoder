@@ -8,26 +8,26 @@ class UpdatedUNetDenoisingAutoencoder(nn.Module):
 
         # Encoder
         self.encoder1 = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(16),
-            nn.LeakyReLU(),
-            nn.Dropout2d(p=0.3)
-        )
-        self.encoder2 = nn.Sequential(
-            nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),  # Downsample
+            nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(32),
             nn.LeakyReLU(),
             nn.Dropout2d(p=0.3)
         )
-        self.encoder3 = nn.Sequential(
+        self.encoder2 = nn.Sequential(
             nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # Downsample
+            nn.BatchNorm2d(64),
+            nn.LeakyReLU(),
+            nn.Dropout2d(p=0.3)
+        )
+        self.encoder3 = nn.Sequential(
+            nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),  # Downsample
             nn.BatchNorm2d(64),
             nn.LeakyReLU()
         )
 
         # Bottleneck
         self.bottleneck = nn.Sequential(
-            nn.Conv2d(64, 256, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(256),
             nn.LeakyReLU(),
             nn.Conv2d(256, 128, kernel_size=3, stride=1, padding=1),
@@ -37,27 +37,27 @@ class UpdatedUNetDenoisingAutoencoder(nn.Module):
 
         # Decoder
         self.decoder3 = nn.Sequential(
-            nn.ConvTranspose2d(128 + 64, 64, kernel_size=2, stride=2),
+            nn.ConvTranspose2d(128 + 128, 64, kernel_size=2, stride=2),
             nn.BatchNorm2d(64),
             nn.LeakyReLU()
         )
         self.decoder2 = nn.Sequential(
-            nn.ConvTranspose2d(64 + 32, 32, kernel_size=2, stride=2),
-            nn.BatchNorm2d(32),
+            nn.ConvTranspose2d(64 + 64, 64, kernel_size=2, stride=2),
+            nn.BatchNorm2d(64),
             nn.LeakyReLU()
         )
         self.decoder1 = nn.Sequential(
-            nn.Conv2d(32 + 16, 16, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(16),
+            nn.Conv2d(32 + 32, 32, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(32),
             nn.LeakyReLU()
         )
 
-        self.output_layer = nn.Conv2d(16, 3, kernel_size=3, stride=1, padding=1)  # Final output layer
+        self.output_layer = nn.Conv2d(32, 3, kernel_size=3, stride=1, padding=1)  # Final output layer
 
     def forward(self, x, verbose=False):
         if verbose:
             print('interpolating', x.shape)
-        x = F.interpolate(x, size=(1028, 92), mode='bilinear', align_corners=False)
+        x = F.interpolate(x, size=(1028, 182), mode='bilinear', align_corners=False)
         if verbose:
             print('input', x.shape)
 
@@ -95,7 +95,7 @@ class UpdatedUNetDenoisingAutoencoder(nn.Module):
         raw_output = self.output_layer(d1)  # Final output
         if verbose:
             print('output', output.shape)
-        output = F.interpolate(raw_output, size=(1025, 89), mode='bilinear', align_corners=False)
+        output = F.interpolate(raw_output, size=(1025, 175), mode='bilinear', align_corners=False)
         if verbose:
             print('output post interpolation', output.shape)
         return output
