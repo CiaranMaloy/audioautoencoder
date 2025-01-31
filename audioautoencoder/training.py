@@ -160,7 +160,7 @@ def train_model(model,
 
             #benchark_loss += criterion(noisy_imgs, clean_imgs).item()
 
-            running_loss += loss.item()
+            running_loss += loss.item() * accumulation_steps
             #recon_loss += r_loss.item()
             ref_loss += criterion(noisy_imgs[:, 0:1, :, :], clean_imgs[:, 0:1, :, :]).item()
             progress_bar.set_postfix(loss=f"loss: {running_loss / (progress_bar.n + 1):.4f}, ref:{ref_loss / (progress_bar.n + 1):.4f}")
