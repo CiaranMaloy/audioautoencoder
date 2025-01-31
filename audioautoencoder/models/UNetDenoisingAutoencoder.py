@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class UpdatedUNetDenoisingAutoencoder(nn.Module):
+class UNetDenoisingAutoencoder(nn.Module):
     def __init__(self):
         super().__init__()
 
@@ -22,7 +22,8 @@ class UpdatedUNetDenoisingAutoencoder(nn.Module):
         self.encoder3 = nn.Sequential(
             nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),  # Downsample
             nn.BatchNorm2d(64),
-            nn.LeakyReLU()
+            nn.LeakyReLU(),
+            nn.Dropout2d(p=0.3)
         )
 
         # Bottleneck
@@ -57,6 +58,7 @@ class UpdatedUNetDenoisingAutoencoder(nn.Module):
     def forward(self, x, verbose=False):
         if verbose:
             print('interpolating', x.shape)
+        # oversample input
         x = F.interpolate(x, size=(1028, 182), mode='bilinear', align_corners=False)
         if verbose:
             print('input', x.shape)
