@@ -31,14 +31,14 @@ class UNetDenoisingAutoencoder(nn.Module):
             nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(256),
             nn.LeakyReLU(),
-            nn.Conv2d(256, 128, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(128),
+            nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(256),
             nn.LeakyReLU()
         )
 
         # Decoder
         self.decoder3 = nn.Sequential(
-            nn.ConvTranspose2d(128 + 128, 128, kernel_size=2, stride=2),
+            nn.ConvTranspose2d(256 + 128, 128, kernel_size=2, stride=2),
             nn.BatchNorm2d(128),
             nn.LeakyReLU()
         )
@@ -82,14 +82,20 @@ class UNetDenoisingAutoencoder(nn.Module):
             print('b', b.shape)
 
         # Decoder
+        b = F.pad(b, (0, 0, 0, 0))
+        e3 = F.pad(e3, (0, 0, 0, 0))
         d3 = self.decoder3(torch.cat((b, e3), dim=1))  # Concatenate bottleneck and e3
         if verbose:
             print('d3', d3.shape)
 
+        d3 = F.pad(d3, (0, 0, 0, 0))
+        e2 = F.pad(e2, (0, 0, 0, 0))
         d2 = self.decoder2(torch.cat((d3, e2), dim=1))  # Concatenate d3 and e2
         if verbose:
             print('d2', d2.shape)
 
+        d2 = F.pad(d2, (0, 0, 0, 0))
+        e1 = F.pad(e1, (0, 0, 0, 0))
         d1 = self.decoder1(torch.cat((d2, e1), dim=1))  # Concatenate d2 and e1
         if verbose:
             print('d1', d1.shape)
