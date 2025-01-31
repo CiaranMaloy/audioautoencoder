@@ -55,7 +55,7 @@ class UNetDenoisingAutoencoder(nn.Module):
 
         self.output_layer = nn.Conv2d(32, 1, kernel_size=3, stride=1, padding=1)  # Final output layer
 
-    def forward(self, x, verbose=True):
+    def forward(self, x, verbose=False):
         if verbose:
             print('interpolating', x.shape)
         # oversample input
