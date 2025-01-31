@@ -8,7 +8,7 @@ class UNetDenoisingAutoencoder(nn.Module):
 
         # Encoder
         self.encoder1 = nn.Sequential(
-            nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(2, 32, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(32),
             nn.LeakyReLU(),
             nn.Dropout2d(p=0.3)
@@ -53,7 +53,7 @@ class UNetDenoisingAutoencoder(nn.Module):
             nn.LeakyReLU()
         )
 
-        self.output_layer = nn.Conv2d(32, 3, kernel_size=3, stride=1, padding=1)  # Final output layer
+        self.output_layer = nn.Conv2d(32, 1, kernel_size=3, stride=1, padding=1)  # Final output layer
 
     def forward(self, x, verbose=False):
         if verbose:
