@@ -53,6 +53,7 @@ class EarlyStopping:
         print(f"Validation score improved. Saving model to {self.save_path}.")
         checkpoint = {
             'model_state_dict': model.state_dict(),
+            'entire_model': model,
             'optimizer_state_dict': optimizer.state_dict(),
             'epoch': epoch,
             'total_epochs': total_epochs,
@@ -213,6 +214,7 @@ def train_model(model,
         # saving model checkpoint
         checkpoint = {
             'model_state_dict': model.state_dict(),
+            'entire_model': model,
             'optimizer_state_dict': optimizer.state_dict(),
             'epoch': epoch,
             'loss': loss,
