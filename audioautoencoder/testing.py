@@ -13,6 +13,7 @@ def test_model(model, test_loader, criterion):
         progress_bar = tqdm(test_loader, desc="Testing", unit="batch")
         for inputs, targets in progress_bar:
 
+          print(inputs)
           inputs, targets = inputs.to(device), targets.to(device)
           print(inputs)
 
