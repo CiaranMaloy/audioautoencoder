@@ -5,19 +5,7 @@ from threading import Lock
 
 from data import *
 
-from datetime import datetime
 import os
-
-def add_datetime_to_filename(filename):
-    # Split the filename into name and extension
-    name, ext = os.path.splitext(filename)
-    
-    # Get the current datetime
-    current_datetime = datetime.now().strftime('%Y%m%d_%H%M%S')
-    
-    # Combine the name, datetime, and extension
-    unique_filename = f"{name}_{current_datetime}{ext}"
-    return unique_filename
 
 def gather_wav_files_and_report(data_dir):
     wav_files = get_all_wav_files(data_dir)

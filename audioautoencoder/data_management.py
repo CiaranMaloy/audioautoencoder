@@ -64,3 +64,56 @@ def create_datasets(dataset_dirs, output_dir, random_seed=42, resume_file="split
 
     print(f"Splits saved to {split_file}. Resume state saved to {resume_path}.")
     return splits
+
+# 2. copy directly from splits to train, val and test datasets
+from concurrent.futures import ThreadPoolExecutor
+import shutil
+import os
+
+import os
+import hashlib
+import random
+import string
+
+def get_custom_basename(file_path):
+    filename = os.path.basename(file_path)  # Extracts just the filename
+    name, ext = os.path.splitext(filename)  # Splits into name and extension
+
+    # Generate a random 6-letter hash
+    random_hash = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+
+    return f"{name}_{random_hash}{ext}"  # Appends the hash before the extension
+
+def copy_file(file_path, destination):
+    """
+    Helper function to copy a file to a destination.
+    """
+    print(destination)
+    shutil.copy(file_path, destination)
+
+def save_splits_to_directories(splits, output_dir, max_workers=8):
+    """
+    Saves the train, validation, and test splits to separate directories using multithreading.
+
+    Args:
+        splits (dict): Dictionary containing the splits with keys 'train', 'val', 'test'.
+        output_dir (str): Base directory where the split directories (train, val, test) will be created.
+        max_workers (int): Number of threads to use for parallel processing.
+
+    Returns:
+        None
+    """
+    os.makedirs(output_dir, exist_ok=True)
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for split_name, files in splits.items():
+            split_dir = os.path.join(output_dir, split_name)
+            os.makedirs(split_dir, exist_ok=True)
+
+            # Submit file copy tasks to the thread pool
+            for file_path in files:
+                custom_basename = get_custom_basename(file_path)
+                destination = os.path.join(split_dir, custom_basename)
+                executor.submit(copy_file, file_path, destination)
+
+    print(f"Splits saved to directories with multithreading: {output_dir}")
