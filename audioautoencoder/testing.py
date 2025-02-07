@@ -14,6 +14,8 @@ def test_model(model, test_loader, criterion):
         for inputs, targets in progress_bar:
 
           inputs, targets = inputs.to(device), targets.to(device)
+          print(inputs.shape)
+
           outputs = model(inputs)
           loss = criterion(outputs, targets)
           progress_bar.set_postfix(loss=f"{loss.item():.4f}")
