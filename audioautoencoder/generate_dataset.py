@@ -468,11 +468,11 @@ class DatasetProcessor:
         print('Output Dir:', self.output_dir)
         
         # Define output and checkpoint files
-        self.train_checkpoint_file = os.path.join(self.output_dir, f"/SNRdB_{SNRdB[0]}-{SNRdB[1]}/train-SNRdB_{SNRdB[0]}-{SNRdB[1]}-checkpoint.txt")
-        self.train_output_file = os.path.join(self.output_dir, f"/SNRdB_{SNRdB[0]}-{SNRdB[1]}/train/train-SNRdB_{SNRdB[0]}-{SNRdB[1]}.h5")
+        self.train_checkpoint_file = os.path.join(self.output_dir, f"SNRdB_{SNRdB[0]}-{SNRdB[1]}/train-SNRdB_{SNRdB[0]}-{SNRdB[1]}-checkpoint.txt")
+        self.train_output_file = os.path.join(self.output_dir, f"SNRdB_{SNRdB[0]}-{SNRdB[1]}/train/train-SNRdB_{SNRdB[0]}-{SNRdB[1]}.h5")
         
-        self.test_checkpoint_file = os.path.join(self.output_dir, f"/SNRdB_{SNRdB[0]}-{SNRdB[1]}/test-SNRdB_{SNRdB[0]}-{SNRdB[1]}-checkpoint.txt")
-        self.test_output_file = os.path.join(self.output_dir, f"/SNRdB_{SNRdB[0]}-{SNRdB[1]}/test/test-SNRdB_{SNRdB[0]}-{SNRdB[1]}.h5")
+        self.test_checkpoint_file = os.path.join(self.output_dir, f"SNRdB_{SNRdB[0]}-{SNRdB[1]}/test-SNRdB_{SNRdB[0]}-{SNRdB[1]}-checkpoint.txt")
+        self.test_output_file = os.path.join(self.output_dir, f"SNRdB_{SNRdB[0]}-{SNRdB[1]}/test/test-SNRdB_{SNRdB[0]}-{SNRdB[1]}.h5")
         
         # Print the file paths
         print("Train Checkpoint File:", self.train_checkpoint_file)
