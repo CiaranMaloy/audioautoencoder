@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader, random_split
-from loaders import *
+from datasets.loaders import *
 
 class NoisyDatasetLoader:
     def __init__(self, dataset_path, output_time_length=175, channels=1, snr_db=None, subset=False, batch_size=32):
