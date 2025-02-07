@@ -399,7 +399,7 @@ def process_file(file_path, noise_file, background_noise_level, random_noise_lev
 
       # Process audio to input and target images
       input_image, target_image, noise_image = process_audio_separation_to_image(audio, noise, sr, background_noise_level=background_noise_level, random_noise_level=random_noise_level, SNRdB=SNRdB, audio_length=audio_length)
-      return input_image, target_image, noise_image
+      return input_image, target_image, noise_image, file_path, noise_file
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
         return None

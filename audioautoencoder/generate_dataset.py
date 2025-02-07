@@ -4,6 +4,7 @@ import traceback
 from threading import Lock
 
 from data import *
+from utils import *
 
 import os
 
@@ -227,6 +228,7 @@ def process_and_save_separation_dataset(
             # Initialize lists to store input and target images for the batch
             input_images = []
             target_images = []
+            filenames = []
 
             # Process files in parallel
             if process_pool:
@@ -238,12 +240,12 @@ def process_and_save_separation_dataset(
                     results = [future.result() for future in futures if future.result() is not None]
 
                 # Collect batch results
-                for input_image, target_image, noise_image in results:
+                for input_image, target_image, noise_image, file_path, noise_file in results:
                     #print(np.shape(input_image))
                     #print(np.shape([target_image[0], noise_image[0]]))
                     input_images.append(input_image)
                     target_images.append([target_image[0], noise_image[0]])
-
+                    filenames.append([file_path, noise_file])
 
             # process files as a loop
             else:
@@ -252,15 +254,17 @@ def process_and_save_separation_dataset(
 
                 # collect batch results
                 if output is not None:
-                    input_image, target_image, noise_image = output
+                    input_image, target_image, noise_image, file_path, noise_file = output
                     input_images.append(input_image)
                     target_images.append([target_image[0], noise_image[0]])
+                    filenames.append([file_path, noise_file])
                 else:
                     print(f"Error processing {audio_file}")
 
             # convert to numpy arrays
             input_images = np.array(input_images, dtype=np.float32)
             target_images = np.array(target_images, dtype=np.float32)
+            filenames = np.array(filenames, dtype=h5py.string_dtype())
 
             # raise error if is inf or nan
             if np.isnan(np.stack(input_images)).any() or np.isinf(np.stack(input_images)).any():
@@ -273,6 +277,9 @@ def process_and_save_separation_dataset(
             with h5py.File(sub_output_file, 'a') as h5f:
                 input_dataset = create_dataset("input_images", h5f, c=2, w=175)
                 target_dataset = create_dataset("target_images", h5f, c=2, w=175)
+
+                # add filenames
+                h5f.create_dataset("filenames", data=filenames)
 
                 print('checking for file existance....')
                 check_file_exists(sub_output_file)
