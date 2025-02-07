@@ -150,3 +150,70 @@ def plot_specgrams_separate(
     noise_waveform = magphase_to_waveform(image_clean[1], image_noisy[1], audio_length=44100*2)
 
     return mix_waveform, clean_waveform, noise_waveform
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+import soundfile as sf
+from pathlib import Path
+
+def plot_image_means(image, title="Image Means"):
+    """Plots the mean values of the input image along the first axis."""
+    plt.figure()
+    for channel in range(image.shape[0]):
+        plt.plot(np.mean(image[channel], axis=1), label=f'Channel {channel}')
+    plt.legend()
+    plt.title(title)
+    plt.show()
+
+def process_and_visualize_audio(noise_level=0.00001, sr=44100, save_path=None):
+    """Processes audio, converts it to image format, visualizes it, and saves output waveforms."""
+    # Generate input audio
+    audio, sr = generate_input_audio()
+    
+    # Convert to image representation
+    input_image, target_image = process_audio_to_image(audio, sr, plot=True, noise_level=noise_level)
+    
+    # Plot input and target image mean values
+    plot_image_means(input_image, "Input Image Means")
+    plot_image_means(target_image, "Target Image Means")
+    
+    # Convert image back to waveform
+    input_waveform = image_to_waveform(input_image, sr)
+    target_waveform = image_to_waveform(target_image, sr)
+    
+    # Print statistics
+    for i, name in enumerate(["input_image", "target_image"]):
+        for channel in range(input_image.shape[0]):
+            print(f"{name}[{channel}] max: {np.max(input_image[channel])}, min: {np.min(input_image[channel])}")
+    
+    print("Input image shape:", np.shape(input_image))
+    
+    # Plot waveforms
+    def plot_waveform(waveform, title):
+        plt.figure()
+        plt.plot(waveform)
+        plt.xlim((4000, 8000))
+        plt.title(title)
+        plt.show()
+    
+    plot_waveform(input_waveform, "Input Waveform")
+    plot_waveform(target_waveform, "Target Waveform")
+    
+    # Ensure save directory exists
+    if save_path:
+        Path(save_path).mkdir(parents=True, exist_ok=True)
+        
+        # Save processed waveforms
+        sf.write(f"{save_path}/test_input.wav", input_waveform, sr)
+        sf.write(f"{save_path}/test_target.wav", target_waveform, sr)
+
+# Example usage
+if __name__ == '__main__':
+    CHECK = False
+    if CHECK:
+        process_and_visualize_audio(
+            noise_level=0.00001,
+            sr=44100,
+            save_path='/content/drive/MyDrive/Projects/ML_Projects/De-noising-autoencoder/Models/UNetDenoisingAutoencoder/Examples/'
+        )

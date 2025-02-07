@@ -293,10 +293,13 @@ def process_and_save_separation_dataset(
                 # Process in batches
                 # Append batch to datasets
                 with write_lock:
-                  input_dataset.resize(input_dataset.shape[0] + len(input_images), axis=0)
-                  target_dataset.resize(target_dataset.shape[0] + len(target_images), axis=0)
-                  input_dataset[-len(input_images):] = np.stack(input_images)
-                  target_dataset[-len(target_images):] = np.stack(target_images)
+                  def append_to_dataset(dataset, images):
+                    dataset.resize(dataset.shape[0] + len(images), axis=0)
+                    dataset[-len(images):] = np.stack(images)
+                    return dataset
+                  
+                  input_dataset = append_to_dataset(input_dataset, input_images)
+                  target_dataset = append_to_dataset(target_dataset, target_images)
 
                 # dedicated write to file
                 h5f.flush()
@@ -438,3 +441,77 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1, chu
 
 # Example usage
 #combine_h5_files("path/to/h5_folder", "path/to/output_folder", max_file_size_gb=1)
+
+
+# dataset processor class 
+import os
+
+class DatasetProcessor:
+    def __init__(self, train_music_dir, train_noise_dir, test_music_dir, test_noise_dir,
+                 output_dir, SNRdB=(0, 20), batch_size=500, checkpoint_file_size=50000,
+                 n_batches_per_batch_file=50, random_noise_level=0.0005,
+                 background_noise_level=0.4, process_pool=True, verbose=False,
+                 audio_length=int(44100 * 2), process_train=True, process_test=True):
+        
+        self.train_music_dir = train_music_dir
+        self.train_noise_dir = train_noise_dir
+        self.test_music_dir = test_music_dir
+        self.test_noise_dir = test_noise_dir
+        self.output_dir = output_dir
+        self.SNRdB = SNRdB
+        self.batch_size = batch_size
+        self.checkpoint_file_size = checkpoint_file_size
+        self.n_batches_per_batch_file = n_batches_per_batch_file
+        self.random_noise_level = random_noise_level
+        self.background_noise_level = background_noise_level
+        self.process_pool = process_pool
+        self.verbose = verbose
+        self.audio_length = audio_length
+        self.process_train = process_train
+        self.process_test = process_test
+        
+        # Define output and checkpoint files
+        self.train_checkpoint_file = os.path.join(output_dir, f"train-SNRdB_{SNRdB[0]}-{SNRdB[1]}-checkpoint.txt")
+        self.train_output_file = os.path.join(output_dir, f"/train/train-SNRdB_{SNRdB[0]}-{SNRdB[1]}.h5")
+        
+        self.test_checkpoint_file = os.path.join(output_dir, f"test-SNRdB_{SNRdB[0]}-{SNRdB[1]}-checkpoint.txt")
+        self.test_output_file = os.path.join(output_dir, f"/test/test-SNRdB_{SNRdB[0]}-{SNRdB[1]}.h5")
+        
+        ensure_directory_exists(self.train_output_file)
+        ensure_directory_exists(self.test_output_file)
+    
+    def process(self):
+
+        if self.process_train:
+            print('Processing training dataset....')
+            process_and_save_separation_dataset(
+                self.train_music_dir, self.train_noise_dir, self.train_output_file,
+                self.train_checkpoint_file, audio_length=self.audio_length,
+                batch_size=self.batch_size, background_noise_level=self.background_noise_level,
+                random_noise_level=self.random_noise_level, SNRdB=self.SNRdB,
+                process_pool=self.process_pool, verbose=self.verbose,
+                checkpoint_file_size=self.checkpoint_file_size
+            )
+
+        if self.process_test:
+            print('Processing testing dataset....')
+            process_and_save_separation_dataset(
+                self.test_music_dir, self.test_noise_dir, self.test_output_file,
+                self.test_checkpoint_file, audio_length=self.audio_length,
+                batch_size=self.batch_size, background_noise_level=self.background_noise_level,
+                random_noise_level=self.random_noise_level, SNRdB=self.SNRdB,
+                process_pool=self.process_pool, verbose=self.verbose,
+                checkpoint_file_size=self.checkpoint_file_size
+            )
+
+# Example usage
+if __name__ == "__main__":
+    processor = DatasetProcessor(
+        train_music_dir='/content/drive/MyDrive/Datasets/Music/MUSDB18/train-2s-44100',
+        train_noise_dir='/content/drive/MyDrive/Datasets/Noise/All_Noise/splits/train-2s-44100',
+        test_music_dir='/content/drive/MyDrive/Datasets/Music/MUSDB18/test-2s-44100',
+        test_noise_dir='/content/drive/MyDrive/Datasets/Noise/All_Noise/splits/test-2s-44100',
+        output_dir='/content/drive/MyDrive/Datasets/Music-Noise/SNRdB_sep/',
+        SNRdB=[0, 20]
+    )
+    processor.process()

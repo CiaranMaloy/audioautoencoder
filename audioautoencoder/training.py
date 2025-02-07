@@ -66,9 +66,39 @@ class EarlyStopping:
         model.load_state_dict(torch.load(self.save_path))
 
 ## Training, testing and calling examples
+import matplotlib.pyplot as plt
+
+def print_loss_graph(losses):
+  fig, ax = plt.subplots(figsize=(5, 2), dpi=100)
+
+  # Set grey background
+  fig.patch.set_facecolor("#333333")
+  ax.set_facecolor("#333333")
+
+  # Plot with a white line
+  for i, loss in enumerate(losses):
+    print(i)
+    ax.plot(loss, color="white", lw=0.4, marker='x', linestyle=['solid', 'dashed', 'dotted'][i%3])
+
+  # Make ticks visible and white
+  ax.tick_params(axis='both', colors='white', length=2, width=0.2)
+
+  # Set x-axis label, y-axis label, and plot title
+  ax.set_xlabel('Epochs', color='white')
+  ax.set_ylabel('Loss', color='white')
+  ax.set_title('Loss over Epochs', color='white')
+
+  # Set spines (border lines) to white
+  for spine in ax.spines.values():
+      spine.set_color('white')
+
+  # Save the plot
+  plt.show()
 
 import os
 import csv
+import pandas as pd
+
 # Training loop
 def train_model(model, 
                 train_loader, 
@@ -222,38 +252,137 @@ def train_model(model,
         }
         torch.save(checkpoint, checkpoint_filename)
         print('Saved to Drive...')
+        
+        # plot loss graph
+        df = pd.read_csv(log_filename)
+        # Set the epoch column as the x-axis if it exists
+        loss_type = ['Train Loss','Validation Loss','Ref Loss']
+        losses = [df[l] for l in loss_type]
+        print_loss_graph(losses)
+
         print(f"Epoch [{epoch + 1}/{epochs}], Loss: {running_loss / len(train_loader):.4f}")
         print("-"*50)
 
-# Testing loop
-def test_model(model, test_loader, criterion):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.eval()
-    with torch.no_grad():
-        test_loss = 0.0
-        progress_bar = tqdm(test_loader, desc="Testing", unit="batch")
-        for inputs, targets in progress_bar:
+import os
+import torch
+import torch.nn as nn
+from torch import optim
+from torch.optim.lr_scheduler import CyclicLR
 
-          inputs, targets = inputs.to(device), targets.to(device)
-          outputs, mask = model(inputs)
-          loss = criterion(outputs, targets)
-          progress_bar.set_postfix(loss=f"{loss.item():.4f}")
-          test_loss += loss.item()
+# training class
 
-        test_loss /= len(test_loader)
+class DenoisingTrainer:
+    def __init__(self, model, noisy_train_loader, noisy_val_loader, 
+                 SNRdB, output_path, patience=100, min_delta=0.0001, min_value=0.8, 
+                 epochs=30, learning_rate=1e-3, load=True, warm_start=False, 
+                 train=True, verbose=True, accumulation_steps=1, load_path=None, 
+                 ):
+        """Initialize the training environment with necessary parameters."""
 
-    return test_loss
+        self.model = model
+        self.train_loader = noisy_train_loader
+        self.val_loader = noisy_val_loader
+        self.SNRdB = SNRdB
+        self.epochs = epochs
+        self.learning_rate = learning_rate
+        self.load = load
+        self.warm_start = warm_start
+        self.train_flag = train
+        self.verbose = verbose
+        self.accumulation_steps = accumulation_steps
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.ref_min_value = min_value
+        
+        # Set up file paths
+        self.output_path = output_path
+        self.checkpoint_filename, self.earlystopping_filename = self.setup_directories(self.output_path)
 
-# Testing loop
-def test_examples(model, test_loader):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.eval()
-    with torch.no_grad():
-        for noisy_imgs, clean_imgs in test_loader:
-            noisy_imgs = noisy_imgs.to(device)
-            #input_features = input_features.to(device)
-            clean_imgs = clean_imgs.to(device)
-            outputs = model(noisy_imgs)
-            break  # Display only the first batch
+        # load from file paths
+        self.load_path = None
+        if self.load == True:
+            self.load_path = load_path
 
-    return noisy_imgs.cpu(), outputs.cpu(), clean_imgs.cpu()
+        # Loss function (adjustable)
+        self.criterion = nn.L1Loss()
+
+        # Initialize Early Stopping
+        self.early_stopping = EarlyStopping(
+            patience=patience, min_delta=min_delta, save_path=self.earlystopping_filename, mode='min'
+        )
+
+        # Optimizer & Scheduler
+        self.optimizer, self.scheduler = self.setup_optimizer_scheduler()
+
+        # Load checkpoint if required
+        self.starting_epoch = 0
+        if self.load:
+            self.starting_epoch, self.epochs = self.load_checkpoint()
+
+        # PyTorch memory configuration
+        os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
+    def setup_directories(self, output_path):
+        """Creates necessary directories and returns file paths."""
+        checkpoint_filename = os.path.join(output_path, 'Autoencodermodel_checkpoint.pth')
+        earlystopping_filename = os.path.join(output_path, 'Autoencodermodel_earlystopping.pth')
+
+        os.makedirs(output_path, exist_ok=True)
+        return checkpoint_filename, earlystopping_filename
+
+    def setup_optimizer_scheduler(self):
+        """Initializes the optimizer and learning rate scheduler."""
+        optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        scheduler = CyclicLR(
+            optimizer, base_lr=1e-5, max_lr=1e-3, step_size_up=3, mode='exp_range', gamma=0.8
+        )
+        return optimizer, scheduler
+
+    def load_checkpoint(self):
+        """Loads the latest checkpoint if available."""
+
+        print(f'Loading model from: {self.load_path}')
+        checkpoint = torch.load(self.load_path, map_location=self.device)
+
+        print(f"Checkpoint keys: {checkpoint.keys()}")
+        print(f"Loss: {checkpoint['loss']}, Epoch: {checkpoint['epoch']}, Total epochs: {checkpoint['total_epochs']}")
+
+        starting_epoch = checkpoint['epoch'] if self.warm_start else 0
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.model.to(self.device)
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+        return starting_epoch, checkpoint['total_epochs']
+    
+    def get_model(self):
+        return self.model
+
+    def train_or_evaluate(self):
+        """Handles the training or evaluation process based on the flag."""
+        if self.train_flag:
+            train_model(
+                self.model, self.train_loader, self.val_loader, self.criterion, 
+                self.optimizer, self.scheduler, self.early_stopping, 
+                starting_epoch=self.starting_epoch, epochs=self.epochs, verbose=self.verbose,
+                checkpoint_filename=self.checkpoint_filename, ref_min_value=self.ref_min_value, 
+                accumulation_steps=self.accumulation_steps
+            )
+        else:
+            print('No training performed.')
+
+if __name__ == '__main__':
+    # --------------- Main Execution ---------------
+    SNRdB = [-10, 10]  # Modify as needed
+    output_path = ...
+
+    # Initialize model and dataloaders here
+    model = ...  # Define your model
+    noisy_train_loader = ...  # Define your training dataloader
+    noisy_val_loader = ...  # Define your validation dataloader
+
+    trainer = DenoisingTrainer(
+        model=model, noisy_train_loader=noisy_train_loader, noisy_val_loader=noisy_val_loader, 
+        SNRdB=SNRdB, output_path=output_path, patience=100, min_delta=0.0001, min_value=0.8, epochs=30, learning_rate=1e-3, 
+        load=True, warm_start=False, train=True, verbose=True, accumulation_steps=1
+    )
+
+    trainer.train_or_evaluate()
