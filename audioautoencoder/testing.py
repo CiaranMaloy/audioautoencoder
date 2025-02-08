@@ -33,11 +33,13 @@ import torchaudio.functional as F
 import torch.nn.functional as nnF
 import pandas as pd
 from tqdm import tqdm
+from torchmetrics.audio import SignalDistortionRatio
 
 class Evaluation:
     def __init__(self):
         """Initialize storage for evaluation metrics."""
         self.results = []
+        self.sdr = SignalDistortionRatio()
 
     def evaluate(self, inputs, targets, outputs):
         """
@@ -56,8 +58,8 @@ class Evaluation:
             output_signal = outputs[i].detach().cpu()
 
             # Compute SDR (using torchaudio)
-            sdr_invstar = F.sdr(input_signal, target_signal).item()
-            sdr_invsout = F.sdr(input_signal, output_signal).item()
+            sdr_invstar = self.sdr(input_signal, target_signal).item()
+            sdr_invsout = self.sdr(input_signal, output_signal).item()
 
             # Compute L1 loss
             l1_invstar = nnF.l1_loss(input_signal, target_signal).item()
