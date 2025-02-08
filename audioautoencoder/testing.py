@@ -57,18 +57,20 @@ class Evaluation:
             output_signal = outputs[i].detach().cpu()
 
             # Compute SDR (using torchaudio)
-            sdr_invstar = self.sdr(input_signal, target_signal).item()
-            sdr_invsout = self.sdr(input_signal, output_signal).item()
+            #reconstruct signals
+            #sdr_invstar = self.sdr(input_signal, target_signal).item()
+            #sdr_invsout = self.sdr(input_signal, output_signal).item()
 
             # Compute L1 loss
-            l1_invstar = nnF.l1_loss(input_signal, target_signal).item()
-            l1_invsout = nnF.l1_loss(input_signal, output_signal).item()
+            #noisy_imgs[:, 0:1, :, :], clean_imgs[:, 0:1, :, :]
+            l1_invstar = nnF.l1_loss(input_signal[:, 0:1, :, :], target_signal[:, 0:1, :, :]).item()
+            l1_invsout = nnF.l1_loss(input_signal[:, 0:1, :, :], output_signal[:, 0:1, :, :]).item()
 
             # Store results
             self.results.append({
                 "instance": len(self.results),
-                "sdr_invstar": sdr_invstar,
-                "sdr_invsout": sdr_invsout,
+                #"sdr_invstar": sdr_invstar,
+                #"sdr_invsout": sdr_invsout,
                 "l1_invstar": l1_invstar,
                 "l1_invsout": l1_invsout
             })
