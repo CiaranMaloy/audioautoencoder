@@ -122,7 +122,7 @@ class AudioDenoiser:
         processed_audio, processed_input = [], []
         for start in range(0, len(waveform) - self.chunk_samples + 1, self.step_samples):
             chunk = waveform[start:start + self.chunk_samples]
-            input_image = audio_to_image(chunk, sr, self.chunk_samples, features=False)
+            input_image = audio_to_image(chunk, sr, self.chunk_samples, features=False, audio_length=44100*2)
             
             # AI denoising
             input_tensor = torch.tensor(np.array([input_image]), dtype=torch.float32).to(self.device)
