@@ -5,7 +5,7 @@ from datasets.loaders import *
 class NoisyDatasetLoader:
     def __init__(self, dataset_path, output_time_length=175, channels=1, snr_db=None, subset=False, batch_size=32):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.batch_size = batch_size if torch.cuda.is_available() else 12
+        self.batch_size = batch_size
         self.num_workers = 0
         self.subset = subset
         self.snr_db = snr_db
