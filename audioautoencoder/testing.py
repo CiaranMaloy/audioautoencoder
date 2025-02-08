@@ -13,16 +13,15 @@ def test_model(model, test_loader, criterion):
         progress_bar = tqdm(test_loader, desc="Testing", unit="batch")
         for inputs, targets in progress_bar:
 
-          print(inputs)
-          #inputs, targets = inputs.to(device), targets.to(device)
+          inputs, targets = inputs.to(device), targets.to(device)
 
-          #outputs = model(inputs)
-          #loss = criterion(outputs, targets)
-          #progress_bar.set_postfix(loss=f"{loss.item():.4f}")
-          #test_loss += loss.item()
+          outputs = model(inputs)
+          loss = criterion(outputs, targets)
+          progress_bar.set_postfix(loss=f"{loss.item():.4f}")
+          test_loss += loss.item()
 
           # evaluation
-          #evaluation.evaluate(inputs, targets, outputs)
+          evaluation.evaluate(inputs, targets, outputs)
 
         test_loss /= len(test_loader)
 
