@@ -228,7 +228,7 @@ def process_and_save_separation_dataset(
             # Initialize lists to store input and target images for the batch
             input_images = []
             target_images = []
-            filenames = []
+            metadata = []
 
             # Process files in parallel
             if process_pool:
@@ -240,12 +240,12 @@ def process_and_save_separation_dataset(
                     results = [future.result() for future in futures if future.result() is not None]
 
                 # Collect batch results
-                for input_image, target_image, noise_image, file_path, noise_file in results:
+                for input_image, target_image, noise_image, file_path, noise_file, target_snr_db in results:
                     #print(np.shape(input_image))
                     #print(np.shape([target_image[0], noise_image[0]]))
                     input_images.append(input_image)
                     target_images.append([target_image[0], noise_image[0]])
-                    filenames.append([file_path, noise_file])
+                    metadata.append([file_path, noise_file, target_snr_db]) # this shoudl be a dict
 
             # process files as a loop
             else:

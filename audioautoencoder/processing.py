@@ -153,14 +153,6 @@ def denormalise(image):
     image[2] = image[2] * (2 * np.pi) - np.pi
     return image
 
-def denormalise_mag(image):
-    image = 10 ** ((image * 60 - 30) / 10)
-    return image
-
-def denormalise_phase(image):
-    image = image * (2 * np.pi) - np.pi
-    return image
-
 def image_to_waveform(image, audio_length=44100):
     """
     Converts a spectrogram image back into an audio waveform.
@@ -178,6 +170,15 @@ def image_to_waveform(image, audio_length=44100):
     stft = magnitude * np.exp(1j * phase)
     return librosa.istft(stft, length=audio_length)
 
+
+# both of these functions are compatable with pytorch
+def denormalise_mag(image):
+    image = 10 ** ((image * 60 - 30) / 10)
+    return image
+def denormalise_phase(image):
+    image = image * (2 * np.pi) - np.pi
+    return image
+
 def magphase_to_waveform(magnitude, phase, audio_length=44100):
     """
     Converts a spectrogram image back into an audio waveform.
@@ -193,3 +194,43 @@ def magphase_to_waveform(magnitude, phase, audio_length=44100):
     phase = denormalise_phase(phase)
     stft = magnitude * np.exp(1j * phase)
     return librosa.istft(stft, length=audio_length)
+
+
+import torch
+import torch.nn.functional as F
+import numpy as np
+
+def magphase_to_waveform_torch(magnitude, phase, audio_length=44100):
+    """
+    Converts magnitude and phase to a waveform using PyTorch tensors and iSTFT.
+
+    Parameters:
+        magnitude (torch.Tensor): The magnitude of the spectrogram.
+        phase (torch.Tensor): The phase of the spectrogram.
+        audio_length (int): The length of the output audio waveform.
+
+    Returns:
+        torch.Tensor: The reconstructed audio waveform.
+    """
+    # Denormalize magnitude and phase
+    magnitude = denormalise_mag(magnitude)
+    phase = denormalise_phase(phase)
+    
+    # Create complex spectrogram (magnitude and phase)
+    stft = magnitude * torch.exp(1j * phase)
+
+    # Use PyTorch's inverse STFT
+    # First, we need to get real and imaginary parts from the complex tensor
+    real_part = stft.real
+    imag_part = stft.imag
+
+    # PyTorch's istft function expects a 2D tensor for real and imaginary parts
+    # In the format: [batch, time, freq] where batch is 1 for single signal input
+    stft_complex = torch.stack([real_part, imag_part], dim=-1)
+
+    # Apply iSTFT to get the waveform (complex values will be combined internally)
+    waveform = torch.istft(stft_complex, n_fft=2048, hop_length=2048//4, win_length=2048, 
+                           length=audio_length, return_complex=False)
+
+    return waveform
+

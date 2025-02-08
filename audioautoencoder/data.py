@@ -256,7 +256,7 @@ def process_audio_separation_to_image(audio, noise, sr, plot=False, random_noise
   target_image = audio_to_image(audio, sr, audio_length=audio_length, features=False)
   noise_image = audio_to_image(scaled_noise, sr, audio_length=audio_length, features=False)
 
-  return input_image, target_image, noise_image
+  return input_image, target_image, noise_image, target_snr_db
 
 def process_audio_and_noise_to_image(audio, noise, sr, plot=False, random_noise_level=0, background_noise_level=0, SNRdB=None, audio_length=44100):
   # Parameters
@@ -398,8 +398,8 @@ def process_file(file_path, noise_file, background_noise_level, random_noise_lev
 
 
       # Process audio to input and target images
-      input_image, target_image, noise_image = process_audio_separation_to_image(audio, noise, sr, background_noise_level=background_noise_level, random_noise_level=random_noise_level, SNRdB=SNRdB, audio_length=audio_length)
-      return input_image, target_image, noise_image, file_path, noise_file
+      input_image, target_image, noise_image, target_snr_db = process_audio_separation_to_image(audio, noise, sr, background_noise_level=background_noise_level, random_noise_level=random_noise_level, SNRdB=SNRdB, audio_length=audio_length)
+      return input_image, target_image, noise_image, file_path, noise_file, target_snr_db
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
         return None
