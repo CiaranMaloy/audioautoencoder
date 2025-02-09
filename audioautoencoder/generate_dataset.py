@@ -322,6 +322,7 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1, chu
 
                 # Check if new file is needed
                 if current_file_size + chunk_sample_size > max_file_size_bytes:
+                    break
                     create_new_file()
 
                 # Resize datasets
