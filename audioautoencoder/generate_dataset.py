@@ -339,31 +339,37 @@ def process_and_save_separation_dataset(
 
     print(f"Dataset saved to {output_file}")
 
-
-import h5py
 import os
+import h5py
 import numpy as np
 import math
 
 def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128):
     # Convert max file size to bytes
     max_file_size_bytes = max_file_size_gb * 1024**3
-    
+
     # List all HDF5 files in the folder
     h5_files = [os.path.join(h5_folder_path, f) for f in os.listdir(h5_folder_path) if f.endswith(".h5")]
-    
-    # Open the first file to get the dataset shape
+
+    # Open the first file to get the dataset shape and dtype
     with h5py.File(h5_files[0], "r") as first_file:
         input_shape = first_file["input_images"].shape[1:]  # Exclude the batch dimension
         target_shape = first_file["target_images"].shape[1:]
+        filename_shape = first_file["filename"].shape[1:]
+        
+        input_dtype = first_file["input_images"].dtype
+        target_dtype = first_file["target_images"].dtype
+        filename_dtype = first_file["filename"].dtype
+        
         sample_size_bytes = (
-            np.prod(input_shape) * np.dtype("float32").itemsize +
-            np.prod(target_shape) * np.dtype("float32").itemsize
+            np.prod(input_shape) * np.dtype(input_dtype).itemsize +
+            np.prod(target_shape) * np.dtype(target_dtype).itemsize +
+            np.prod(filename_shape) * np.dtype(filename_dtype).itemsize
         )
-    
+
     # Create output folder if it doesn't exist
     os.makedirs(output_folder_path, exist_ok=True)
-    
+
     # Variables for tracking file splitting
     current_file_index = 0
     current_file_samples = 0
@@ -372,71 +378,89 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1, chu
     combined_file = None
     input_dataset = None
     target_dataset = None
-    flag = False
-    
+    filename_dataset = None
+
     def create_new_file():
         """Helper function to create a new HDF5 file."""
-        nonlocal current_file_index, current_file_samples, current_file_size, combined_file, input_dataset, target_dataset, previous_size, chunk_size
+        nonlocal current_file_index, current_file_samples, current_file_size, combined_file
+        nonlocal input_dataset, target_dataset, filename_dataset, previous_size
+        
         # Close the current file if open
         if combined_file is not None:
             combined_file.close()
-        
+
         # Create a new file
         file_path = os.path.join(output_folder_path, f"combined_{current_file_index:03d}.h5")
         combined_file = h5py.File(file_path, "w")
-        input_dataset = combined_file.create_dataset("input_images", shape=(0, *input_shape), chunks=(chunk_size, *input_shape), maxshape=(None, *input_shape), dtype="float32")
-        target_dataset = combined_file.create_dataset("target_images", shape=(0, *target_shape), chunks=(chunk_size, *input_shape), maxshape=(None, *target_shape), dtype="float32")
+
+        input_dataset = combined_file.create_dataset(
+            "input_images", shape=(0, *input_shape), chunks=(chunk_size, *input_shape),
+            maxshape=(None, *input_shape), dtype=input_dtype
+        )
+        target_dataset = combined_file.create_dataset(
+            "target_images", shape=(0, *target_shape), chunks=(chunk_size, *target_shape),
+            maxshape=(None, *target_shape), dtype=target_dtype
+        )
+        filename_dataset = combined_file.create_dataset(
+            "filename", shape=(0, *filename_shape), chunks=(chunk_size, *filename_shape),
+            maxshape=(None, *filename_shape), dtype=filename_dtype
+        )
+
         current_file_samples = 0
         current_file_size = 0
         previous_size = 0
         current_file_index += 1
+
         print(f"Created new file: {file_path}")
-    
+
     # Start with the first file
     create_new_file()
-    
+
     # Copy data from each file into the combined datasets
     for h5_file in h5_files:
         with h5py.File(h5_file, "r") as source_file:
             input_data = source_file["input_images"][:]
             target_data = source_file["target_images"][:]
+            filename_data = source_file["filename"][:]
             num_samples = input_data.shape[0]
-            
-            for i in range(num_samples):
-                sample_input = input_data[i:i+1]  # Get one sample at a time
-                sample_target = target_data[i:i+1]
-                sample_size = sample_size_bytes
-                
-                # Check if adding this sample exceeds the max file size
-                if current_file_size + sample_size > max_file_size_bytes:
-                    create_new_file()
-                    print('Done....')
-                    flag = True
-                    break
-                
-                current_size_gb = (current_file_size + sample_size)/1024**3
-                if math.floor(previous_size) != math.floor(current_size_gb):
-                    print(np.round(current_size_gb), h5_file)
-                previous_size = current_size_gb
-                # Append the sample to the current dataset
-                input_dataset.resize((current_file_samples + 1, *input_shape))
-                target_dataset.resize((current_file_samples + 1, *target_shape))
-                input_dataset[current_file_samples] = sample_input
-                target_dataset[current_file_samples] = sample_target
-                
-                current_file_samples += 1
-                current_file_size += sample_size
 
-        # Check if adding this sample exceeds the max file size
-        if flag:
-            print('Done.... - no more files')
-            break
-    
+            for i in range(0, num_samples, chunk_size):
+                # Process in chunks
+                chunk_input = input_data[i:i+chunk_size]
+                chunk_target = target_data[i:i+chunk_size]
+                chunk_filename = filename_data[i:i+chunk_size]
+                chunk_sample_size = chunk_input.shape[0] * sample_size_bytes
+
+                # Check if adding this chunk exceeds the max file size
+                if current_file_size + chunk_sample_size > max_file_size_bytes:
+                    create_new_file()
+
+                # Update the dataset size
+                new_size = current_file_samples + chunk_input.shape[0]
+                input_dataset.resize((new_size, *input_shape))
+                target_dataset.resize((new_size, *target_shape))
+                filename_dataset.resize((new_size, *filename_shape))
+
+                # Append the chunk
+                input_dataset[current_file_samples:new_size] = chunk_input
+                target_dataset[current_file_samples:new_size] = chunk_target
+                filename_dataset[current_file_samples:new_size] = chunk_filename
+
+                current_file_samples = new_size
+                current_file_size += chunk_sample_size
+
+                # Print progress every GB
+                current_size_gb = current_file_size / 1024**3
+                if math.floor(previous_size) != math.floor(current_size_gb):
+                    print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
+                previous_size = current_size_gb
+
     # Close the last file
     if combined_file is not None:
         combined_file.close()
-    
+
     print(f"Finished combining files into {current_file_index} output files in {output_folder_path}")
+
 
 # Example usage
 #combine_h5_files("path/to/h5_folder", "path/to/output_folder", max_file_size_gb=1)
