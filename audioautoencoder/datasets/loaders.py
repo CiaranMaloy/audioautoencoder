@@ -91,21 +91,8 @@ class HDF5Dataset_metadata(Dataset):
                 target_image = torch.tensor(self.target_dataset[idx, :, :, :self.output_time_length], dtype=torch.float32)
 
             # Extract filename correctly
-            filename_value = self.filename_dataset[idx]
-            
-            # Decode bytes to strings if necessary
-            if isinstance(filename_value, bytes):
-                filename_value = filename_value.decode('utf-8')  # Decode byte string to regular string
-
-            # In case filename_value is a list of bytes, decode each entry
-            elif isinstance(filename_value, list):
-                filename_value = [f.decode('utf-8') if isinstance(f, bytes) else f for f in filename_value]
-            
-            # Ensure filename is a list of lists in the format: [[audio_filename, noise_filename], ...]
-            if isinstance(filename_value, str):
-                filename = [[filename_value]]  # Wrap single string in a list if it's not a list already
-            else:
-                filename = filename_value  # Assume it's a list of filenames (already properly structured)
+            filename = self.filename_dataset[idx]
+            print(type(filename))
 
             # Extract metadata
             metadata = {
