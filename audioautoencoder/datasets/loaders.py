@@ -92,12 +92,25 @@ class HDF5Dataset_metadata(Dataset):
 
             # Extract filename correctly
             filename_value = self.filename_dataset[idx]
-            print(filename_value)
+            
+            # Decode bytes to strings if necessary
+            if isinstance(filename_value, bytes):
+                filename_value = filename_value.decode('utf-8')  # Decode byte string to regular string
+
+            # In case filename_value is a list of bytes, decode each entry
+            elif isinstance(filename_value, list):
+                filename_value = [f.decode('utf-8') if isinstance(f, bytes) else f for f in filename_value]
+            
+            # Ensure filename is a list of lists in the format: [[audio_filename, noise_filename], ...]
+            if isinstance(filename_value, str):
+                filename = [[filename_value]]  # Wrap single string in a list if it's not a list already
+            else:
+                filename = filename_value  # Assume it's a list of filenames (already properly structured)
 
             # Extract metadata
             metadata = {
-                "filename": filename_value,
-                "snr_db": float(self.snr_db_dataset[idx])  # Convert to Python float
+                "filename": filename,
+                "snr_db": float(self.snr_db_dataset[idx].item())  # Convert to Python float
             }
 
             return input_image, target_image, metadata
