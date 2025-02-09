@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader, random_split
 from datasets.loaders import *
 
 class NoisyDatasetLoader:
-    def __init__(self, dataset_path, output_time_length=175, channels=1, snr_db=None, subset=False, batch_size=32):
+    def __init__(self, dataset_path, output_time_length=175, channels=1, snr_db=None, subset=False, batch_size=32, metadata=False):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.batch_size = batch_size
         self.num_workers = 0
@@ -12,12 +12,18 @@ class NoisyDatasetLoader:
         self.dataset_path = dataset_path
         self.output_time_length = output_time_length
         self.channels = channels
+        self.metadata = metadata
         self._initialize_dataset()
     
     def _initialize_dataset(self):
         torch.manual_seed(42)
         split_rng = torch.Generator().manual_seed(42)
-        dataset = HDF5Dataset_metadata(self.dataset_path, output_time_length=self.output_time_length, channels=self.channels)
+
+        if self.metadata:
+            dataset = HDF5Dataset_metadata(self.dataset_path, output_time_length=self.output_time_length, channels=self.channels)
+        else:
+            dataset = HDF5Dataset(self.dataset_path, output_time_length=self.output_time_length, channels=self.channels)
+        
         total_size = len(dataset)
         train_size = int(0.8 * total_size)
         val_size = total_size - train_size
