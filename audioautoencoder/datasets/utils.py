@@ -32,8 +32,12 @@ class NoisyDatasetLoader:
         if self.subset:
             self._apply_subset(split_rng)
         
-        self.train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers, pin_memory=True)
-        self.val_loader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers, pin_memory=True)
+        if self.metadata:
+            self.train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers, pin_memory=True, colate_fn=custom_collate_fn)
+            self.val_loader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers, pin_memory=True, colate_fn=custom_collate_fn)
+        else:
+            self.train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers, pin_memory=True)
+            self.val_loader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers, pin_memory=True)
         
         print(f"Training set size: {len(self.train_dataset)}")
         print(f"Validation set size: {len(self.val_dataset)}")
