@@ -92,6 +92,7 @@ class HDF5Dataset_metadata(Dataset):
 
             # Extract filename correctly
             filename_value = self.filename_dataset[idx]
+            print(filename_value)
 
             # Extract metadata
             metadata = {
@@ -107,7 +108,7 @@ class HDF5Dataset_metadata(Dataset):
             # Return placeholder tensors and empty metadata
             input_placeholder = torch.zeros((self.input_shape[1], self.input_shape[2], self.output_time_length), dtype=torch.float32)
             target_placeholder = torch.zeros((self.target_shape[1], self.target_shape[2], self.output_time_length), dtype=torch.float32)
-            metadata_placeholder = {"filename": "", "snr_db": float("nan")}
+            metadata_placeholder = {"filename": [""], "snr_db": float("nan")}
 
             return input_placeholder, target_placeholder, metadata_placeholder
 
