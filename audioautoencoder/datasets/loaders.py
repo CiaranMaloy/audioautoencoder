@@ -95,12 +95,10 @@ class HDF5Dataset_metadata(Dataset):
             if isinstance(filename, bytes):  # Check if it's a bytes object
                 filename = filename.decode('utf-8')  # Convert to a string
 
-            print(filename)
-
             # Extract metadata
             metadata = {
                 "filename": filename,
-                "snr_db": float(self.snr_db_dataset[idx].item())  # Convert to Python float
+                "snr_db": self.snr_db_dataset[idx].item() # Convert to Python float
             }
 
             return input_image, target_image, metadata
