@@ -125,5 +125,12 @@ def custom_collate_fn(batch):
     # Unzip the batch into inputs, targets, and metadata
     inputs, targets, metadata = zip(*batch)
     
+    # Convert inputs and targets into tensors (if they are numpy arrays or lists)
+    inputs = torch.tensor(np.array(inputs))
+    targets = torch.tensor(np.array(targets))
+    
+    # For metadata, you can keep it as is or process it further if needed
+    # Here, assuming metadata is a list of strings (paths)
+    
     # Return the batch as a tuple of tensors and metadata
     return inputs, targets, metadata
