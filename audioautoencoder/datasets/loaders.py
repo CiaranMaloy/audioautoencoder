@@ -54,6 +54,7 @@ class HDF5Dataset(Dataset):
 import torch
 import h5py
 from torch.utils.data import Dataset
+import numpy as np
 
 class HDF5Dataset_metadata(Dataset):
     def __init__(self, h5_file_path, output_time_length=86, channels=2):
