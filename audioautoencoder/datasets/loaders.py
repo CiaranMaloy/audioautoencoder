@@ -92,10 +92,6 @@ class HDF5Dataset_metadata(Dataset):
 
             # Extract filename correctly
             filename_value = self.filename_dataset[idx]
-            if isinstance(filename_value, np.ndarray):
-                filename_value = filename_value[0]  # Extract string from array if necessary
-            if isinstance(filename_value, bytes):
-                filename_value = filename_value.decode("utf-8")  # Decode if it's bytes
 
             # Extract metadata
             metadata = {
