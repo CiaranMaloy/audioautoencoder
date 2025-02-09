@@ -31,6 +31,24 @@ def create_dataset(dataset_name, h5f, c=3, h=1025, w=89):
     
     return dataset
 
+import os
+
+def ensure_folder(path):
+    """
+    Ensures that the given path exists. 
+    If the path is a file, it creates the parent directory. 
+    If the path is a directory, it ensures it exists.
+    
+    Args:
+        path (str): The file or directory path.
+    
+    Returns:
+        str: The ensured directory path.
+    """
+    directory = path if os.path.isdir(path) else os.path.dirname(path)
+    if directory and not os.path.exists(directory):
+        os.makedirs(directory, exist_ok=True)
+
 def process_and_save_noisy_dataset(
       data_dir, 
       noise_data_dir, 
@@ -203,6 +221,8 @@ def process_and_save_separation_dataset(
       LOGIC = True
       max_file_size_bytes = max_file_size_gb * 1024**3
       write_lock = Lock()
+
+      ensure_folder(output_file)
 
       while LOGIC:
         # Get the list of .wav files in the directory
