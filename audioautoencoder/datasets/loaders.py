@@ -92,7 +92,10 @@ class HDF5Dataset_metadata(Dataset):
 
             # Extract filename correctly
             filename = self.filename_dataset[idx]
-            print(type(filename))
+            if isinstance(filename, bytes):  # Check if it's a bytes object
+                filename = filename.decode('utf-8')  # Convert to a string
+
+            print(filename)
 
             # Extract metadata
             metadata = {
