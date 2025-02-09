@@ -33,6 +33,7 @@ class NoisyDatasetLoader:
             self._apply_subset(split_rng)
         
         if self.metadata:
+            # include custom colate function for metadata
             self.train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers, pin_memory=True, colate_fn=custom_collate_fn)
             self.val_loader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers, pin_memory=True, colate_fn=custom_collate_fn)
         else:
