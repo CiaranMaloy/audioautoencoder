@@ -51,6 +51,10 @@ class HDF5Dataset(Dataset):
             self.h5_file.close()
 
 
+import torch
+import h5py
+from torch.utils.data import Dataset
+
 class HDF5Dataset_metadata(Dataset):
     def __init__(self, h5_file_path, output_time_length=86, channels=2):
         self.h5_file_path = h5_file_path
@@ -85,9 +89,16 @@ class HDF5Dataset_metadata(Dataset):
             else:
                 target_image = torch.tensor(self.target_dataset[idx, :, :, :self.output_time_length], dtype=torch.float32)
 
+            # Extract filename correctly
+            filename_value = self.filename_dataset[idx]
+            if isinstance(filename_value, np.ndarray):
+                filename_value = filename_value[0]  # Extract string from array if necessary
+            if isinstance(filename_value, bytes):
+                filename_value = filename_value.decode("utf-8")  # Decode if it's bytes
+
             # Extract metadata
             metadata = {
-                "filename": self.filename_dataset[idx].decode("utf-8"),  # Decode bytes to string
+                "filename": filename_value,
                 "snr_db": float(self.snr_db_dataset[idx])  # Convert to Python float
             }
 
@@ -106,4 +117,5 @@ class HDF5Dataset_metadata(Dataset):
     def __del__(self):
         if hasattr(self, "h5_file") and self.h5_file:
             self.h5_file.close()
+
 
