@@ -228,7 +228,8 @@ def process_and_save_separation_dataset(
             # Initialize lists to store input and target images for the batch
             input_images = []
             target_images = []
-            metadata = []
+            filenames = []
+            snr_db = []
 
             # Process files in parallel
             if process_pool:
@@ -245,7 +246,8 @@ def process_and_save_separation_dataset(
                     #print(np.shape([target_image[0], noise_image[0]]))
                     input_images.append(input_image)
                     target_images.append([target_image[0], noise_image[0]])
-                    metadata.append([file_path, noise_file, target_snr_db]) # this shoudl be a dict
+                    filenames.append([file_path, noise_file]) # this shoudl be a dict
+                    snr_db.append(target_snr_db)
 
             # process files as a loop
             else:
@@ -265,6 +267,7 @@ def process_and_save_separation_dataset(
             input_images = np.array(input_images, dtype=np.float32)
             target_images = np.array(target_images, dtype=np.float32)
             filenames = np.array(filenames, dtype=h5py.string_dtype())
+            snr_db = np.array(snr_db, dtype=np.float32)
 
             # raise error if is inf or nan
             if np.isnan(np.stack(input_images)).any() or np.isinf(np.stack(input_images)).any():
@@ -280,6 +283,7 @@ def process_and_save_separation_dataset(
 
                 # add filenames
                 h5f.create_dataset("filenames", data=filenames)
+                h5f.create_dataset("snr_db", data=snr_db)
 
                 print('checking for file existance....')
                 check_file_exists(sub_output_file)
