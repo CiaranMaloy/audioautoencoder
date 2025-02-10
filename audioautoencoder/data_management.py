@@ -31,7 +31,8 @@ def create_datasets(dataset_dirs, output_dir, random_seed=42, resume_file="split
     # Gather all wav files
     all_files = []
     for dataset_dir in dataset_dirs:
-        all_files.extend(glob.glob(os.path.join(dataset_dir, "**" ,"*.wav"), recursive=True))
+        all_files.extend(glob.glob(os.path.join(dataset_dir, "**", "*.wav"), recursive=True))
+        all_files.extend(glob.glob(os.path.join(dataset_dir, "**", "*.mp3"), recursive=True))
 
     if not all_files:
         raise ValueError("No .wav files found in the provided directories.")
