@@ -45,7 +45,7 @@ def create_datasets(dataset_dirs, output_dir, random_seed=42, resume_file="split
     random.shuffle(all_files)
 
     num_files = len(all_files)
-    num_train = int(num_files * 0.7)
+    num_train = int(num_files * 0.6)
     num_val = int(num_files * 0.1)
 
     splits = {
