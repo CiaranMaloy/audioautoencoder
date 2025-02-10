@@ -192,7 +192,7 @@ def process_and_save_separation_dataset(
                     time.sleep(20)
                     break
 
-                if i > checkpoint_file_size:
+                if (i + batch_size > checkpoint_file_size) or (i + batch_size > total_files):
                   LOGIC = False
                   print('File maximum samples file......')
                   time.sleep(20)
@@ -359,7 +359,7 @@ import os
 class DatasetProcessor:
     def __init__(self, train_music_dir, train_noise_dir, test_music_dir, test_noise_dir,
                  output_dir, SNRdB=(0, 20), batch_size=500, checkpoint_file_size=50000,
-                 n_batches_per_batch_file=50, random_noise_level=0.0005,
+                 random_noise_level=0.0005,
                  background_noise_level=0.4, process_pool=True, verbose=False,
                  audio_length=int(44100 * 2), process_train=True, process_test=True):
         
@@ -371,7 +371,6 @@ class DatasetProcessor:
         self.SNRdB = SNRdB
         self.batch_size = batch_size
         self.checkpoint_file_size = checkpoint_file_size
-        self.n_batches_per_batch_file = n_batches_per_batch_file
         self.random_noise_level = random_noise_level
         self.background_noise_level = background_noise_level
         self.process_pool = process_pool
