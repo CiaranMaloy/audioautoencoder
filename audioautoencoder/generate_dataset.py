@@ -63,7 +63,8 @@ def process_and_save_separation_dataset(
       SNRdB=None, 
       verbose=False, 
       checkpoint_file_size=50000, 
-      max_file_size_gb=60):
+      max_file_size_gb=60, 
+      mix_only=False):
     """
     Process all .wav files in a folder and save the input-output image pairs.
     use this to train a denoising autoencoder 
@@ -82,6 +83,9 @@ def process_and_save_separation_dataset(
         # Get the list of .wav files in the directory
         print('Gathering wav files....')
         wav_files, total_files = gather_wav_files_and_report(data_dir)
+
+        if mix_only:
+            wav_files = [file for file in wav_files if 'mixture' in file]
 
         # get noise files
         print('Gathering noise files....')
@@ -361,7 +365,8 @@ class DatasetProcessor:
                  output_dir, SNRdB=(0, 20), batch_size=500, checkpoint_file_size=50000,
                  random_noise_level=0.0005,
                  background_noise_level=0.4, process_pool=True, verbose=False,
-                 audio_length=int(44100 * 2), process_train=True, process_test=True):
+                 audio_length=int(44100 * 2), process_train=True, process_test=True,
+                 mix_only=False):
         
         self.train_music_dir = train_music_dir
         self.train_noise_dir = train_noise_dir
@@ -378,6 +383,7 @@ class DatasetProcessor:
         self.audio_length = audio_length
         self.process_train = process_train
         self.process_test = process_test
+        self.mix_only = mix_only
 
         print('Output Dir:', self.output_dir)
         
@@ -408,7 +414,8 @@ class DatasetProcessor:
                 batch_size=self.batch_size, background_noise_level=self.background_noise_level,
                 random_noise_level=self.random_noise_level, SNRdB=self.SNRdB,
                 process_pool=self.process_pool, verbose=self.verbose,
-                checkpoint_file_size=self.checkpoint_file_size
+                checkpoint_file_size=self.checkpoint_file_size, 
+                mix_only=self.mix_only
             )
 
         if self.process_test:
@@ -419,7 +426,8 @@ class DatasetProcessor:
                 batch_size=self.batch_size, background_noise_level=self.background_noise_level,
                 random_noise_level=self.random_noise_level, SNRdB=self.SNRdB,
                 process_pool=self.process_pool, verbose=self.verbose,
-                checkpoint_file_size=self.checkpoint_file_size
+                checkpoint_file_size=self.checkpoint_file_size,
+                mix_only=self.mix_only
             )
 
 # Example usage
