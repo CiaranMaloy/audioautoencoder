@@ -86,6 +86,8 @@ def process_and_save_separation_dataset(
 
         if mix_only:
             wav_files = [file for file in wav_files if 'mixture' in file]
+            total_files = len(wav_files)
+            print('Mix files:', total_files)
 
         # get noise files
         print('Gathering noise files....')
