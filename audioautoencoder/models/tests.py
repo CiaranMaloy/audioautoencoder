@@ -1,7 +1,7 @@
 import unittest
 import torch
 from torchsummary import summary
-from models import UNetDenoisingAutoencoder  # Import your model
+from models.UNetDenoisingAutoencoder import *  # Import your model
 
 class TestAutoencoder(unittest.TestCase):
     def setUp(self):
