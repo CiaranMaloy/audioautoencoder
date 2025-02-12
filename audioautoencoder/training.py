@@ -85,6 +85,7 @@ def print_loss_graph(losses):
   # Set x-axis label, y-axis label, and plot title
   ax.set_xlabel('Epochs', color='white')
   ax.set_ylabel('Loss', color='white')
+  ax.set_yscale('log')
   ax.set_title('Loss over Epochs', color='white')
 
   # Set spines (border lines) to white
