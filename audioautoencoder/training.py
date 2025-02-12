@@ -77,7 +77,6 @@ def print_loss_graph(losses):
 
   # Plot with a white line
   for i, loss in enumerate(losses):
-    print(i)
     ax.plot(loss, color="white", lw=0.4, marker='x', linestyle=['solid', 'dashed', 'dotted'][i%3])
 
   # Make ticks visible and white
