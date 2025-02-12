@@ -276,6 +276,7 @@ class DenoisingTrainer:
                  SNRdB, output_path, patience=100, min_delta=0.0001, min_value=0.8, 
                  epochs=30, learning_rate=1e-3, load=True, warm_start=False, 
                  train=True, verbose=True, accumulation_steps=1, load_path=None, 
+                 base_lr=1e-5, max_lr=1e-3, gamma=0.8, scheduler=None, optimizer=None
                  ):
         """Initialize the training environment with necessary parameters."""
 
@@ -311,7 +312,13 @@ class DenoisingTrainer:
         )
 
         # Optimizer & Scheduler
-        self.optimizer, self.scheduler = self.setup_optimizer_scheduler()
+        self.optimizer, self.scheduler = self.setup_optimizer_scheduler(base_lr, max_lr, gamma)
+        
+        # potential to define a scheduler
+        if scheduler is not None:
+            self.scheduler = scheduler
+        if optimizer is not None:
+            self.optimizer = optimizer
 
         # Load checkpoint if required
         self.starting_epoch = 0
@@ -329,11 +336,11 @@ class DenoisingTrainer:
         os.makedirs(output_path, exist_ok=True)
         return checkpoint_filename, earlystopping_filename
 
-    def setup_optimizer_scheduler(self):
+    def setup_optimizer_scheduler(self, base_lr, max_lr, gamma, step_size_up=3):
         """Initializes the optimizer and learning rate scheduler."""
         optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         scheduler = CyclicLR(
-            optimizer, base_lr=1e-5, max_lr=1e-3, step_size_up=3, mode='exp_range', gamma=0.8
+            optimizer, base_lr=base_lr, max_lr=max_lr, step_size_up=step_size_up, mode='exp_range', gamma=gamma
         )
         return optimizer, scheduler
 
