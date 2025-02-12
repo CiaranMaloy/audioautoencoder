@@ -208,6 +208,39 @@ def process_and_visualize_audio(noise_level=0.00001, sr=44100, save_path=None):
         sf.write(f"{save_path}/test_input.wav", input_waveform, sr)
         sf.write(f"{save_path}/test_target.wav", target_waveform, sr)
 
+import torch
+import matplotlib.pyplot as plt
+from torch.optim.lr_scheduler import CyclicLR
+from torch.optim import SGD
+
+def plot_learning_rate(base_lr, max_lr, gamma, n, step_size_up=3):
+    
+  # Dummy optimizer
+  model_params = [torch.nn.Parameter(torch.randn(2, 2, requires_grad=True))]
+  optimizer = SGD(model_params, lr=1e-3)
+
+  # Define CyclicLR scheduler
+  scheduler = CyclicLR(optimizer, base_lr=base_lr, max_lr=max_lr, step_size_up=step_size_up, mode='exp_range', gamma=gamma)
+
+  # Simulate 30 epochs
+  lrs = []
+  for epoch in range(n):
+      optimizer.step()  # Dummy step
+      lrs.append(optimizer.param_groups[0]['lr'])
+      scheduler.step()  # Update scheduler
+
+  # Plot the learning rates
+  plt.figure(figsize=(8, 5))
+  plt.plot(range(1, n+1), lrs, marker='o', linestyle='-', label="Learning Rate")
+  plt.title("CyclicLR Scheduler over 30 Epochs")
+  plt.xlabel("Epoch")
+  plt.ylabel("Learning Rate")
+  plt.yscale('log')
+  plt.grid(True)
+  plt.legend()
+  plt.show()
+
+
 # Example usage
 if __name__ == '__main__':
     CHECK = False
