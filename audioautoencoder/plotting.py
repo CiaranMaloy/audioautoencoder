@@ -240,6 +240,39 @@ def plot_learning_rate(base_lr, max_lr, gamma, n, step_size_up=3):
   plt.legend()
   plt.show()
 
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load the CSV file
+def plot_training_log(csv_file_path):
+  df = pd.read_csv(csv_file_path)
+
+  # Check the first few rows to confirm structure
+  print(df.head())
+
+  # Set the epoch column as the x-axis if it exists
+  if 'Epoch' in df.columns:
+      x = df['Epoch']
+  else:
+      x = range(len(df))  # Fallback if epoch column is missing
+
+  # Plot all numerical columns
+  plt.figure(figsize=(10, 6))
+  for col in df.select_dtypes(include=['number']).columns:
+      if col != 'Epoch' and col != 'KL Beta':  # Skip epoch column in y-axis plots
+          plt.plot(x, df[col], label=col)
+
+  # Formatting
+  plt.xlabel("Epoch")
+  plt.ylabel("Loss / Metrics")
+  plt.title("Training and Validation Metrics Over Time")
+  plt.legend()
+  plt.yscale('log')
+  #plt.ylim((0, 0.03))
+  plt.grid(True)
+
+  # Show plot
+  plt.show()
 
 # Example usage
 if __name__ == '__main__':
