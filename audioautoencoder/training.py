@@ -276,7 +276,8 @@ class DenoisingTrainer:
                  SNRdB, output_path, patience=100, min_delta=0.0001, min_value=0.8, 
                  epochs=30, learning_rate=1e-3, load=True, warm_start=False, 
                  train=True, verbose=True, accumulation_steps=1, load_path=None, 
-                 base_lr=1e-5, max_lr=1e-3, gamma=0.8, scheduler=None, optimizer=None
+                 base_lr=1e-5, max_lr=1e-3, gamma=0.8, scheduler=None, optimizer=None, 
+                 scheduler_loss=False
                  ):
         """Initialize the training environment with necessary parameters."""
 
@@ -293,6 +294,7 @@ class DenoisingTrainer:
         self.accumulation_steps = accumulation_steps
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.ref_min_value = min_value
+        self.scheduler_loss = scheduler_loss
         
         # Set up file paths
         self.output_path = output_path
@@ -371,7 +373,7 @@ class DenoisingTrainer:
                 self.optimizer, self.scheduler, self.early_stopping, 
                 starting_epoch=self.starting_epoch, epochs=self.epochs, verbose=self.verbose,
                 checkpoint_filename=self.checkpoint_filename, ref_min_value=self.ref_min_value, 
-                accumulation_steps=self.accumulation_steps
+                accumulation_steps=self.accumulation_steps, scheduler_loss=self.scheduler_loss
             )
         else:
             print('No training performed.')
