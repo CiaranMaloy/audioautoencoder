@@ -268,6 +268,7 @@ import torch
 import torch.nn as nn
 from torch import optim
 from torch.optim.lr_scheduler import CyclicLR
+import torch.nn.init as init
 
 # training class
 
@@ -304,6 +305,8 @@ class DenoisingTrainer:
         self.load_path = None
         if self.load == True:
             self.load_path = load_path
+        else:
+            model.apply(self.init_weights)  # Apply to entire model
 
         # Loss function (adjustable)
         self.criterion = nn.L1Loss()
@@ -329,6 +332,18 @@ class DenoisingTrainer:
 
         # PyTorch memory configuration
         os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
+    def init_weights(self, m):
+        if isinstance(m, nn.Conv2d):
+            init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+        elif isinstance(m, nn.Linear):
+            init.xavier_uniform_(m.weight)
+        elif isinstance(m, nn.BatchNorm2d):
+            init.constant_(m.weight, 1)
+            init.constant_(m.bias, 0)
+
+
+
 
     def setup_directories(self, output_path):
         """Creates necessary directories and returns file paths."""
