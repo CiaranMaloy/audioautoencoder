@@ -32,8 +32,8 @@ class TestAutoencoder(unittest.TestCase):
             self.fail(f"Model summary failed: {str(e)}")
 
 # This allows running tests externally
-def suite(Model):
-    test_suite = unittest.TestLoader().loadTestsFromTestCase(Model)
+def suite():
+    test_suite = unittest.TestLoader().loadTestsFromTestCase(TestAutoencoder)
     return test_suite
 
 # runner
@@ -41,10 +41,10 @@ class TestRunner:
     def __init__(self):
         self.runner = unittest.TextTestRunner()
 
-    def run(self, Model):
+    def run(self):
         print("Running autoencoder tests...")
-        self.runner.run(suite(Model))
+        self.runner.run(suite())
 
 if __name__ == "__main__":
-    runner = TestRunner(TestAutoencoder)
+    runner = TestRunner()
     runner.run()
