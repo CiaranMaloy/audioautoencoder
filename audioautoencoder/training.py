@@ -67,6 +67,7 @@ class EarlyStopping:
 
 ## Training, testing and calling examples
 import matplotlib.pyplot as plt
+import numpy as np
 
 def print_loss_graph(losses):
   fig, ax = plt.subplots(figsize=(5, 2), dpi=100)
@@ -86,6 +87,9 @@ def print_loss_graph(losses):
   ax.set_xlabel('Epochs', color='white')
   ax.set_ylabel('Loss', color='white')
   ax.set_yscale('log')
+  a = np.mean(losses) + np.std(losses) * 2
+  b = np.mean(losses) - np.std(losses) * 2
+  ax.set_ylim((a, b))
   ax.set_title('Loss over Epochs', color='white')
 
   # Set spines (border lines) to white
@@ -318,7 +322,7 @@ class DenoisingTrainer:
                  epochs=30, learning_rate=1e-3, load=True, warm_start=False, 
                  train=True, verbose=True, accumulation_steps=1, load_path=None, 
                  base_lr=1e-5, max_lr=1e-3, gamma=0.8, scheduler=None, optimizer=None, 
-                 scheduler_loss=False, max_noise=0.1, noise_epochs=10
+                 scheduler_loss=False, max_noise=0.1, noise_epochs=20
                  ):
         """Initialize the training environment with necessary parameters."""
 

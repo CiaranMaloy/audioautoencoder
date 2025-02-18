@@ -251,10 +251,7 @@ def plot_training_log(csv_file_path):
   print(df.head())
 
   # Set the epoch column as the x-axis if it exists
-  if 'Epoch' in df.columns:
-      x = df['Epoch']
-  else:
-      x = range(len(df))  # Fallback if epoch column is missing
+  x = range(len(df))  # Fallback if epoch column is missing
 
   # Plot all numerical columns
   plt.figure(figsize=(10, 6))
