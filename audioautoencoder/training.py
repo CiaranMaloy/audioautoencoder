@@ -322,7 +322,7 @@ class DenoisingTrainer:
                  epochs=30, learning_rate=1e-3, load=True, warm_start=False, 
                  train=True, verbose=True, accumulation_steps=1, load_path=None, 
                  base_lr=1e-5, max_lr=1e-3, gamma=0.8, scheduler=None, optimizer=None, 
-                 scheduler_loss=False, max_noise=0.1, noise_epochs=20
+                 scheduler_loss=False, max_noise=0.05, noise_epochs=20
                  ):
         """Initialize the training environment with necessary parameters."""
 
