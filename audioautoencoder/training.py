@@ -388,9 +388,6 @@ class DenoisingTrainer:
             init.constant_(m.weight, 1)
             init.constant_(m.bias, 0)
 
-
-
-
     def setup_directories(self, output_path):
         """Creates necessary directories and returns file paths."""
         checkpoint_filename = os.path.join(output_path, 'Autoencodermodel_checkpoint.pth')
@@ -457,3 +454,30 @@ if __name__ == '__main__':
     )
 
     trainer.train_or_evaluate()
+
+
+import torch
+import torch.nn as nn
+
+# class to load trained model
+class DenoisingLoader:
+    def __init__(self, model, checkpoint_path, device=None):
+        """Loads a trained denoising model for inference."""
+        self.device = device if device else ("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = model.to(self.device)
+        self.load_checkpoint(checkpoint_path)
+
+    def load_checkpoint(self, checkpoint_path):
+        """Loads the model weights from a checkpoint."""
+        checkpoint = torch.load(checkpoint_path, map_location=self.device)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.model.eval()  # Set model to evaluation mode
+        print(f"Loaded model from {checkpoint_path}")
+
+    def denoise(self, noisy_input):
+        """Denoises an input tensor using the loaded model."""
+        self.model.eval()
+        with torch.no_grad():
+            noisy_input = noisy_input.to(self.device)
+            denoised_output = self.model(noisy_input)
+        return denoised_output.cpu()
