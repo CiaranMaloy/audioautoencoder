@@ -99,6 +99,32 @@ import os
 import csv
 import pandas as pd
 
+class NoiseScheduler:
+    def __init__(self, max_noise_std=0.2, min_noise_std=0.0, total_epochs=50, mode="linear"):
+        """
+        max_noise_std: Initial noise standard deviation
+        min_noise_std: Final noise standard deviation (usually 0)
+        total_epochs: Number of epochs over which noise reduces
+        mode: "linear" or "exponential" decay
+        """
+        self.max_noise_std = max_noise_std
+        self.min_noise_std = min_noise_std
+        self.total_epochs = total_epochs
+        self.mode = mode
+
+    def get_noise_std(self, epoch):
+        """Returns the noise level for a given epoch."""
+        if self.mode == "linear":
+            return max(
+                self.min_noise_std,
+                self.max_noise_std * (1 - epoch / self.total_epochs),
+            )
+        elif self.mode == "exponential":
+            decay_rate = (self.min_noise_std / self.max_noise_std) ** (1 / self.total_epochs)
+            return max(self.min_noise_std, self.max_noise_std * (decay_rate ** epoch))
+        else:
+            raise ValueError("Invalid mode. Choose 'linear' or 'exponential'.")
+
 # Training loop
 def train_model(model, 
                 train_loader, 
@@ -113,7 +139,9 @@ def train_model(model,
                 checkpoint_filename='checkpoint.pth', 
                 scheduler_loss=False, 
                 ref_min_value=0.4, 
-                accumulation_steps=4
+                accumulation_steps=4, 
+                max_noise=0.1,
+                noise_epochs=10
                 ):
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -144,6 +172,9 @@ def train_model(model,
                 print(f'Step {i+1}')
                 scheduler.step()
 
+    # introduce noise if specified
+    noise_scheduler = NoiseScheduler(max_noise_std=max_noise, min_noise_std=0.0, total_epochs=noise_epochs, mode="linear")
+
     model.train()
     for epoch in range(starting_epoch, epochs):
         # Print the current learning rate
@@ -161,6 +192,9 @@ def train_model(model,
         beta = epoch/epochs
         print(f'New kl loss beta: {beta}')
 
+        # get noise to add
+        noise_std = noise_scheduler.get_noise_std(epoch)  # Get noise level for this epoch
+
         i = 0
         if verbose:
           print('starting progress....')
@@ -177,6 +211,12 @@ def train_model(model,
             
             if verbose:
               print('training model')
+
+            # add noise to input
+            noise = torch.randn_like(noisy_imgs) * noise_std
+            noisy_imgs = noisy_imgs + noise
+
+            # train model 
             outputs = model(noisy_imgs)
 
             if verbose:
@@ -278,7 +318,7 @@ class DenoisingTrainer:
                  epochs=30, learning_rate=1e-3, load=True, warm_start=False, 
                  train=True, verbose=True, accumulation_steps=1, load_path=None, 
                  base_lr=1e-5, max_lr=1e-3, gamma=0.8, scheduler=None, optimizer=None, 
-                 scheduler_loss=False
+                 scheduler_loss=False, max_noise=0.1, noise_epochs=10
                  ):
         """Initialize the training environment with necessary parameters."""
 
@@ -296,6 +336,8 @@ class DenoisingTrainer:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.ref_min_value = min_value
         self.scheduler_loss = scheduler_loss
+        self.max_noise = max_noise
+        self.nosie_epochs = noise_epochs
         
         # Set up file paths
         self.output_path = output_path
@@ -388,7 +430,8 @@ class DenoisingTrainer:
                 self.optimizer, self.scheduler, self.early_stopping, 
                 starting_epoch=self.starting_epoch, epochs=self.epochs, verbose=self.verbose,
                 checkpoint_filename=self.checkpoint_filename, ref_min_value=self.ref_min_value, 
-                accumulation_steps=self.accumulation_steps, scheduler_loss=self.scheduler_loss
+                accumulation_steps=self.accumulation_steps, scheduler_loss=self.scheduler_loss, 
+                max_noise=self.max_noise, noise_epochs=self.nosie_epochs
             )
         else:
             print('No training performed.')
