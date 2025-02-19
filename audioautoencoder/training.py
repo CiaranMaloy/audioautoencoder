@@ -198,6 +198,7 @@ def train_model(model,
 
         # get noise to add
         noise_std = noise_scheduler.get_noise_std(epoch)  # Get noise level for this epoch
+        print('Noise Level: ', noise_std)
 
         i = 0
         if verbose:
