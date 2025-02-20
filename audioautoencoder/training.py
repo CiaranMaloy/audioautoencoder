@@ -87,8 +87,8 @@ def print_loss_graph(losses):
   ax.set_xlabel('Epochs', color='white')
   ax.set_ylabel('Loss', color='white')
   ax.set_yscale('log')
-  a = np.mean(losses) + np.std(losses) * 2
-  b = np.clip(np.mean(losses) - np.std(losses) * 2, 0, 100)
+  a = np.median(losses) + np.std(losses) * 2
+  b = np.clip(np.median(losses) - np.std(losses) * 2, 0, 100)
   ax.set_ylim((b, a))
   ax.set_title('Loss over Epochs', color='white')
 
