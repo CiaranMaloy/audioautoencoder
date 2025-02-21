@@ -234,3 +234,45 @@ def magphase_to_waveform_torch(magnitude, phase, audio_length=44100):
 
     return waveform
 
+import librosa
+import numpy as np
+import cv2
+
+def extract_features(audio, sr, n_fft, audio_length=44100*2):
+    """
+    Extracts audio features from a file and saves them in an HDF5 file.
+
+    Parameters:
+    - file_path: Path to the audio file (WAV, MP3, etc.)
+    - h5_file_path: Path to the output HDF5 file to save the features.
+    """
+    # Compute spectrogram using STFT
+    n = len(audio)
+    assert(n == audio_length)
+    # extract such that waveform can be recosntructed in the correct length
+    audio_pad = librosa.util.fix_length(audio, size=n + n_fft // 2)
+    stft = librosa.stft(audio_pad, n_fft=n_fft)
+    magnitude, phase = np.abs(stft), np.angle(stft) 
+
+    magnitude = librosa.amplitude_to_db(magnitude)
+    magnitude = magnitude.astype(np.float64)
+
+    # Apply Laplacian filter (Edge detection on spectrogram)
+    laplacian_spec = cv2.Laplacian(magnitude, cv2.CV_64F, ksize=9)
+
+    # Compute MFCCs
+    mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+
+    # Compute Delta and Delta-Delta of MFCCs
+    mfcc_delta = librosa.feature.delta(mfccs)
+    mfcc_delta2 = librosa.feature.delta(mfccs, order=2)
+
+    data = {
+        'phase': phase,
+        'spectrogram': magnitude,
+        'laplacian_spectrogram': laplacian_spec,
+        'mfccs': mfccs,
+        'mfcc_delta': mfcc_delta,
+        'mfcc_delta2': mfcc_delta2
+    }
+    return data
