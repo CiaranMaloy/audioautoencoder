@@ -162,6 +162,9 @@ def process_and_save_separation_dataset(
 
             print(df_input.head())
 
+            for col in df_input.columns:
+                print(f"Column: {col}, dtype: {df_input[col].dtype}")
+
                     # Create HDF5 file for saving
             print('Creating HDF5 file....')
             sub_output_file = add_datetime_to_filename(output_file)
