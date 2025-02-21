@@ -202,6 +202,63 @@ def combine_signal_noise(signal, noise, target_snr_db):
     
     return combined_signal, scaled_noise, current_snr_db
 
+def process_audio_extract_features(audio, noise, sr, plot=False, random_noise_level=0, background_noise_level=0, SNRdB=None, audio_length=44100):
+  # Parameters
+  T = np.linspace(0, len(audio)/sr, len(audio), endpoint=False)
+  # --
+  if plot:
+    plt.plot(audio)
+    plt.xlim((4000, 8000))
+    plt.show()
+
+  # Add Gaussian noise with random intensity
+  sigma = 1  # 1 for pink noise, 0 for white noise, 2 for brown noise
+  mu = 0
+  s = np.random.normal(mu, sigma, len(audio))* np.sin(2 * np.pi * random.uniform(0.1, 1.5) * T)
+  if not random_noise_level:
+    s = (s/np.max(abs(s)))
+  elif random_noise_level > 0:
+    s = (s/np.max(abs(s))) * random.uniform(0, random_noise_level)
+  elif random_noise_level < 0:
+    s = (s/np.max(abs(s))) * (-random_noise_level)
+
+  if plot:
+    plt.plot(s)
+    plt.xlim((4000, 8000))
+    plt.show()
+
+  if background_noise_level > 0:
+    noise = (noise/np.max(abs(noise))) * random.uniform(0, background_noise_level)
+  else:
+    noise = (noise/np.max(abs(noise))) * 0.00001
+
+  if SNRdB is None:
+    random_number = random.uniform(0, 1)
+    if random_number > 0.7:
+      noisy_audio = np.clip(audio + s + noise, -1, 1)
+    elif random_number > 0.2:
+      noisy_audio = np.clip(audio + noise, -1, 1)
+    else:
+      noisy_audio = audio
+  else:
+     noise = noise + s
+     target_snr_db = random.uniform(SNRdB[0], SNRdB[1])
+     noisy_audio, scaled_noise, _ = combine_signal_noise(audio, noise, target_snr_db)
+     
+  if plot:
+    plt.plot(noisy_audio)
+    plt.xlim((4000, 8000))
+    plt.show()
+
+  #noisy_audio = bandpass_filter(noisy_audio, 80, 16000, sr, order=1)
+
+  # extract features
+  input_features = extract_features(noisy_audio, sr, audio_length=audio_length)
+  target_features = extract_features(audio, sr, audio_length=audio_length)
+  noise_features = extract_features(scaled_noise, sr, audio_length=audio_length)
+
+  return input_features, target_features, noise_features, target_snr_db
+
 def process_audio_separation_to_image(audio, noise, sr, plot=False, random_noise_level=0, background_noise_level=0, SNRdB=None, audio_length=44100):
   # Parameters
   T = np.linspace(0, len(audio)/sr, len(audio), endpoint=False)
@@ -251,6 +308,9 @@ def process_audio_separation_to_image(audio, noise, sr, plot=False, random_noise
     plt.show()
 
   #noisy_audio = bandpass_filter(noisy_audio, 80, 16000, sr, order=1)
+
+  # extract features
+  extract_features(audio, sr, audio_length=44100*2)
 
   input_image = audio_to_image(noisy_audio, sr, audio_length=audio_length, features=False)
   target_image = audio_to_image(audio, sr, audio_length=audio_length, features=False)
@@ -396,10 +456,9 @@ def process_file(file_path, noise_file, background_noise_level, random_noise_lev
       sr = audio_sr
       # Add channel dimension
 
-
       # Process audio to input and target images
-      input_image, target_image, noise_image, target_snr_db = process_audio_separation_to_image(audio, noise, sr, background_noise_level=background_noise_level, random_noise_level=random_noise_level, SNRdB=SNRdB, audio_length=audio_length)
-      return input_image, target_image, noise_image, file_path, noise_file, target_snr_db
+      input_features, target_features, noise_features, target_snr_db = process_audio_extract_features(audio, noise, sr, background_noise_level=background_noise_level, random_noise_level=random_noise_level, SNRdB=SNRdB, audio_length=audio_length)
+      return input_features, target_features, noise_features, file_path, noise_file, target_snr_db
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
         return None

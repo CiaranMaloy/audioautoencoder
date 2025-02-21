@@ -238,7 +238,7 @@ import librosa
 import numpy as np
 import cv2
 
-def extract_features(audio, sr, n_fft, audio_length=44100*2):
+def extract_features(audio, sr, n_fft=2048, audio_length=44100*2):
     """
     Extracts audio features from a file and saves them in an HDF5 file.
 

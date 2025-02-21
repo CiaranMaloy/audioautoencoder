@@ -49,6 +49,8 @@ def ensure_folder(path):
     if directory and not os.path.exists(directory):
         os.makedirs(directory, exist_ok=True)
 
+import pandas as pd
+
 def process_and_save_separation_dataset(
       data_dir, 
       noise_data_dir, 
@@ -106,8 +108,10 @@ def process_and_save_separation_dataset(
             noise_files = random.sample(noise_wav_files, batch_size)
 
             # Initialize lists to store input and target images for the batch
-            input_images = []
-            target_images = []
+            # features
+            input_features_array, target_features_array, noise_features_array = [], [], []
+
+            # metadata
             filenames = []
             snr_db = []
 
@@ -121,71 +125,55 @@ def process_and_save_separation_dataset(
                     results = [future.result() for future in futures if future.result() is not None]
 
                 # Collect batch results
-                for input_image, target_image, noise_image, file_path, noise_file, target_snr_db in results:
-                    #print(np.shape(input_image))
-                    #print(np.shape([target_image[0], noise_image[0]]))
-                    input_images.append(input_image)
-                    target_images.append([target_image[0], noise_image[0]])
+                for input_features, target_features, noise_features, file_path, noise_file, target_snr_db in results:
+                    # features 
+                    input_features_array.append(input_features)
+                    target_features_array.append(target_features)
+                    noise_features_array.append(noise_features)
+
+                    # metadata 
                     filenames.append([file_path, noise_file]) # this shoudl be a dict
                     snr_db.append(target_snr_db)
 
             # process files as a loop
             else:
-                for audio_file, noise_file in zip(batch_files, noise_files):
-                    output = process_file(audio_file, noise_file, background_noise_level, random_noise_level, SNRdB, audio_length)
+                print('Blank, there is no logic for this....')
+                break
+                #for audio_file, noise_file in zip(batch_files, noise_files):
+                #    output = process_file(audio_file, noise_file, background_noise_level, random_noise_level, SNRdB, audio_length)
 
                 # collect batch results
-                if output is not None:
-                    input_image, target_image, noise_image, file_path, noise_file = output
-                    input_images.append(input_image)
-                    target_images.append([target_image[0], noise_image[0]])
-                    filenames.append([file_path, noise_file])
-                else:
-                    print(f"Error processing {audio_file}")
+                #if output is not None:
+                #    input_image, target_image, noise_image, file_path, noise_file = output
+                #    input_images.append(input_image)
+                #    target_images.append([target_image[0], noise_image[0]])
+                #    filenames.append([file_path, noise_file])
+                #else:
+                #    print(f"Error processing {audio_file}")
 
-            # convert to numpy arrays
-            input_images = np.array(input_images, dtype=np.float32)
-            target_images = np.array(target_images, dtype=np.float32)
+            # Metadata arrays
             filenames = np.array(filenames, dtype=h5py.string_dtype())
             snr_db = np.array(snr_db, dtype=np.float32)
 
-            # raise error if is inf or nan
-            if np.isnan(np.stack(input_images)).any() or np.isinf(np.stack(input_images)).any():
-                raise ValueError("Input images contain NaN or Inf values.")
+            # Convert feature lists into DataFrames
+            df_input = pd.DataFrame(input_features_array)
+            df_target = pd.DataFrame(target_features_array)
+            df_noise = pd.DataFrame(noise_features_array)
 
                     # Create HDF5 file for saving
             print('Creating HDF5 file....')
             sub_output_file = add_datetime_to_filename(output_file)
 
             with h5py.File(sub_output_file, 'a') as h5f:
-                input_dataset = create_dataset("input_images", h5f, c=2, w=175)
-                target_dataset = create_dataset("target_images", h5f, c=2, w=175)
+                # Save features as HDF5 groups
+                h5f.create_dataset("input_features", data=df_input.to_records(index=False))
+                h5f.create_dataset("target_features", data=df_target.to_records(index=False))
+                h5f.create_dataset("noise_features", data=df_noise.to_records(index=False))
 
-                # add filenames
+                # Store metadata separately
                 h5f.create_dataset("filenames", data=filenames)
                 h5f.create_dataset("snr_db", data=snr_db)
 
-                print('checking for file existance....')
-                check_file_exists(sub_output_file)
-
-                print('processing batches...')
-                # Process in batches
-                # Append batch to datasets
-                with write_lock:
-                  def append_to_dataset(dataset, images):
-                    dataset.resize(dataset.shape[0] + len(images), axis=0)
-                    dataset[-len(images):] = np.stack(images)
-                    return dataset
-                  
-                  input_dataset = append_to_dataset(input_dataset, input_images)
-                  target_dataset = append_to_dataset(target_dataset, target_images)
-
-                # dedicated write to file
-                h5f.flush()
-
-                if verbose:
-                  print('input dataset shape:', input_dataset.shape)
-                  print('target dataset shape:', target_dataset.shape)
                 # Save checkpoint after each batch
                 save_checkpoint(checkpoint_file, i + batch_size)
 
