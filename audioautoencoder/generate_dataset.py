@@ -160,6 +160,8 @@ def process_and_save_separation_dataset(
             df_target = pd.DataFrame(target_features_array)
             df_noise = pd.DataFrame(noise_features_array)
 
+            print(df_input.head())
+
                     # Create HDF5 file for saving
             print('Creating HDF5 file....')
             sub_output_file = add_datetime_to_filename(output_file)
