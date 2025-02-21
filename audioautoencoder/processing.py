@@ -270,7 +270,7 @@ def extract_features(audio, sr, n_fft=2048, audio_length=44100*2):
     data = {
         'phase': np.array(phase),
         'spectrogram': np.array(magnitude),
-        'laplacian_spectrogram': np.array(laplacian_spec),
+        'edges': np.array(laplacian_spec),
         'mfccs': np.array(mfccs),
         'mfcc_delta': np.array(mfcc_delta),
         'mfcc_delta2': np.array(mfcc_delta2)

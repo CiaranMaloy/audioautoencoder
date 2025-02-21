@@ -156,14 +156,14 @@ def process_and_save_separation_dataset(
             snr_db = np.array(snr_db, dtype=np.float32)
 
             # Convert feature lists into DataFrames
-            df_input = pd.DataFrame(input_features_array)
-            df_target = pd.DataFrame(target_features_array)
-            df_noise = pd.DataFrame(noise_features_array)
+            #df_input = pd.DataFrame(input_features_array)
+            #df_target = pd.DataFrame(target_features_array)
+            #df_noise = pd.DataFrame(noise_features_array)
 
-            print(df_input.head())
+            #print(df_input.head())
 
-            for col in df_input.columns:
-                print(f"Column: {col}, dtype: {df_input[col].dtype}")
+            #for col in df_input.columns:
+            #    print(f"Column: {col}, dtype: {df_input[col].dtype}")
 
                     # Create HDF5 file for saving
             print('Creating HDF5 file....')
@@ -171,9 +171,29 @@ def process_and_save_separation_dataset(
 
             with h5py.File(sub_output_file, 'a') as h5f:
                 # Save features as HDF5 groups
-                h5f.create_dataset("input_features", data=df_input.to_records(index=False))
-                h5f.create_dataset("target_features", data=df_target.to_records(index=False))
-                h5f.create_dataset("noise_features", data=df_noise.to_records(index=False))
+                # input features
+                h5f.create_dataset("input_features_phase", data=np.stack([d["phase"] for d in input_features_array]))
+                h5f.create_dataset("input_features_spectrogram", data=np.stack([d["spectrogram"] for d in input_features_array]))
+                h5f.create_dataset("input_features_edges", data=np.stack([d["edges"] for d in input_features_array]))
+                h5f.create_dataset("input_features_mfccs", data=np.stack([d["mfccs"] for d in input_features_array]))
+                h5f.create_dataset("input_features_mfcc_delta", data=np.stack([d["mfcc_delta"] for d in input_features_array]))
+                h5f.create_dataset("input_features_mfcc_delta2", data=np.stack([d["mfcc_delta2"] for d in input_features_array]))
+
+                # target features
+                h5f.create_dataset("target_features_phase", data=np.stack([d["phase"] for d in target_features_array]))
+                h5f.create_dataset("target_features_spectrogram", data=np.stack([d["spectrogram"] for d in target_features_array]))
+                h5f.create_dataset("target_features_edges", data=np.stack([d["edges"] for d in target_features_array]))
+                h5f.create_dataset("target_features_mfccs", data=np.stack([d["mfccs"] for d in target_features_array]))
+                h5f.create_dataset("target_features_mfcc_delta", data=np.stack([d["mfcc_delta"] for d in target_features_array]))
+                h5f.create_dataset("target_features_mfcc_delta2", data=np.stack([d["mfcc_delta2"] for d in target_features_array]))
+
+                # noise features
+                h5f.create_dataset("noise_features_phase", data=np.stack([d["phase"] for d in noise_features_array]))
+                h5f.create_dataset("noise_features_spectrogram", data=np.stack([d["spectrogram"] for d in noise_features_array]))
+                h5f.create_dataset("noise_features_edges", data=np.stack([d["edges"] for d in noise_features_array]))
+                h5f.create_dataset("noise_features_mfccs", data=np.stack([d["mfccs"] for d in noise_features_array]))
+                h5f.create_dataset("noise_features_mfcc_delta", data=np.stack([d["mfcc_delta"] for d in noise_features_array]))
+                h5f.create_dataset("noise_features_mfcc_delta2", data=np.stack([d["mfcc_delta2"] for d in noise_features_array]))
 
                 # Store metadata separately
                 h5f.create_dataset("filenames", data=filenames)
