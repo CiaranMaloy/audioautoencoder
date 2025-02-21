@@ -261,7 +261,7 @@ def extract_features(audio, sr, n_fft=2048, audio_length=44100*2):
     laplacian_spec = cv2.Laplacian(magnitude, cv2.CV_64F, ksize=9)
 
     # Compute MFCCs
-    mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+    mfccs = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=13)
 
     # Compute Delta and Delta-Delta of MFCCs
     mfcc_delta = librosa.feature.delta(mfccs)
