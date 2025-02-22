@@ -237,6 +237,248 @@ import h5py
 import numpy as np
 import math
 
+def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128):
+    """Combines multiple HDF5 files into a few large ones, ensuring they do not exceed max_file_size_gb."""
+    
+    # Convert max file size to bytes
+    max_file_size_bytes = max_file_size_gb * 1024**3
+
+    # List all HDF5 files in the folder
+    h5_files = sorted(
+        [os.path.join(h5_folder_path, f) for f in os.listdir(h5_folder_path) if f.endswith(".h5")]
+    )
+    
+    if not h5_files:
+        print("No HDF5 files found in directory.")
+        return
+
+    # Open the first file to get dataset structure
+    with h5py.File(h5_files[0], "r") as first_file:
+
+        # features
+        # input
+        input_phase_shape = first_file["input_features_phase"].shape[1:]
+        input_spectrogram_shape = first_file["input_features_spectrogram"].shape[1:]
+        input_edges_shape = first_file["input_features_edges"].shape[1:]
+        input_mfcc_shape = first_file["input_features_mfccs"].shape[1:]
+        input_mfcc_delta_shape = first_file["input_features_mfcc_delta"].shape[1:]
+        input_mfcc_delta2_shape = first_file["input_features_mfcc_delta2"].shape[1:]
+
+        # output
+        target_spectrogram_shape = first_file["target_features_spectrogram"].shape[1:]
+
+        # metadata
+        filename_shape = first_file["filenames"].shape[1:]
+        snr_db_shape = first_file["snr_db"].shape[1:]
+
+        # dtypes
+        # input
+        input_phase_dtype = first_file["input_features_phase"].dtype
+        input_spectrogram_dtype = first_file["input_features_spectrogram"].dtype
+        input_edges_dtype = first_file["input_features_edges"].dtype
+        input_mfcc_dtype = first_file["input_features_mfccs"].dtype
+        input_mfcc_delta_dtype = first_file["input_features_mfcc_delta"].dtype
+        input_mfcc_delta2_dtype = first_file["input_features_mfcc_delta2"].dtype
+
+        # output
+        target_spectrogram_dtype = first_file["target_features_spectrogram"].dtype
+
+        # metadata
+        filename_dtype = first_file["filenames"].dtype
+        snr_db_dtype = first_file["snr_db"].dtype
+
+        sample_size_bytes = (
+            np.prod(input_phase_shape) * np.dtype(input_phase_dtype).itemsize +
+            np.prod(input_spectrogram_shape) * np.dtype(input_spectrogram_dtype).itemsize +
+            np.prod(input_edges_shape) * np.dtype(input_edges_dtype).itemsize +
+            np.prod(input_mfcc_shape) * np.dtype(input_mfcc_dtype).itemsize +
+            np.prod(input_mfcc_delta_shape) * np.dtype(input_mfcc_delta_dtype).itemsize +
+            np.prod(input_mfcc_delta2_shape) * np.dtype(input_mfcc_delta2_dtype).itemsize +
+            np.prod(target_spectrogram_shape) * np.dtype(target_spectrogram_dtype).itemsize +
+            np.prod(filename_shape) * np.dtype(filename_dtype).itemsize +
+            np.prod(snr_db_shape) * np.dtype(snr_db_dtype).itemsize
+        )
+
+    # Ensure output directory exists
+    os.makedirs(output_folder_path, exist_ok=True)
+
+    # Variables for file management
+    current_file_index = 0
+    current_file_samples = 0
+    current_file_size = 0
+    previous_size = 0
+    combined_file = None
+
+    # Declare datasets at module scope
+    filename_dataset = snr_db_dataset = None
+    input_phase_dataset = input_spectrogram_dataset = input_edges_dataset = input_mfcc_dataset = input_mfcc_delta_dataset = input_mfcc_delta2_dataset = target_spectrogram_dataset = None
+
+    def create_new_file():
+        """Creates a new HDF5 output file."""
+        nonlocal current_file_index, current_file_samples, current_file_size, combined_file
+        nonlocal filename_dataset, snr_db_dataset, previous_size  # FIXED
+        nonlocal input_phase_dataset, input_spectrogram_dataset, input_edges_dataset, input_mfcc_dataset, input_mfcc_delta_dataset, input_mfcc_delta2_dataset, target_spectrogram_dataset
+
+        # Close previous file if it exists
+        if combined_file is not None:
+            combined_file.close()
+
+        # Generate new file name
+        file_path = os.path.join(output_folder_path, f"combined_{current_file_index:03d}.h5")
+        combined_file = h5py.File(file_path, "w")
+
+        # Input datasets
+        input_phase_dataset = combined_file.create_dataset(
+            "input_features_phase", shape=(0, *input_phase_shape), chunks=(chunk_size, *input_phase_shape),
+            maxshape=(None, *input_phase_shape), dtype=input_phase_dtype
+        )
+
+        input_spectrogram_dataset = combined_file.create_dataset(
+            "input_features_spectrogram", shape=(0, *input_spectrogram_shape), chunks=(chunk_size, *input_spectrogram_shape),
+            maxshape=(None, *input_spectrogram_shape), dtype=input_spectrogram_dtype
+        )
+
+        input_edges_dataset = combined_file.create_dataset(
+            "input_features_edges", shape=(0, *input_edges_shape), chunks=(chunk_size, *input_edges_shape),
+            maxshape=(None, *input_edges_shape), dtype=input_edges_dtype
+        )
+
+        input_mfcc_dataset = combined_file.create_dataset(
+            "input_features_mfccs", shape=(0, *input_mfcc_shape), chunks=(chunk_size, *input_mfcc_shape),
+            maxshape=(None, *input_mfcc_shape), dtype=input_mfcc_dtype
+        )
+
+        input_mfcc_delta_dataset = combined_file.create_dataset(
+            "input_features_mfcc_delta", shape=(0, *input_mfcc_delta_shape), chunks=(chunk_size, *input_mfcc_delta_shape),
+            maxshape=(None, *input_mfcc_delta_shape), dtype=input_mfcc_delta_dtype
+        )
+
+        input_mfcc_delta2_dataset = combined_file.create_dataset(
+            "input_features_mfcc_delta2", shape=(0, *input_mfcc_delta2_shape), chunks=(chunk_size, *input_mfcc_delta2_shape),
+            maxshape=(None, *input_mfcc_delta2_shape), dtype=input_mfcc_delta2_dtype
+        )
+
+        # Output dataset
+        target_spectrogram_dataset = combined_file.create_dataset(
+            "target_features_spectrogram", shape=(0, *target_spectrogram_shape), chunks=(chunk_size, *target_spectrogram_shape),
+            maxshape=(None, *target_spectrogram_shape), dtype=target_spectrogram_dtype
+        )
+
+        # Metadata datasets
+        filename_dataset = combined_file.create_dataset(
+            "filenames", shape=(0, *filename_shape), chunks=(chunk_size, *filename_shape),
+            maxshape=(None, *filename_shape), dtype=filename_dtype
+        )
+
+        snr_db_dataset = combined_file.create_dataset(
+            "snr_db", shape=(0, *snr_db_shape), chunks=(chunk_size, *snr_db_shape),
+            maxshape=(None, *snr_db_shape), dtype=snr_db_dtype
+        )
+
+        current_file_samples = 0
+        current_file_size = 0
+        previous_size = 0
+        current_file_index += 1
+
+        print(f"Created new file: {file_path}")
+
+    # Start processing files
+    create_new_file()
+
+    for h5_file in h5_files:
+        with h5py.File(h5_file, "r") as source_file:
+            # input
+            input_phase = source_file["input_features_phase"][:]
+            input_spectrogram = source_file["input_features_spectrogram"][:]
+            input_edges = source_file["input_features_edges"][:]
+            input_mfcc = source_file["input_features_mfccs"][:]
+            input_mfcc_delta = source_file["input_features_mfcc_delta"][:]
+            input_mfcc_delta2 = source_file["input_features_mfcc_delta2"][:]
+
+            # output
+            target_spectrogram = source_file["target_features_spectrogram"][:]
+
+            # metadata
+            filename = source_file["filenames"][:]
+            snr_db = source_file["snr_db"][:]
+
+            # number samples
+            num_samples = input_phase.shape[0]
+
+            for i in range(0, num_samples, chunk_size):
+                # input
+                chunk_input_phase = input_phase[i:i+chunk_size]
+                chunk_input_spectrogram = input_spectrogram[i:i+chunk_size]
+                chunk_input_edges = input_edges[i:i+chunk_size]
+                chunk_input_mfcc = input_mfcc[i:i+chunk_size]
+                chunk_input_mfcc_delta = input_mfcc_delta[i:i+chunk_size]
+                chunk_input_mfcc_delta2 = input_mfcc_delta2[i:i+chunk_size]
+
+                # output
+                chunk_target_spectrogram = target_spectrogram[i:i+chunk_size]
+
+                # metadata
+                chunk_filename = filename[i:i+chunk_size]
+                chunk_snr_db = snr_db[i:i+chunk_size]
+
+                # sample size
+                chunk_sample_size = chunk_input_phase.shape[0] * sample_size_bytes
+
+                # Check if new file is needed
+                if current_file_size + chunk_sample_size > max_file_size_bytes:
+                    break
+                    create_new_file()
+
+                # Resize datasets
+                new_size = current_file_samples + chunk_input_phase.shape[0]
+
+                # input
+                input_phase_dataset.resize((new_size, *input_phase_shape))
+                input_spectrogram_dataset.resize((new_size, *input_spectrogram_shape))
+                input_edges_dataset.resize((new_size, *input_edges_shape))
+                input_mfcc_dataset.resize((new_size, *input_mfcc_shape)) 
+                input_mfcc_delta_dataset.resize((new_size, *input_mfcc_delta_shape)) 
+                input_mfcc_delta2_dataset.resize((new_size, *input_mfcc_delta2_shape)) 
+
+                # target
+                target_spectrogram_dataset.resize((new_size, *target_spectrogram_shape))
+
+                # metadata
+                filename_dataset.resize((new_size, *filename_shape))
+                snr_db_dataset.resize((new_size, *snr_db_shape))
+
+                # Append data
+                # input
+                input_phase_dataset[current_file_samples:new_size] = chunk_input_phase
+                input_spectrogram_dataset[current_file_samples:new_size] = chunk_input_spectrogram
+                input_edges_dataset[current_file_samples:new_size] = chunk_input_edges
+                input_mfcc_dataset[current_file_samples:new_size] = chunk_input_mfcc
+                input_mfcc_delta_dataset[current_file_samples:new_size] = chunk_input_mfcc_delta
+                input_mfcc_delta2_dataset[current_file_samples:new_size] = chunk_input_mfcc_delta2
+
+                # target
+                target_spectrogram_dataset[current_file_samples:new_size] = chunk_target_spectrogram
+
+                # metadata
+                filename_dataset[current_file_samples:new_size] = chunk_filename
+                snr_db_dataset[current_file_samples:new_size] = chunk_snr_db
+
+                current_file_samples = new_size
+                current_file_size += chunk_sample_size
+
+                # Print progress every ~1GB
+                current_size_gb = current_file_size / 1024**3
+                if math.floor(previous_size) != math.floor(current_size_gb):
+                    print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
+                previous_size = current_size_gb
+
+    # Close the last output file
+    if combined_file is not None:
+        combined_file.close()
+
+    print(f"Finished combining files into {current_file_index} output files in {output_folder_path}")
+
+
 def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128):
     """Combines multiple HDF5 files into a few large ones, ensuring they do not exceed max_file_size_gb."""
     
