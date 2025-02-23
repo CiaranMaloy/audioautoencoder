@@ -201,7 +201,7 @@ class HDF5Dataset_features(Dataset):
             input_mfcc, input_mfcc_delta, input_mfcc_delta2
         ], axis=0), dtype=torch.float32)  # Shape: (6, H, W)
 
-        target = torch.tensor(target_spectrogram, dtype=torch.float32)  # Shape: (H, W)
+        target = torch.tensor([target_spectrogram], dtype=torch.float32)  # Shape: (H, W)
 
         # Extract filename correctly
         filename = self.h5_file["filenames"][idx]
