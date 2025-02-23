@@ -203,6 +203,11 @@ class HDF5Dataset_features(Dataset):
 
         target = torch.tensor([target_spectrogram], dtype=torch.float32)  # Shape: (H, W)
 
+        # reformat to between 0 and 1
+        a = 3
+        inputs = (inputs/a) + 0.5
+        target = (target/a) + 0.5
+
         # Extract filename correctly
         filename = self.h5_file["filenames"][idx]
         if isinstance(filename, bytes):  # Check if it's a bytes object
