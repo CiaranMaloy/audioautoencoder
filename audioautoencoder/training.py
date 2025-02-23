@@ -205,7 +205,7 @@ def train_model(model,
           print('starting progress....')
         
         optimizer.zero_grad()
-        for noisy_imgs, clean_imgs in progress_bar:
+        for noisy_imgs, clean_imgs, _ in progress_bar:
             if verbose:
               print('in loop')
               progress_bar.set_description(f"Epoch {epoch + 1}, Batch {i}")
