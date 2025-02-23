@@ -210,7 +210,11 @@ class HDF5Dataset_features(Dataset):
             input_mfcc, input_mfcc_delta, input_spectrogram_lf
         ], axis=0), dtype=torch.float32)  # Shape: (6, H, W)
 
-        target = torch.tensor([target_spectrogram], dtype=torch.float32)  # Shape: (H, W)
+        # Output:
+        target_spectrogram_lf = self.resample_feature(target_spectrogram[freq_indices, :], target_shape)
+        target = torch.tensor(np.stack([
+            target_spectrogram, target_spectrogram_lf
+        ], axis=0), dtype=torch.float32) 
 
         # reformat to between 0 and 1
         a = 3
