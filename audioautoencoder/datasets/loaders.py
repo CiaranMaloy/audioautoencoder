@@ -190,15 +190,24 @@ class HDF5Dataset_features(Dataset):
         target_spectrogram = self.scalers["target_features_spectrogram"].transform(target_spectrogram.reshape(1, -1)).reshape(target_spectrogram.shape)
 
         # resample mfcc featues so theyre the same shape as the spectrogram and phase features
+        # Define frequency bins
+        sampling_rate = 44100  # 44.1 kHz audio
+        n_fft = 2048  # Adjust this for better resolution
+        freqs = np.linspace(0, sampling_rate / 2, n_fft // 2 + 1)  # STFT frequency bins
+
+        # Find indices corresponding to 0–4000 Hz
+        min_freq, max_freq = 0, 4000
+        freq_indices = np.where((freqs >= min_freq) & (freqs <= max_freq))[0]
         # Resample MFCC features
         input_mfcc = self.resample_feature(input_mfcc, target_shape)
         input_mfcc_delta = self.resample_feature(input_mfcc_delta, target_shape)
-        input_mfcc_delta2 = self.resample_feature(input_mfcc_delta2, target_shape)
+        #input_mfcc_delta2 = self.resample_feature(input_mfcc_delta2, target_shape)
+        input_spectrogram_lf = self.resample_feature(input_spectrogram[freq_indices, :], target_shape)
 
         # Convert to tensors - input_phase, is missing,..... it's too confusing
         inputs = torch.tensor(np.stack([
             input_spectrogram, input_edges,
-            input_mfcc, input_mfcc_delta, input_mfcc_delta2
+            input_mfcc, input_mfcc_delta, input_spectrogram_lf
         ], axis=0), dtype=torch.float32)  # Shape: (6, H, W)
 
         target = torch.tensor([target_spectrogram], dtype=torch.float32)  # Shape: (H, W)
