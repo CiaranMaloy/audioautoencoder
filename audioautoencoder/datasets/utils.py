@@ -96,7 +96,7 @@ import h5py
 import numpy as np
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, MaxAbsScaler
 
-def train_scalers(dataset_path):
+def train_scalers(dataset_path, sample_size=1000):
     """Trains scalers for each feature in the HDF5 dataset."""
     scalers = {}
     
@@ -115,13 +115,13 @@ def train_scalers(dataset_path):
           return scaler.fit(sampled_data.reshape(sampled_data.shape[0], -1))  # Flatten for scaler
 
         # Train scalers
-        scalers["input_features_phase"] = get_scaler(source_file["input_features_phase"], MaxAbsScaler())
-        scalers["input_features_spectrogram"] = get_scaler(source_file["input_features_spectrogram"], StandardScaler())
-        scalers["input_features_edges"] = get_scaler(source_file["input_features_edges"], StandardScaler())
-        scalers["input_features_mfccs"] = get_scaler(source_file["input_features_mfccs"], StandardScaler())
-        scalers["input_features_mfcc_delta"] = get_scaler(source_file["input_features_mfcc_delta"], StandardScaler())
-        scalers["input_features_mfcc_delta2"] = get_scaler(source_file["input_features_mfcc_delta2"], StandardScaler())
-        scalers["target_features_spectrogram"] = get_scaler(source_file["target_features_spectrogram"], StandardScaler())
+        scalers["input_features_phase"] = get_scaler(source_file["input_features_phase"], MaxAbsScaler(), sample_size=sample_size)
+        scalers["input_features_spectrogram"] = get_scaler(source_file["input_features_spectrogram"], StandardScaler(), sample_size=sample_size)
+        scalers["input_features_edges"] = get_scaler(source_file["input_features_edges"], StandardScaler(), sample_size=sample_size)
+        scalers["input_features_mfccs"] = get_scaler(source_file["input_features_mfccs"], StandardScaler(), sample_size=sample_size)
+        scalers["input_features_mfcc_delta"] = get_scaler(source_file["input_features_mfcc_delta"], StandardScaler(), sample_size=sample_size)
+        scalers["input_features_mfcc_delta2"] = get_scaler(source_file["input_features_mfcc_delta2"], StandardScaler(), sample_size=sample_size)
+        scalers["target_features_spectrogram"] = get_scaler(source_file["target_features_spectrogram"], StandardScaler(), sample_size=sample_size)
         
     return scalers
 
