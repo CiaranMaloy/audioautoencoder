@@ -117,6 +117,7 @@ class HDF5Dataset_metadata(Dataset):
         if hasattr(self, "h5_file") and self.h5_file:
             self.h5_file.close()
 
+import torch.nn.functional as F
 class HDF5Dataset_features(Dataset):
     def __init__(self, h5_file_path, scalers, output_time_length=86, channels=2):
         self.h5_file_path = h5_file_path
@@ -149,6 +150,14 @@ class HDF5Dataset_features(Dataset):
 
     def __len__(self):
         return self.h5_file["snr_db"].shape[0]
+    
+    def resample_feature(self, feature, target_shape):
+        """Resamples a 2D numpy feature array to match target shape using torch.nn.functional.interpolate."""
+        feature_tensor = torch.tensor(feature, dtype=torch.float32).unsqueeze(0).unsqueeze(0)  # Shape: (1, 1, H, W)
+        target_size = (target_shape[0], target_shape[1])  # (new_H, new_W)
+        
+        resized_feature = F.interpolate(feature_tensor, size=target_size, mode="bilinear", align_corners=False)
+        return resized_feature.squeeze(0).squeeze(0).numpy()  # Remove batch/channel dim and return as numpy
 
     def __getitem__(self, idx):
         #try:
@@ -164,6 +173,9 @@ class HDF5Dataset_features(Dataset):
         input_mfcc_delta = self.h5_file["input_features_mfcc_delta"][idx]
         input_mfcc_delta2 = self.h5_file["input_features_mfcc_delta2"][idx]
 
+        # Define target shape (use spectrogram shape as reference)
+        target_shape = input_spectrogram.shape
+
         # Load target
         target_spectrogram = self.h5_file["target_features_spectrogram"][idx]
 
@@ -177,9 +189,15 @@ class HDF5Dataset_features(Dataset):
 
         target_spectrogram = self.scalers["target_features_spectrogram"].transform(target_spectrogram.reshape(1, -1)).reshape(target_spectrogram.shape)
 
-        # Convert to tensors
+        # resample mfcc featues so theyre the same shape as the spectrogram and phase features
+        # Resample MFCC features
+        input_mfcc = self.resample_feature(input_mfcc, target_shape)
+        input_mfcc_delta = self.resample_feature(input_mfcc_delta, target_shape)
+        input_mfcc_delta2 = self.resample_feature(input_mfcc_delta2, target_shape)
+
+        # Convert to tensors - input_phase, is missing,..... it's too confusing
         inputs = torch.tensor(np.stack([
-            input_phase, input_spectrogram, input_edges,
+            input_spectrogram, input_edges,
             input_mfcc, input_mfcc_delta, input_mfcc_delta2
         ], axis=0), dtype=torch.float32)  # Shape: (6, H, W)
 
