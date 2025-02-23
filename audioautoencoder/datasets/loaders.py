@@ -206,8 +206,8 @@ class HDF5Dataset_features(Dataset):
 
         # Convert to tensors - input_phase, is missing,..... it's too confusing
         inputs = torch.tensor(np.stack([
-            input_spectrogram, input_edges,
-            input_mfcc, input_mfcc_delta, input_spectrogram_lf
+            input_spectrogram, input_spectrogram_lf, input_edges,
+            input_mfcc, input_mfcc_delta
         ], axis=0), dtype=torch.float32)  # Shape: (6, H, W)
 
         # Output:
