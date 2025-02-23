@@ -115,7 +115,7 @@ def train_scalers(dataset_path, sample_size=1000):
           return scaler.fit(sampled_data.reshape(sampled_data.shape[0], -1))  # Flatten for scaler
 
         # Train scalers
-        scalers["input_features_phase"] = get_scaler(source_file["input_features_phase"], MaxAbsScaler(), sample_size=sample_size)
+        scalers["input_features_phase"] = get_scaler(source_file["input_features_phase"], MinMaxScaler(), sample_size=sample_size)
         scalers["input_features_spectrogram"] = get_scaler(source_file["input_features_spectrogram"], StandardScaler(), sample_size=sample_size)
         scalers["input_features_edges"] = get_scaler(source_file["input_features_edges"], StandardScaler(), sample_size=sample_size)
         scalers["input_features_mfccs"] = get_scaler(source_file["input_features_mfccs"], StandardScaler(), sample_size=sample_size)

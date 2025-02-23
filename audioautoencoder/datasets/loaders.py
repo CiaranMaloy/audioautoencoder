@@ -145,10 +145,10 @@ class HDF5Dataset_features(Dataset):
         #self.input_shape = self.input_dataset.shape
         #self.target_shape = self.target_dataset.shape
 
-        print("Dataset size:", self.self.h5_file["snr_db"].shape[0])
+        print("Dataset size:", self.h5_file["snr_db"].shape[0])
 
     def __len__(self):
-        return self.self.h5_file["snr_db"].shape[0]
+        return self.h5_file["snr_db"].shape[0]
 
     def __getitem__(self, idx):
         #try:
