@@ -197,7 +197,7 @@ class HDF5Dataset_features(Dataset):
         min_freq, max_freq = 0, 4000
         freq_indices = np.where((freqs >= min_freq) & (freqs <= max_freq))[0]
         # Resample MFCC features
-        input_ceptrum = self.resample_feature(input_ceptrum, target_shape)
+        input_cepstrum = self.resample_feature(input_cepstrum, target_shape)
         input_cepstrum_edges = self.resample_feature(input_cepstrum_edges, target_shape)
         #input_mfcc_delta2 = self.resample_feature(input_mfcc_delta2, target_shape)
         input_spectrogram_lf = self.resample_feature(input_spectrogram[freq_indices, :], target_shape)
