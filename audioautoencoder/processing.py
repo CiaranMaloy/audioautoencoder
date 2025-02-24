@@ -260,26 +260,23 @@ def extract_features(audio, sr, n_fft=2048, audio_length=44100*2):
     # Apply Laplacian filter (Edge detection on spectrogram)
     laplacian_spec = cv2.Laplacian(magnitude, cv2.CV_64F, ksize=9)
 
-    # Compute MFCCs
-    mfccs = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=13)
-
-    # Compute Delta and Delta-Delta of MFCCs
-    mfcc_delta = librosa.feature.delta(mfccs)
-    mfcc_delta2 = librosa.feature.delta(mfccs, order=2)
+    # Compute Cepstrum
+    log_magnitude = np.log1p(np.abs(stft))
+    cepstrum = np.fft.ifft(log_magnitude, axis=0).real[:100]  # Truncated cepstrum
+    laplacian_ceps = cv2.Laplacian(cepstrum, cv2.CV_64F, ksize=9)
 
     # make sure arrays are smaller, as float 32 instead of 64
+    phase = np.array(phase).astype(np.float32)
     magnitude = np.array(magnitude).astype(np.float32)
     laplacian_spec = np.array(laplacian_spec).astype(np.float32)
-    mfccs = np.array(mfccs).astype(np.float32)
-    mfcc_delta = np.array(mfcc_delta).astype(np.float32)
-    mfcc_delta2 = np.array(mfcc_delta2).astype(np.float32)
+    cepstrum = np.array(cepstrum).astype(np.float32)
+    laplacian_ceps = np.array(laplacian_ceps).astype(np.float32)
 
     data = {
         'phase': phase,
         'spectrogram': magnitude,
         'edges': laplacian_spec,
-        'mfccs': mfccs,
-        'mfcc_delta': mfcc_delta,
-        'mfcc_delta2': mfcc_delta2
+        'cepstrum': cepstrum,
+        'cepstrum_edges': laplacian_ceps
     }
     return data

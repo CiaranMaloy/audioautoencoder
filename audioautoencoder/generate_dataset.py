@@ -184,25 +184,24 @@ def process_and_save_separation_dataset(
                 h5f.create_dataset("input_features_phase", data=np.stack([d["phase"] for d in input_features_array]))
                 h5f.create_dataset("input_features_spectrogram", data=np.stack([d["spectrogram"] for d in input_features_array]))
                 h5f.create_dataset("input_features_edges", data=np.stack([d["edges"] for d in input_features_array]))
-                h5f.create_dataset("input_features_mfccs", data=np.stack([d["mfccs"] for d in input_features_array]))
-                h5f.create_dataset("input_features_mfcc_delta", data=np.stack([d["mfcc_delta"] for d in input_features_array]))
-                h5f.create_dataset("input_features_mfcc_delta2", data=np.stack([d["mfcc_delta2"] for d in input_features_array]))
+                h5f.create_dataset("input_features_cepstrum", data=np.stack([d["cepstrum"] for d in input_features_array]))
+                h5f.create_dataset("input_features_cepstrum_edges", data=np.stack([d["cepstrum_edges"] for d in input_features_array]))
 
                 # target features
-                h5f.create_dataset("target_features_phase", data=np.stack([d["phase"] for d in target_features_array]))
+                #h5f.create_dataset("target_features_phase", data=np.stack([d["phase"] for d in target_features_array]))
                 h5f.create_dataset("target_features_spectrogram", data=np.stack([d["spectrogram"] for d in target_features_array]))
-                h5f.create_dataset("target_features_edges", data=np.stack([d["edges"] for d in target_features_array]))
-                h5f.create_dataset("target_features_mfccs", data=np.stack([d["mfccs"] for d in target_features_array]))
-                h5f.create_dataset("target_features_mfcc_delta", data=np.stack([d["mfcc_delta"] for d in target_features_array]))
-                h5f.create_dataset("target_features_mfcc_delta2", data=np.stack([d["mfcc_delta2"] for d in target_features_array]))
+                #h5f.create_dataset("target_features_edges", data=np.stack([d["edges"] for d in target_features_array]))
+                #h5f.create_dataset("target_features_mfccs", data=np.stack([d["mfccs"] for d in target_features_array]))
+                #h5f.create_dataset("target_features_mfcc_delta", data=np.stack([d["mfcc_delta"] for d in target_features_array]))
+                #h5f.create_dataset("target_features_mfcc_delta2", data=np.stack([d["mfcc_delta2"] for d in target_features_array]))
 
                 # noise features
-                h5f.create_dataset("noise_features_phase", data=np.stack([d["phase"] for d in noise_features_array]))
-                h5f.create_dataset("noise_features_spectrogram", data=np.stack([d["spectrogram"] for d in noise_features_array]))
-                h5f.create_dataset("noise_features_edges", data=np.stack([d["edges"] for d in noise_features_array]))
-                h5f.create_dataset("noise_features_mfccs", data=np.stack([d["mfccs"] for d in noise_features_array]))
-                h5f.create_dataset("noise_features_mfcc_delta", data=np.stack([d["mfcc_delta"] for d in noise_features_array]))
-                h5f.create_dataset("noise_features_mfcc_delta2", data=np.stack([d["mfcc_delta2"] for d in noise_features_array]))
+                #h5f.create_dataset("noise_features_phase", data=np.stack([d["phase"] for d in noise_features_array]))
+                #h5f.create_dataset("noise_features_spectrogram", data=np.stack([d["spectrogram"] for d in noise_features_array]))
+                #h5f.create_dataset("noise_features_edges", data=np.stack([d["edges"] for d in noise_features_array]))
+                #h5f.create_dataset("noise_features_mfccs", data=np.stack([d["mfccs"] for d in noise_features_array]))
+                #h5f.create_dataset("noise_features_mfcc_delta", data=np.stack([d["mfcc_delta"] for d in noise_features_array]))
+                #h5f.create_dataset("noise_features_mfcc_delta2", data=np.stack([d["mfcc_delta2"] for d in noise_features_array]))
 
                 # Store metadata separately
                 h5f.create_dataset("filenames", data=filenames)
