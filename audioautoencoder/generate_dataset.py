@@ -50,6 +50,7 @@ def ensure_folder(path):
         os.makedirs(directory, exist_ok=True)
 
 import pandas as pd
+import gc
 
 def process_and_save_separation_dataset(
       data_dir, 
@@ -123,6 +124,11 @@ def process_and_save_separation_dataset(
                     for audio_file, noise_file in zip(batch_files, noise_files)
                     ]
                     results = [future.result() for future in futures if future.result() is not None]
+
+                    # ensure executor shutdown 
+                    executor.shutdown(wait=True)
+                    del executor
+                    gc.collect()
 
                 # Collect batch results
                 for input_features, target_features, noise_features, file_path, noise_file, target_snr_db in results:
@@ -199,28 +205,35 @@ def process_and_save_separation_dataset(
                 h5f.create_dataset("filenames", data=filenames)
                 h5f.create_dataset("snr_db", data=snr_db)
 
-                # Save checkpoint after each batch
-                save_checkpoint(checkpoint_file, i + batch_size)
+                h5f.flush()
+                h5f.close()
 
-                if os.path.exists(sub_output_file):
-                  current_size = os.path.getsize(sub_output_file)
-                  #i.set_postfix(loss=f"{current_size / 1024**3}")
-                  if current_size >= max_file_size_bytes:
+            # Save checkpoint after each batch
+            save_checkpoint(checkpoint_file, i + batch_size)
+
+            if os.path.exists(sub_output_file):
+                current_size = os.path.getsize(sub_output_file)
+                #i.set_postfix(loss=f"{current_size / 1024**3}")
+                if current_size >= max_file_size_bytes:
                     LOGIC = False
                     print('File maximum size met....')
                     time.sleep(20)
                     break
 
-                if (i + batch_size > checkpoint_file_size) or (i + batch_size > total_files):
-                  LOGIC = False
-                  print('File maximum samples file......')
-                  time.sleep(20)
-                  break
+            if (i + batch_size > checkpoint_file_size) or (i + batch_size > total_files):
+                LOGIC = False
+                print('File maximum samples file......')
+                time.sleep(20)
+                break
 
             if os.path.exists(sub_output_file):
                 current_size = os.path.getsize(sub_output_file)
                 print(f'Current file size: {current_size / 1024**3}')
             print(f'Done {sub_output_file}')
+
+            # ensure feature arrays deleted
+            del input_features_array, target_features_array, noise_features_array
+            gc.collect()
 
     except Exception as e:
         # Log the exception
