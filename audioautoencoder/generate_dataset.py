@@ -51,6 +51,7 @@ def ensure_folder(path):
 
 import pandas as pd
 import gc
+import shutil
 
 def process_and_save_separation_dataset(
       data_dir, 
@@ -67,7 +68,9 @@ def process_and_save_separation_dataset(
       verbose=False, 
       checkpoint_file_size=50000, 
       max_file_size_gb=60, 
-      mix_only=False):
+      mix_only=False, 
+      folder="/content/", 
+      min_free_gb=20):
     """
     Process all .wav files in a folder and save the input-output image pairs.
     use this to train a denoising autoencoder 
@@ -234,6 +237,16 @@ def process_and_save_separation_dataset(
             # ensure feature arrays deleted
             del input_features_array, target_features_array, noise_features_array
             gc.collect()
+
+            # check free disk space: 
+            total, used, free = shutil.disk_usage(folder)
+            free_gb = free / (1024**3)  # Convert bytes to GB
+
+            print(f"Free disk space: {free_gb:.2f} GB")
+            
+            if free_gb < min_free_gb:
+                print(f"Warning: Low disk space ({free_gb:.2f} GB left). Stopping script.")
+                os._exit(1)  # Force stop the script
 
     except Exception as e:
         # Log the exception
