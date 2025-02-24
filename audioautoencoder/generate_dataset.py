@@ -370,7 +370,7 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
             maxshape=(None, *input_cepstrum_shape), dtype=input_cepstrum_dtype
         )
 
-        input_mfcc_delta_dataset = combined_file.create_dataset(
+        input_cepstrum_edges_dataset = combined_file.create_dataset(
             "input_features_cepstrum_edges", shape=(0, *input_cepstrum_edges_shape), chunks=(chunk_size, *input_cepstrum_edges_shape),
             maxshape=(None, *input_cepstrum_edges_shape), dtype=input_cepstrum_edges_dtype
         )
