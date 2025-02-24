@@ -169,9 +169,8 @@ class HDF5Dataset_features(Dataset):
         input_phase = self.h5_file["input_features_phase"][idx]
         input_spectrogram = self.h5_file["input_features_spectrogram"][idx]
         input_edges = self.h5_file["input_features_edges"][idx]
-        input_mfcc = self.h5_file["input_features_mfccs"][idx]
-        input_mfcc_delta = self.h5_file["input_features_mfcc_delta"][idx]
-        input_mfcc_delta2 = self.h5_file["input_features_mfcc_delta2"][idx]
+        input_cepstrum = self.h5_file["input_features_cepstrum"][idx]
+        input_cepstrum_edges= self.h5_file["input_features_cepstrum_edges"][idx]
 
         # Define target shape (use spectrogram shape as reference)
         target_shape = input_spectrogram.shape
@@ -183,9 +182,8 @@ class HDF5Dataset_features(Dataset):
         input_phase = self.scalers["input_features_phase"].transform(input_phase.reshape(1, -1)).reshape(input_phase.shape)
         input_spectrogram = self.scalers["input_features_spectrogram"].transform(input_spectrogram.reshape(1, -1)).reshape(input_spectrogram.shape)
         input_edges = self.scalers["input_features_edges"].transform(input_edges.reshape(1, -1)).reshape(input_edges.shape)
-        input_mfcc = self.scalers["input_features_mfccs"].transform(input_mfcc.reshape(1, -1)).reshape(input_mfcc.shape)
-        input_mfcc_delta = self.scalers["input_features_mfcc_delta"].transform(input_mfcc_delta.reshape(1, -1)).reshape(input_mfcc_delta.shape)
-        input_mfcc_delta2 = self.scalers["input_features_mfcc_delta2"].transform(input_mfcc_delta2.reshape(1, -1)).reshape(input_mfcc_delta2.shape)
+        input_cepstrum = self.scalers["input_features_cepstrum"].transform(input_cepstrum.reshape(1, -1)).reshape(input_cepstrum.shape)
+        input_cepstrum_edges = self.scalers["input_features_cepstrum_edges"].transform(input_cepstrum_edges.reshape(1, -1)).reshape(input_cepstrum_edges.shape)
 
         target_spectrogram = self.scalers["target_features_spectrogram"].transform(target_spectrogram.reshape(1, -1)).reshape(target_spectrogram.shape)
 
@@ -199,15 +197,15 @@ class HDF5Dataset_features(Dataset):
         min_freq, max_freq = 0, 4000
         freq_indices = np.where((freqs >= min_freq) & (freqs <= max_freq))[0]
         # Resample MFCC features
-        input_mfcc = self.resample_feature(input_mfcc, target_shape)
-        input_mfcc_delta = self.resample_feature(input_mfcc_delta, target_shape)
+        input_ceptrum = self.resample_feature(input_ceptrum, target_shape)
+        input_cepstrum_edges = self.resample_feature(input_cepstrum_edges, target_shape)
         #input_mfcc_delta2 = self.resample_feature(input_mfcc_delta2, target_shape)
         input_spectrogram_lf = self.resample_feature(input_spectrogram[freq_indices, :], target_shape)
 
         # Convert to tensors - input_phase, is missing,..... it's too confusing
         inputs = torch.tensor(np.stack([
             input_spectrogram, input_spectrogram_lf, input_edges,
-            input_mfcc, input_mfcc_delta
+            input_cepstrum, input_cepstrum_edges
         ], axis=0), dtype=torch.float32)  # Shape: (6, H, W)
 
         # Output:

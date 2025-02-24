@@ -285,9 +285,8 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
         input_phase_shape = first_file["input_features_phase"].shape[1:]
         input_spectrogram_shape = first_file["input_features_spectrogram"].shape[1:]
         input_edges_shape = first_file["input_features_edges"].shape[1:]
-        input_mfcc_shape = first_file["input_features_mfccs"].shape[1:]
-        input_mfcc_delta_shape = first_file["input_features_mfcc_delta"].shape[1:]
-        input_mfcc_delta2_shape = first_file["input_features_mfcc_delta2"].shape[1:]
+        input_cepstrum_shape = first_file["input_features_cepstrum"].shape[1:]
+        input_cepstrum_edges_shape = first_file["input_features_cepstrum_edges"].shape[1:]
 
         # output
         target_spectrogram_shape = first_file["target_features_spectrogram"].shape[1:]
@@ -301,9 +300,8 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
         input_phase_dtype = first_file["input_features_phase"].dtype
         input_spectrogram_dtype = first_file["input_features_spectrogram"].dtype
         input_edges_dtype = first_file["input_features_edges"].dtype
-        input_mfcc_dtype = first_file["input_features_mfccs"].dtype
-        input_mfcc_delta_dtype = first_file["input_features_mfcc_delta"].dtype
-        input_mfcc_delta2_dtype = first_file["input_features_mfcc_delta2"].dtype
+        input_cepstrum_dtype = first_file["input_features_cepstrum"].dtype
+        input_cepstrum_edges_dtype = first_file["input_features_cepstrum_edges"].dtype
 
         # output
         target_spectrogram_dtype = first_file["target_features_spectrogram"].dtype
@@ -316,9 +314,8 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
             np.prod(input_phase_shape) * np.dtype(input_phase_dtype).itemsize +
             np.prod(input_spectrogram_shape) * np.dtype(input_spectrogram_dtype).itemsize +
             np.prod(input_edges_shape) * np.dtype(input_edges_dtype).itemsize +
-            np.prod(input_mfcc_shape) * np.dtype(input_mfcc_dtype).itemsize +
-            np.prod(input_mfcc_delta_shape) * np.dtype(input_mfcc_delta_dtype).itemsize +
-            np.prod(input_mfcc_delta2_shape) * np.dtype(input_mfcc_delta2_dtype).itemsize +
+            np.prod(input_cepstrum_shape) * np.dtype(input_cepstrum_dtype).itemsize +
+            np.prod(input_cepstrum_edges_shape) * np.dtype(input_cepstrum_edges_dtype).itemsize +
             np.prod(target_spectrogram_shape) * np.dtype(target_spectrogram_dtype).itemsize +
             np.prod(filename_shape) * np.dtype(filename_dtype).itemsize +
             np.prod(snr_db_shape) * np.dtype(snr_db_dtype).itemsize
@@ -336,13 +333,13 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
 
     # Declare datasets at module scope
     filename_dataset = snr_db_dataset = None
-    input_phase_dataset = input_spectrogram_dataset = input_edges_dataset = input_mfcc_dataset = input_mfcc_delta_dataset = input_mfcc_delta2_dataset = target_spectrogram_dataset = None
+    input_phase_dataset = input_spectrogram_dataset = input_edges_dataset = input_cepstrum_dataset = input_cepstrum_edges_dataset = target_spectrogram_dataset = None
 
     def create_new_file():
         """Creates a new HDF5 output file."""
         nonlocal current_file_index, current_file_samples, current_file_size, combined_file
         nonlocal filename_dataset, snr_db_dataset, previous_size  # FIXED
-        nonlocal input_phase_dataset, input_spectrogram_dataset, input_edges_dataset, input_mfcc_dataset, input_mfcc_delta_dataset, input_mfcc_delta2_dataset, target_spectrogram_dataset
+        nonlocal input_phase_dataset, input_spectrogram_dataset, input_edges_dataset, input_cepstrum_dataset, input_cepstrum_edges_dataset, target_spectrogram_dataset
 
         # Close previous file if it exists
         if combined_file is not None:
@@ -368,19 +365,14 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
             maxshape=(None, *input_edges_shape), dtype=input_edges_dtype
         )
 
-        input_mfcc_dataset = combined_file.create_dataset(
-            "input_features_mfccs", shape=(0, *input_mfcc_shape), chunks=(chunk_size, *input_mfcc_shape),
-            maxshape=(None, *input_mfcc_shape), dtype=input_mfcc_dtype
+        input_cepstrum_dataset = combined_file.create_dataset(
+            "input_features_cepstrum", shape=(0, *input_cepstrum_shape), chunks=(chunk_size, *input_cepstrum_shape),
+            maxshape=(None, *input_cepstrum_shape), dtype=input_cepstrum_dtype
         )
 
         input_mfcc_delta_dataset = combined_file.create_dataset(
-            "input_features_mfcc_delta", shape=(0, *input_mfcc_delta_shape), chunks=(chunk_size, *input_mfcc_delta_shape),
-            maxshape=(None, *input_mfcc_delta_shape), dtype=input_mfcc_delta_dtype
-        )
-
-        input_mfcc_delta2_dataset = combined_file.create_dataset(
-            "input_features_mfcc_delta2", shape=(0, *input_mfcc_delta2_shape), chunks=(chunk_size, *input_mfcc_delta2_shape),
-            maxshape=(None, *input_mfcc_delta2_shape), dtype=input_mfcc_delta2_dtype
+            "input_features_cepstrum_edges", shape=(0, *input_cepstrum_edges_shape), chunks=(chunk_size, *input_cepstrum_edges_shape),
+            maxshape=(None, *input_cepstrum_edges_shape), dtype=input_cepstrum_edges_dtype
         )
 
         # Output dataset
@@ -416,9 +408,8 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
             input_phase = source_file["input_features_phase"][:]
             input_spectrogram = source_file["input_features_spectrogram"][:]
             input_edges = source_file["input_features_edges"][:]
-            input_mfcc = source_file["input_features_mfccs"][:]
-            input_mfcc_delta = source_file["input_features_mfcc_delta"][:]
-            input_mfcc_delta2 = source_file["input_features_mfcc_delta2"][:]
+            input_cepstrum = source_file["input_features_cepstrum"][:]
+            input_cepstrum_edges = source_file["input_features_cepstrum_edges"][:]
 
             # output
             target_spectrogram = source_file["target_features_spectrogram"][:]
@@ -435,9 +426,8 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
                 chunk_input_phase = input_phase[i:i+chunk_size]
                 chunk_input_spectrogram = input_spectrogram[i:i+chunk_size]
                 chunk_input_edges = input_edges[i:i+chunk_size]
-                chunk_input_mfcc = input_mfcc[i:i+chunk_size]
-                chunk_input_mfcc_delta = input_mfcc_delta[i:i+chunk_size]
-                chunk_input_mfcc_delta2 = input_mfcc_delta2[i:i+chunk_size]
+                chunk_input_cepstrum = input_cepstrum[i:i+chunk_size]
+                chunk_input_cepstrum_edges = input_cepstrum_edges[i:i+chunk_size]
 
                 # output
                 chunk_target_spectrogram = target_spectrogram[i:i+chunk_size]
@@ -461,9 +451,8 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
                 input_phase_dataset.resize((new_size, *input_phase_shape))
                 input_spectrogram_dataset.resize((new_size, *input_spectrogram_shape))
                 input_edges_dataset.resize((new_size, *input_edges_shape))
-                input_mfcc_dataset.resize((new_size, *input_mfcc_shape)) 
-                input_mfcc_delta_dataset.resize((new_size, *input_mfcc_delta_shape)) 
-                input_mfcc_delta2_dataset.resize((new_size, *input_mfcc_delta2_shape)) 
+                input_cepstrum_dataset.resize((new_size, *input_cepstrum_shape)) 
+                input_cepstrum_edges_dataset.resize((new_size, *input_cepstrum_edges_shape)) 
 
                 # target
                 target_spectrogram_dataset.resize((new_size, *target_spectrogram_shape))
@@ -477,9 +466,8 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
                 input_phase_dataset[current_file_samples:new_size] = chunk_input_phase
                 input_spectrogram_dataset[current_file_samples:new_size] = chunk_input_spectrogram
                 input_edges_dataset[current_file_samples:new_size] = chunk_input_edges
-                input_mfcc_dataset[current_file_samples:new_size] = chunk_input_mfcc
-                input_mfcc_delta_dataset[current_file_samples:new_size] = chunk_input_mfcc_delta
-                input_mfcc_delta2_dataset[current_file_samples:new_size] = chunk_input_mfcc_delta2
+                input_cepstrum_dataset[current_file_samples:new_size] = chunk_input_cepstrum
+                input_cepstrum_edges_dataset[current_file_samples:new_size] = chunk_input_cepstrum_edges
 
                 # target
                 target_spectrogram_dataset[current_file_samples:new_size] = chunk_target_spectrogram

@@ -115,12 +115,13 @@ def train_scalers(dataset_path, sample_size=1000):
           return scaler.fit(sampled_data.reshape(sampled_data.shape[0], -1))  # Flatten for scaler
 
         # Train scalers
+        # input
         scalers["input_features_phase"] = get_scaler(source_file["input_features_phase"], MinMaxScaler(), sample_size=sample_size)
         scalers["input_features_spectrogram"] = get_scaler(source_file["input_features_spectrogram"], StandardScaler(), sample_size=sample_size)
         scalers["input_features_edges"] = get_scaler(source_file["input_features_edges"], StandardScaler(), sample_size=sample_size)
-        scalers["input_features_mfccs"] = get_scaler(source_file["input_features_mfccs"], StandardScaler(), sample_size=sample_size)
-        scalers["input_features_mfcc_delta"] = get_scaler(source_file["input_features_mfcc_delta"], StandardScaler(), sample_size=sample_size)
-        scalers["input_features_mfcc_delta2"] = get_scaler(source_file["input_features_mfcc_delta2"], StandardScaler(), sample_size=sample_size)
+        scalers["input_features_cepstrum"] = get_scaler(source_file["input_features_cepstrum"], StandardScaler(), sample_size=sample_size)
+        scalers["input_features_cepstrum_edges"] = get_scaler(source_file["input_features_cepstrum_edges"], StandardScaler(), sample_size=sample_size)
+        # target
         scalers["target_features_spectrogram"] = get_scaler(source_file["target_features_spectrogram"], StandardScaler(), sample_size=sample_size)
         
     return scalers
