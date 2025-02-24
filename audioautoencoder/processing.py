@@ -267,12 +267,19 @@ def extract_features(audio, sr, n_fft=2048, audio_length=44100*2):
     mfcc_delta = librosa.feature.delta(mfccs)
     mfcc_delta2 = librosa.feature.delta(mfccs, order=2)
 
+    # make sure arrays are smaller, as float 32 instead of 64
+    magnitude = np.array(magnitude).astype(np.float32)
+    laplacian_spec = np.array(laplacian_spec).astype(np.float32)
+    mfccs = np.array(mfccs).astype(np.float32)
+    mfcc_delta = np.array(mfcc_delta).astype(np.float32)
+    mfcc_delta2 = np.array(mfcc_delta2).astype(np.float32)
+
     data = {
-        'phase': np.array(phase),
-        'spectrogram': np.array(magnitude),
-        'edges': np.array(laplacian_spec),
-        'mfccs': np.array(mfccs),
-        'mfcc_delta': np.array(mfcc_delta),
-        'mfcc_delta2': np.array(mfcc_delta2)
+        'phase': phase,
+        'spectrogram': magnitude,
+        'edges': laplacian_spec,
+        'mfccs': mfccs,
+        'mfcc_delta': mfcc_delta,
+        'mfcc_delta2': mfcc_delta2
     }
     return data
