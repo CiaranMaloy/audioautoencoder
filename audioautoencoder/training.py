@@ -254,7 +254,7 @@ def train_model(model,
         recon_loss = 0.0
         with torch.no_grad():
             val_batch = 0
-            for inputs, targets in progress_bar:
+            for inputs, targets, _ in progress_bar:
                 inputs, targets = inputs.to(device), targets.to(device)
                 outputs = model(inputs)
                 loss = criterion(outputs, targets)

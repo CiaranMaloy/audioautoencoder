@@ -126,6 +126,17 @@ def train_scalers(dataset_path, sample_size=1000):
         
     return scalers
 
+import os
+import joblib  # or use pickle if you prefer
+
+def save_scalers(scalers, save_path):
+    """Save scalers to a file."""
+    joblib.dump(scalers, save_path)
+
+def load_scalers(save_path):
+    """Load scalers from a file."""
+    return joblib.load(save_path)
+
 if __name__ == '__main__':
     SNRdB = [-10, 40]
     IMPORT_TRAIN_NOISY = True
