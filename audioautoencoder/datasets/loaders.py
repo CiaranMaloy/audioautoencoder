@@ -228,7 +228,8 @@ class HDF5Dataset_features(Dataset):
         metadata = {
             "filename": filename,
             "snr_db": self.h5_file["snr_db"][idx].item(), # Convert to Python float
-            "phase": input_phase
+            "phase": input_phase,
+            "lf_shape": input_spectrogram[freq_indices, :].shape
         }
 
         return inputs, target, metadata

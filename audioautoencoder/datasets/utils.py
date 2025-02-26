@@ -138,6 +138,14 @@ def load_scalers(save_path):
     """Load scalers from a file."""
     return joblib.load(save_path)
 
+def resample_feature(self, feature, target_shape):
+    """Resamples a 2D numpy feature array to match target shape using torch.nn.functional.interpolate."""
+    feature_tensor = torch.tensor(feature, dtype=torch.float32).unsqueeze(0).unsqueeze(0)  # Shape: (1, 1, H, W)
+    target_size = (target_shape[0], target_shape[1])  # (new_H, new_W)
+    
+    resized_feature = F.interpolate(feature_tensor, size=target_size, mode="bilinear", align_corners=False)
+    return resized_feature.squeeze(0).squeeze(0).numpy()  # Remove batch/channel dim and return as numpy
+
 if __name__ == '__main__':
     SNRdB = [-10, 40]
     IMPORT_TRAIN_NOISY = True
