@@ -227,7 +227,8 @@ class HDF5Dataset_features(Dataset):
         # Extract metadata
         metadata = {
             "filename": filename,
-            "snr_db": self.h5_file["snr_db"][idx].item() # Convert to Python float
+            "snr_db": self.h5_file["snr_db"][idx].item(), # Convert to Python float
+            "phase": input_phase
         }
 
         return inputs, target, metadata
