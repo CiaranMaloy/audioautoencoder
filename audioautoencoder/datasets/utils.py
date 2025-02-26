@@ -131,6 +131,7 @@ import joblib  # or use pickle if you prefer
 
 def save_scalers(scalers, save_path):
     """Save scalers to a file."""
+    os.makedirs(os.path.dirname(save_path), exist_ok=True) 
     joblib.dump(scalers, save_path)
 
 def load_scalers(save_path):
