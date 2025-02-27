@@ -280,3 +280,14 @@ def extract_features(audio, sr, n_fft=2048, audio_length=44100*2):
         'cepstrum_edges': laplacian_ceps
     }
     return data
+
+
+'''
+this is an important bit of code that will go with reconstructing a octave band channel split spectrogram
+
+# reconstruct spectrogram
+out_spectrogram = np.array(df_subset.loc[index, "out_track"][0])
+lf_spectrogram = np.array(df_subset.loc[index, "out_track"][1])
+out_spectrogram[freq_indices, :] = resample_feature(lf_spectrogram, df_subset.loc[index, "lf_shape"])
+
+'''
