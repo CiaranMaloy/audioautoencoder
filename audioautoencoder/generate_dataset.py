@@ -402,6 +402,7 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
     # Start processing files
     create_new_file()
 
+    break_trigger = False
     for h5_file in h5_files:
         with h5py.File(h5_file, "r") as source_file:
             # input
@@ -441,6 +442,7 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
 
                 # Check if new file is needed
                 if current_file_size + chunk_sample_size > max_file_size_bytes:
+                    break_trigger = True
                     break
                     create_new_file()
 
@@ -484,7 +486,8 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
                 if math.floor(previous_size) != math.floor(current_size_gb):
                     print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
                 previous_size = current_size_gb
-
+        if break_trigger:
+            break
     # Close the last output file
     if combined_file is not None:
         combined_file.close()
