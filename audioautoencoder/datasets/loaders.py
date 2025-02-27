@@ -331,7 +331,7 @@ class HDF5Dataset_bandchannels(Dataset):
         inputs = torch.tensor(np.stack([
             input_spectrogram, input_spectrogram_hf, input_spectrogram_mf, input_spectrogram_lf,
             input_edges, input_edges_hf, input_edges_mf, input_edges_lf,
-            input_cepstrum
+            input_cepstrum, 
         ], axis=0), dtype=torch.float32)  # Shape: (6, H, W)
 
         # Output:

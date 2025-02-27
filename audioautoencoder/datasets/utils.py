@@ -155,12 +155,18 @@ def train_scalers(dataset_path, sample_size=1000):
 
         # Train scalers
         # input
+        print('Training Phase...')
         scalers["input_features_phase"] = get_scaler(source_file["input_features_phase"], MinMaxScaler(), sample_size=sample_size)
+        print('Training Spectrogram...')
         scalers["input_features_spectrogram"] = get_scaler(source_file["input_features_spectrogram"], StandardScaler(), sample_size=sample_size)
+        print('Training Edges...')
         scalers["input_features_edges"] = get_scaler(source_file["input_features_edges"], StandardScaler(), sample_size=sample_size)
+        print('Training Cepstrum...')
         scalers["input_features_cepstrum"] = get_scaler(source_file["input_features_cepstrum"], StandardScaler(), sample_size=sample_size)
+        print('Training Cepstrum Edges...')
         scalers["input_features_cepstrum_edges"] = get_scaler(source_file["input_features_cepstrum_edges"], StandardScaler(), sample_size=sample_size)
         # target
+        print('Training Target Spectrogram...')
         scalers["target_features_spectrogram"] = get_scaler(source_file["target_features_spectrogram"], StandardScaler(), sample_size=sample_size)
         
     return scalers
