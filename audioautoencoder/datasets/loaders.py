@@ -280,7 +280,7 @@ class HDF5Dataset_bandchannels(Dataset):
         # Load input features
         input_phase = self.h5_file["input_features_phase"][idx]
         input_spectrogram = self.h5_file["input_features_spectrogram"][idx]
-        #input_edges = self.h5_file["input_features_edges"][idx]
+        input_edges = self.h5_file["input_features_edges"][idx]
         input_cepstrum = self.h5_file["input_features_cepstrum"][idx]
         #input_cepstrum_edges= self.h5_file["input_features_cepstrum_edges"][idx]
 
