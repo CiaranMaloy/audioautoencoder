@@ -208,8 +208,8 @@ def train_scalers_separation(dataset_path, sample_size=1000):
 
         # train spectrogram scaler
         print('Training Spectrogram...')
-        data = np.concatenate((source_file["input_features_spectrogram"], source_file["target_features_spectrogram"]), axis=0)
-        spec_scaler = get_scaler(data, StandardScaler(), sample_size=sample_size)
+        data = [source_file["input_features_spectrogram"], source_file["target_features_spectrogram"]]
+        spec_scaler = get_scaler_multi(data, StandardScaler(), sample_size=sample_size)
 
         # Train scalers
         # input
