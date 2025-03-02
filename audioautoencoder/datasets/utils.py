@@ -183,20 +183,17 @@ def get_scaler(data, scaler, sample_size=1000):
           # Fit scaler
           return scaler.fit(sampled_data.reshape(sampled_data.shape[0], -1))  # Flatten for scaler
 
-def get_scaler_multi(data_in, scaler, sample_size=1000):
+def get_scaler_partial(data, scaler, sample_size=1000):
           """Fit scaler on a random subset of data to speed up training."""
-          all_data = []
-          for data in data_in:
-            num_samples = data.shape[0]
-            sample_size = min(sample_size, num_samples)  # Ensure we don't exceed available samples
+          num_samples = data.shape[0]
+          sample_size = min(sample_size, num_samples)  # Ensure we don't exceed available samples
 
-            # Randomly select indices
-            indices = np.sort(np.random.choice(num_samples, size=sample_size, replace=False))
-            all_data.extend(data[indices])  # Efficiently select rows
+          # Randomly select indices
+          indices = np.sort(np.random.choice(num_samples, size=sample_size, replace=False))
+          sampled_data = data[indices]  # Efficiently select rows
 
-          all_data = np.array(all_data)
           # Fit scaler
-          return scaler.fit(all_data.reshape(all_data.shape[0], -1))  # Flatten for scaler
+          return scaler.partial_fit(sampled_data.reshape(sampled_data.shape[0], -1))  # Flatten for scaler
 
 
 def train_scalers_separation(dataset_path, sample_size=1000):
@@ -208,8 +205,9 @@ def train_scalers_separation(dataset_path, sample_size=1000):
 
         # train spectrogram scaler
         print('Training Spectrogram...')
-        data = [source_file["input_features_spectrogram"], source_file["target_features_spectrogram"]]
-        spec_scaler = get_scaler_multi(data, StandardScaler(), sample_size=sample_size)
+        spec_scaler = StandardScaler()
+        spec_scaler = get_scaler_partial(source_file["input_features_spectrogram"], spec_scaler, sample_size=sample_size)
+        spec_scaler = get_scaler_partial(source_file["target_features_spectrogram"], spec_scaler, sample_size=sample_size)
 
         # Train scalers
         # input
