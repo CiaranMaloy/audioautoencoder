@@ -20,9 +20,14 @@ def load_audio_file(file_path, target_sr=44100):
 
   # Resample if needed
   if sr != target_sr:
-      resampler = T.Resample(orig_freq=sr, new_freq=target_sr)
-      waveform = resampler(waveform)
-      sr = target_sr  # Update sample rate
+        resampler = T.Resample(orig_freq=sr, new_freq=target_sr)
+        
+        # Convert NumPy array to PyTorch tensor if needed
+        if not isinstance(waveform, torch.Tensor):
+            waveform = torch.tensor(waveform, dtype=torch.float32)
+
+        waveform = resampler(waveform)
+        sr = target_sr  # Update sample rate
 
   # Convert stereo to mono if needed
   if waveform.shape[0] == 2:
@@ -31,6 +36,25 @@ def load_audio_file(file_path, target_sr=44100):
       audio = waveform[0]
 
   return audio, sr
+
+import torch
+import torchaudio.transforms as T
+
+def load_audio_file(file_path, target_sr=44100):
+    waveform, sr = torchaudio.load(file_path)  # Load as a tensor
+
+    if sr != target_sr:
+        resampler = T.Resample(orig_freq=sr, new_freq=target_sr)
+        
+        # Convert NumPy array to PyTorch tensor if needed
+        if not isinstance(waveform, torch.Tensor):
+            waveform = torch.tensor(waveform, dtype=torch.float32)
+
+        waveform = resampler(waveform)
+        sr = target_sr  # Update sample rate
+
+    return waveform, sr
+
 
 def add_datetime_to_filename(filename):
     # Split the filename into name and extension
