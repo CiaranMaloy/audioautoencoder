@@ -171,13 +171,7 @@ def train_scalers(dataset_path, sample_size=1000):
         
     return scalers
 
-def train_scalers_separation(dataset_path, sample_size=1000):
-    """Trains scalers for each feature in the HDF5 dataset."""
-    scalers = {}
-    
-    with h5py.File(dataset_path, "r") as source_file:
-        
-        def get_scaler(data, scaler, sample_size=1000):
+def get_scaler(data, scaler, sample_size=1000):
           """Fit scaler on a random subset of data to speed up training."""
           num_samples = data.shape[0]
           sample_size = min(sample_size, num_samples)  # Ensure we don't exceed available samples
@@ -188,6 +182,29 @@ def train_scalers_separation(dataset_path, sample_size=1000):
 
           # Fit scaler
           return scaler.fit(sampled_data.reshape(sampled_data.shape[0], -1))  # Flatten for scaler
+
+def get_scaler_multi(data_in, scaler, sample_size=1000):
+          """Fit scaler on a random subset of data to speed up training."""
+          all_data = []
+          for data in data_in:
+            num_samples = data.shape[0]
+            sample_size = min(sample_size, num_samples)  # Ensure we don't exceed available samples
+
+            # Randomly select indices
+            indices = np.sort(np.random.choice(num_samples, size=sample_size, replace=False))
+            all_data.extend(data[indices])  # Efficiently select rows
+
+          all_data = np.array(all_data)
+          # Fit scaler
+          return scaler.fit(all_data.reshape(all_data.shape[0], -1))  # Flatten for scaler
+
+
+def train_scalers_separation(dataset_path, sample_size=1000):
+    """Trains scalers for each feature in the HDF5 dataset."""
+    scalers = {}
+    
+    with h5py.File(dataset_path, "r") as source_file:
+
 
         # train spectrogram scaler
         print('Training Spectrogram...')
