@@ -82,7 +82,7 @@ import matplotlib.pyplot as plt
 import soundfile as sf
 
 class AudioDenoiser:
-    def __init__(self, model, output_path, sample_rate=44100, chunk_duration=2, step_size=0.5, device=None):
+    def __init__(self, model, scalers, output_path, sample_rate=44100, chunk_duration=2, step_size=0.5, device=None):
         """
         Audio Denoising Pipeline using AI model.
         
@@ -98,6 +98,7 @@ class AudioDenoiser:
         self.output_path = output_path
         self.sample_rate = sample_rate
         self.chunk_samples = sample_rate * chunk_duration
+        self.scalers = scalers
         self.step_samples = int(self.chunk_samples * step_size)
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
@@ -122,20 +123,23 @@ class AudioDenoiser:
         processed_audio, processed_input = [], []
         for start in range(0, len(waveform) - self.chunk_samples + 1, self.step_samples):
             chunk = waveform[start:start + self.chunk_samples]
-            input_image = audio_to_image(chunk, sr, self.chunk_samples, features=False, audio_length=44100*2)
-            
+            features = extract_features(chunk, sr, audio_length=self.chunk_samples)
+            transformed_features, metadata = transform_features(features)
+
             # AI denoising
-            input_tensor = torch.tensor(np.array([input_image]), dtype=torch.float32).to(self.device)
-            denoised_img = self.model(input_tensor)
+            input_tensor = torch.tensor(np.array([transformed_features]), dtype=torch.float32).to(self.device)
+            denoised = self.model(input_tensor)
             
             input_image = input_tensor.cpu().numpy()[0]
-            denoised_img = denoised_img.cpu().numpy()[0]
+            denoised = denoised.cpu().numpy()[0]
+
+            denoised_spectrogram = reconstruct_spectrogram(denoised, metadata, self.scalers)
 
             # Convert back to waveform
-            output_chunk = magphase_to_waveform(denoised_img[0], input_image[1], self.chunk_samples)
-            output_chunk_input = magphase_to_waveform(input_image[0], input_image[1], self.chunk_samples)
+            output_chunk = magphase_to_waveform(denoised_spectrogram, features['phase'], self.chunk_samples)
+            #output_chunk_input = magphase_to_waveform(input_image[0], features['phase'], self.chunk_samples)
 
-            processed_input.append(output_chunk_input)
+            processed_input.append(chunk)
             processed_audio.append(output_chunk)
 
         # Reconstruct waveform with overlap-add
@@ -196,3 +200,89 @@ class AudioDenoiser:
         plt.ylabel("Frequency (Hz)")
         plt.colorbar(label="Amplitude (dB)")
         plt.show()
+
+def resample_feature(self, feature, target_shape):
+    """Resamples a 2D numpy feature array to match target shape using torch.nn.functional.interpolate."""
+    feature_tensor = torch.tensor(feature, dtype=torch.float32).unsqueeze(0).unsqueeze(0)  # Shape: (1, 1, H, W)
+    target_size = (target_shape[0], target_shape[1])  # (new_H, new_W)
+    
+    resized_feature = F.interpolate(feature_tensor, size=target_size, mode="bilinear", align_corners=False)
+    return resized_feature.squeeze(0).squeeze(0).numpy()  # Remove batch/channel dim and return as numpy
+
+def transform_features(features, scalers):
+    input_spectrogram = features['spectrogram']
+    input_edges = features['edges']
+    input_cepstrum = features['cepstrum']
+
+    # function to transform the extracted features to an input to the 
+    target_shape = input_spectrogram.shape
+    # Apply scalers
+        #input_phase = self.scalers["input_features_phase"].transform(input_phase.reshape(1, -1)).reshape(input_phase.shape)
+    input_spectrogram = scalers["input_features_spectrogram"].transform(input_spectrogram.reshape(1, -1)).reshape(input_spectrogram.shape)
+    input_edges = scalers["input_features_edges"].transform(input_edges.reshape(1, -1)).reshape(input_edges.shape)
+    input_cepstrum = scalers["input_features_cepstrum"].transform(input_cepstrum.reshape(1, -1)).reshape(input_cepstrum.shape)
+    #input_cepstrum_edges = self.scalers["input_features_cepstrum_edges"].transform(input_cepstrum_edges.reshape(1, -1)).reshape(input_cepstrum_edges.shape)
+
+    # resample mfcc featues so theyre the same shape as the spectrogram and phase features
+    # Define frequency bins
+    sampling_rate = 44100  # 44.1 kHz audio
+    n_fft = 2048  # Adjust this for better resolution
+    freqs = np.linspace(0, sampling_rate / 2, n_fft // 2 + 1)  # STFT frequency bins
+
+    # Find indices corresponding to 0–4000 Hz
+    min_freq, hf, mf, lf = 0, 4000, 1000, 200 
+    freq_indices_hf = np.where((freqs >= min_freq) & (freqs <= hf))[0]
+    freq_indices_mf = np.where((freqs >= min_freq) & (freqs <= mf))[0]
+    freq_indices_lf = np.where((freqs >= min_freq) & (freqs <= lf))[0]
+    # input spectrogram
+    input_spectrogram_hf = resample_feature(input_spectrogram[freq_indices_hf, :], target_shape)
+    input_spectrogram_mf = resample_feature(input_spectrogram[freq_indices_mf, :], target_shape)
+    input_spectrogram_lf = resample_feature(input_spectrogram[freq_indices_lf, :], target_shape)
+    # edges
+    input_edges_hf = resample_feature(input_edges[freq_indices_hf, :], target_shape)
+    input_edges_mf = resample_feature(input_edges[freq_indices_mf, :], target_shape)
+    input_edges_lf = resample_feature(input_edges[freq_indices_lf, :], target_shape)
+
+    # now input indices for 0-1000 and 0-200 to add as channels and as freq_indicies for reconstruction
+
+    # Resample MFCC features
+    input_cepstrum = resample_feature(input_cepstrum, target_shape)
+    
+    # Convert to tensors - input_phase, is missing,..... it's too confusing
+    inputs = torch.tensor(np.stack([
+        input_spectrogram, input_spectrogram_hf, input_spectrogram_mf, input_spectrogram_lf,
+        input_edges, input_edges_hf, input_edges_mf, input_edges_lf,
+        input_cepstrum
+    ], axis=0), dtype=torch.float32)  # Shape: (6, H, W)
+
+    a = 3
+    inputs = (inputs/a) + 0.5
+
+    # metadata
+    # Extract metadata
+    metadata = {
+        "hf_shape": input_spectrogram[freq_indices_hf, :].shape,
+        "mf_shape": input_spectrogram[freq_indices_mf, :].shape,
+        "lf_shape": input_spectrogram[freq_indices_lf, :].shape,
+        "freq_indices_hf": freq_indices_hf,
+        "freq_indices_mf": freq_indices_mf,
+        "freq_indices_lf": freq_indices_lf
+    }
+
+    return inputs, metadata
+
+def reconstruct_spectrogram(outputs, metadata, scalers):
+    # lets evaluate this from a l1 loss perspective
+    # reconstruct spectrogram
+    out_spectrogram = np.array(outputs[0])
+    out_spec_shape = out_spectrogram.shape
+    out_spectrogram[metadata["freq_indices_hf"], :] = resample_feature(outputs[1], metadata["hf_shape"])
+    out_spectrogram[metadata["freq_indices_mf"], :] = resample_feature(outputs[2], metadata["mf_shape"])
+    out_spectrogram[metadata["freq_indices_lf"], :] = resample_feature(outputs[3], metadata["lf_shape"])
+    
+    # transform back to 0 centred and 
+    out_spectrogram = (out_spectrogram - 0.5) * 3
+
+    # undo scaler
+    out_spectrogram = scalers["target_features_spectrogram"].inverse_transform(out_spectrogram.reshape(1, -1)).reshape(out_spec_shape)
+    return out_spectrogram

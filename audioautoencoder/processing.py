@@ -190,8 +190,8 @@ def magphase_to_waveform(magnitude, phase, audio_length=44100):
     Returns:
         np.array: Reconstructed audio waveform.
     """
-    magnitude = denormalise_mag(magnitude)
-    phase = denormalise_phase(phase)
+    #magnitude = denormalise_mag(magnitude)
+    #phase = denormalise_phase(phase)
     stft = magnitude * np.exp(1j * phase)
     return librosa.istft(stft, length=audio_length)
 
