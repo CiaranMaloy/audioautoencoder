@@ -206,7 +206,9 @@ def train_scalers_separation(dataset_path, sample_size=1000):
         # train spectrogram scaler
         print('Training Spectrogram...')
         spec_scaler = StandardScaler()
+        print('Input features')
         spec_scaler = get_scaler_partial(source_file["input_features_spectrogram"], spec_scaler, sample_size=sample_size)
+        print('Input features')
         spec_scaler = get_scaler_partial(source_file["target_features_spectrogram"], spec_scaler, sample_size=sample_size)
 
         # Train scalers
