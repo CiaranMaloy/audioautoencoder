@@ -197,7 +197,7 @@ def process_and_save_separation_dataset(
 
                 # noise features
                 #h5f.create_dataset("noise_features_phase", data=np.stack([d["phase"] for d in noise_features_array]))
-                #h5f.create_dataset("noise_features_spectrogram", data=np.stack([d["spectrogram"] for d in noise_features_array]))
+                h5f.create_dataset("noise_features_spectrogram", data=np.stack([d["spectrogram"] for d in noise_features_array]))
                 #h5f.create_dataset("noise_features_edges", data=np.stack([d["edges"] for d in noise_features_array]))
                 #h5f.create_dataset("noise_features_mfccs", data=np.stack([d["mfccs"] for d in noise_features_array]))
                 #h5f.create_dataset("noise_features_mfcc_delta", data=np.stack([d["mfcc_delta"] for d in noise_features_array]))
@@ -290,6 +290,7 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
 
         # output
         target_spectrogram_shape = first_file["target_features_spectrogram"].shape[1:]
+        #noise_spectrogram_shape = first_file["noise_features_spectrogram"].shape[1:]
 
         # metadata
         filename_shape = first_file["filenames"].shape[1:]

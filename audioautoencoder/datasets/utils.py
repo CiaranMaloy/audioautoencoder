@@ -171,6 +171,46 @@ def train_scalers(dataset_path, sample_size=1000):
         
     return scalers
 
+def train_scalers_separation(dataset_path, sample_size=1000):
+    """Trains scalers for each feature in the HDF5 dataset."""
+    scalers = {}
+    
+    with h5py.File(dataset_path, "r") as source_file:
+        
+        def get_scaler(data, scaler, sample_size=1000):
+          """Fit scaler on a random subset of data to speed up training."""
+          num_samples = data.shape[0]
+          sample_size = min(sample_size, num_samples)  # Ensure we don't exceed available samples
+
+          # Randomly select indices
+          indices = np.sort(np.random.choice(num_samples, size=sample_size, replace=False))
+          sampled_data = data[indices]  # Efficiently select rows
+
+          # Fit scaler
+          return scaler.fit(sampled_data.reshape(sampled_data.shape[0], -1))  # Flatten for scaler
+
+        # train spectrogram scaler
+        print('Training Spectrogram...')
+        data = np.concatenate((source_file["input_features_spectrogram"], source_file["target_features_spectrogram"]), axis=0)
+        spec_scaler = get_scaler(data, StandardScaler(), sample_size=sample_size)
+
+        # Train scalers
+        # input
+        #print('Training Phase...')
+        #scalers["input_features_phase"] = get_scaler(source_file["input_features_phase"], MinMaxScaler(), sample_size=sample_size)
+
+        scalers["input_features_spectrogram"] = spec_scaler
+        print('Training Edges...')
+        scalers["input_features_edges"] = get_scaler(source_file["input_features_edges"], StandardScaler(), sample_size=sample_size)
+        print('Training Cepstrum...')
+        scalers["input_features_cepstrum"] = get_scaler(source_file["input_features_cepstrum"], StandardScaler(), sample_size=sample_size)
+        print('Training Cepstrum Edges...')
+        scalers["input_features_cepstrum_edges"] = get_scaler(source_file["input_features_cepstrum_edges"], StandardScaler(), sample_size=sample_size)
+        # target
+        scalers["target_features_spectrogram"] = spec_scaler
+        
+    return scalers
+
 import os
 import joblib  # or use pickle if you prefer
 
