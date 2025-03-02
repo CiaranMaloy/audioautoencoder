@@ -197,6 +197,7 @@ def get_scaler_partial(data, scaler, sample_size=1000):
 
 
 def train_scalers_separation(dataset_path, sample_size=1000):
+    print('Training scalers for separation dataset')
     """Trains scalers for each feature in the HDF5 dataset."""
     scalers = {}
     
