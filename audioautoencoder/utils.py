@@ -35,6 +35,9 @@ def load_audio_file(file_path, target_sr=44100):
   else:
       audio = waveform[0]
 
+  if len(audio) == 2:
+      audio = audio[0]
+
   return audio, sr
 
 import torch
