@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-## Masking Unet
+
+## Reconstruction unet 
 class SpatialAttention(nn.Module):
     def __init__(self, kernel_size=7):
         super(SpatialAttention, self).__init__()
@@ -15,10 +16,10 @@ class SpatialAttention(nn.Module):
         attn = self.conv(torch.cat([avg_out, max_out], dim=1))  # Convolution
         return x * self.sigmoid(attn)  # Apply Attention Map
 
-class UNetConv8(nn.Module):
+class UNetConv9(nn.Module):
     # Update from UnetConv6, moving to a masking model, which hopefully works better
     def __init__(self, in_channels=9, out_channels=4):
-        super(UNetConv8, self).__init__()
+        super(UNetConv9, self).__init__()
 
         a = 2
         A, B, C, D = 64, 128, 256, 512
@@ -118,5 +119,5 @@ class UNetConv8(nn.Module):
         d1 = torch.cat([d1, e1_attn], dim=1)
 
         # Final Convolution (output denoised spectrogram)
-        mask = F.interpolate(self.final(d1), size=(1025, 175), mode="bilinear", align_corners=False)
-        return x[:, :4] * self.sigmoid(mask)
+        output = F.interpolate(self.final(d1), size=(1025, 175), mode="bilinear", align_corners=False)
+        return output
