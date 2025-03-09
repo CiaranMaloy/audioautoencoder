@@ -505,7 +505,7 @@ def calculate_rms(audio):
     return np.sqrt(np.mean(audio**2))
 
 # generate shorter audio files from audio files
-def generate_audio_files(input_path, output_path, t=1, sr=44100):
+def generate_audio_files(input_path, output_path, t=1, sr=44100, min_size=0.005):
     '''
     Generate audio dataset of a certain length within an output path from an input path 
     could be improved by pool processing
@@ -549,7 +549,7 @@ def generate_audio_files(input_path, output_path, t=1, sr=44100):
                     audio_chunk = audio[start_sample:end_sample]
 
                     # Save the chunk as a new .wav file
-                    if calculate_rms(audio_chunk) > 0.015: # 0.02 if music
+                    if calculate_rms(audio_chunk) > min_size: # 0.02 if music
                         sf.write(output_file_path, audio_chunk, sr)
 
             # Update file progress
