@@ -458,8 +458,8 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         b = self.db_to_amplitude(b)
 
         output = a - b
-        print(min(output))
-        print(max(output))
+        print(np.min(output))
+        print(np.max(output))
         return self.amplitude_to_db_numpy(output)
     
     def __getitem__(self, idx):
