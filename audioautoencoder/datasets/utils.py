@@ -130,6 +130,7 @@ class ChannelDatasetLoader:
         self.train_dataset, _ = random_split(self.train_dataset, [int(subsample * len(self.train_dataset)), len(self.train_dataset) - int(subsample * len(self.train_dataset))], generator=split_rng)
         self.val_dataset, _ = random_split(self.val_dataset, [int(subsample * len(self.val_dataset)), len(self.val_dataset) - int(subsample * len(self.val_dataset))], generator=split_rng)
 
+
 class DiffusionDatasetLoader:
     def __init__(self, dataset_path, scalers, output_time_length=175, channels=1, snr_db=None, subset=False, batch_size=32):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
