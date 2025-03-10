@@ -454,6 +454,9 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         return log_A
 
     def logsubtract(self, a, b):
+        print(np.max(a), np.min(a))
+        print(np.max(b), np.min(b))
+
         a = self.db_to_amplitude(a)
         b = self.db_to_amplitude(b)
 
