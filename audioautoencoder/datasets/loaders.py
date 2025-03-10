@@ -390,7 +390,7 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         resized_feature = F.interpolate(feature_tensor, size=target_size, mode="bilinear", align_corners=False)
         return resized_feature.squeeze(0).squeeze(0).numpy()  # Remove batch/channel dim and return as numpy
 
-    def db_to_amplitude_pytorch(self, dB, ref=1.0):
+    def db_to_amplitude(self, dB, ref=1.0):
         """
         Converts decibels (dB) back to amplitude in PyTorch.
 
@@ -427,12 +427,37 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
             log_A = torch.clamp(log_A, min=log_A.max() - top_db)
 
         return log_A
-    
-    def logsubtract(self, a, b):
-        a = self.db_to_amplitude_pytorch(a)
-        b = self.db_to_amplitude_pytorch(b)
 
-        return self.amplitude_to_db_pytorch(a - b)
+    def amplitude_to_db_numpy(A, ref=1.0, top_db=None):
+        """
+        Converts amplitude to decibels (dB) using NumPy, similar to librosa.amplitude_to_db.
+
+        Args:
+            A (np.ndarray): Amplitude spectrogram.
+            ref (float, optional): Reference value. Default is max of A.
+            top_db (float, optional): Dynamic range threshold.
+
+        Returns:
+            np.ndarray: dB-scaled spectrogram.
+        """
+        A = np.abs(A)  # Ensure positive values
+        if ref is None:
+            ref = np.max(A)  # Normalize to max amplitude
+
+        # Convert to dB scale
+        log_A = 20.0 * np.log10(np.clip(A / ref, a_min=1e-10, a_max=None))
+
+        # Apply dynamic range compression (clip to top_db)
+        if top_db is not None:
+            log_A = np.clip(log_A, a_min=log_A.max() - top_db, a_max=None)
+
+        return log_A
+
+    def logsubtract(self, a, b):
+        a = self.db_to_amplitude(a)
+        b = self.db_to_amplitude(b)
+
+        return self.amplitude_to_db_numpy(a - b)
     
     def __getitem__(self, idx):
         #try:
