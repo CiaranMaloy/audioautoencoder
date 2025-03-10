@@ -428,7 +428,7 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
 
         return log_A
 
-    def amplitude_to_db_numpy(A, ref=1.0, top_db=None):
+    def amplitude_to_db_numpy(self, A, ref=1.0, top_db=None):
         """
         Converts amplitude to decibels (dB) using NumPy, similar to librosa.amplitude_to_db.
 
