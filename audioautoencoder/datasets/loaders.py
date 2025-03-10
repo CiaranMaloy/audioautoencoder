@@ -306,6 +306,7 @@ class HDF5Dataset_bandchannels(Dataset):
         freqs = np.linspace(0, sampling_rate / 2, n_fft // 2 + 1)  # STFT frequency bins
 
         # Find indices corresponding to 0–4000 Hz
+        # updated bandchannels will be 5000, 1250, 500
         min_freq, hf, mf, lf = 0, 4000, 1000, 200
         freq_indices_hf = np.where((freqs >= min_freq) & (freqs <= hf))[0]
         freq_indices_mf = np.where((freqs >= min_freq) & (freqs <= mf))[0]
