@@ -483,7 +483,7 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
 
                 # target
                 target_spectrogram_dataset[current_file_samples:new_size] = chunk_target_spectrogram
-                noise_spectrogram_dataset[current_file_size:new_size] = chunk_noise_spectrogram
+                noise_spectrogram_dataset[current_file_samples:new_size] = chunk_noise_spectrogram
 
                 # metadata
                 filename_dataset[current_file_samples:new_size] = chunk_filename
