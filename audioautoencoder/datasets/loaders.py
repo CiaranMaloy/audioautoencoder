@@ -461,7 +461,7 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         #input_cepstrum_edges = self.scalers["input_features_cepstrum_edges"].transform(input_cepstrum_edges.reshape(1, -1)).reshape(input_cepstrum_edges.shape)
 
         target_spectrogram = self.scalers["target_features_spectrogram"].transform(target_spectrogram.reshape(1, -1)).reshape(target_spectrogram.shape)
-        noise_spectrogram = self.scalers["target_features_spectrogram"].transform(noise_spectrogram.reshape(1, -1)).reshape(target_spectrogram.shape)
+        #noise_spectrogram = self.scalers["target_features_spectrogram"].transform(noise_spectrogram.reshape(1, -1)).reshape(target_spectrogram.shape)
 
         target_spectrogram = self.logsubtract(input_spectrogram, target_spectrogram) 
 
