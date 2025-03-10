@@ -234,7 +234,7 @@ def process_and_save_separation_dataset(
             print(f'Done {sub_output_file}')
 
             # ensure feature arrays deleted
-            del input_features_array, target_features_array, noise_features_array
+            del input_features_array, target_features_array, noise_features_array, h5f
             gc.collect()
 
             # check free disk space: 
