@@ -369,6 +369,172 @@ class HDF5Dataset_bandchannels(Dataset):
         if hasattr(self, "h5_file") and self.h5_file:
             self.h5_file.close()
 
+class HDF5Dataset_bandchannels_diffusion(Dataset):
+    def __init__(self, h5_file_path, scalers, output_time_length=86, channels=2):
+        self.h5_file_path = h5_file_path
+        self.output_time_length = output_time_length
+        self.channels = channels
+        self.scalers = scalers
+        self.h5_file = h5py.File(self.h5_file_path, "r")  # Open the file once
+
+        print("Dataset size:", self.h5_file["snr_db"].shape[0])
+
+    def __len__(self):
+        return self.h5_file["snr_db"].shape[0]
+    
+    def resample_feature(self, feature, target_shape):
+        """Resamples a 2D numpy feature array to match target shape using torch.nn.functional.interpolate."""
+        feature_tensor = torch.tensor(feature, dtype=torch.float32).unsqueeze(0).unsqueeze(0)  # Shape: (1, 1, H, W)
+        target_size = (target_shape[0], target_shape[1])  # (new_H, new_W)
+        
+        resized_feature = F.interpolate(feature_tensor, size=target_size, mode="bilinear", align_corners=False)
+        return resized_feature.squeeze(0).squeeze(0).numpy()  # Remove batch/channel dim and return as numpy
+
+    def db_to_amplitude_pytorch(self, dB, ref=1.0):
+        """
+        Converts decibels (dB) back to amplitude in PyTorch.
+
+        Args:
+            dB (torch.Tensor): dB-scaled spectrogram.
+            ref (float, optional): Reference value (default is 1.0).
+
+        Returns:
+            torch.Tensor: Amplitude spectrogram.
+        """
+        return ref * (10.0 ** (dB / 20.0))
+
+    def amplitude_to_db_pytorch(self, A, ref=1.0, top_db=None):
+        """
+        Converts amplitude to decibels (dB) in PyTorch, similar to librosa.amplitude_to_db.
+        
+        Args:
+            A (torch.Tensor): Amplitude spectrogram.
+            ref (float, optional): Reference value. Default is max of A.
+            top_db (float, optional): Dynamic range threshold. Default is 80 dB.
+
+        Returns:
+            torch.Tensor: dB-scaled spectrogram.
+        """
+        A = torch.abs(A)  # Ensure positive values
+        if ref is None:
+            ref = torch.max(A)  # Normalize to max amplitude
+
+        # Convert to dB scale
+        log_A = 20.0 * torch.log10(torch.clamp(A / ref, min=1e-10))
+
+        # Apply dynamic range compression (clip to top_db)
+        if top_db is not None:
+            log_A = torch.clamp(log_A, min=log_A.max() - top_db)
+
+        return log_A
+    
+    def logsubtract(self, a, b):
+        a = self.db_to_amplitude_pytorch(a)
+        b = self.db_to_amplitude_pytorch(b)
+
+        return self.amplitude_to_db_pytorch(a - b)
+    
+    def __getitem__(self, idx):
+        #try:
+            # normalise dataset (maybe try and keep in torch language)
+
+            # this is where to combine the features into a 5 channel image after each image has been normalised
+            
+        # Load input features
+        input_phase = self.h5_file["input_features_phase"][idx]
+        input_spectrogram = self.h5_file["input_features_spectrogram"][idx]
+        input_edges = self.h5_file["input_features_edges"][idx]
+        input_cepstrum = self.h5_file["input_features_cepstrum"][idx]
+        #input_cepstrum_edges= self.h5_file["input_features_cepstrum_edges"][idx]
+
+        # Define target shape (use spectrogram shape as reference)
+        target_shape = input_spectrogram.shape
+
+        # Load target
+        target_spectrogram = self.h5_file["target_features_spectrogram"][idx]
+
+        # Apply scalers
+        #input_phase = self.scalers["input_features_phase"].transform(input_phase.reshape(1, -1)).reshape(input_phase.shape)
+        input_spectrogram = self.scalers["input_features_spectrogram"].transform(input_spectrogram.reshape(1, -1)).reshape(input_spectrogram.shape)
+        input_edges = self.scalers["input_features_edges"].transform(input_edges.reshape(1, -1)).reshape(input_edges.shape)
+        input_cepstrum = self.scalers["input_features_cepstrum"].transform(input_cepstrum.reshape(1, -1)).reshape(input_cepstrum.shape)
+        #input_cepstrum_edges = self.scalers["input_features_cepstrum_edges"].transform(input_cepstrum_edges.reshape(1, -1)).reshape(input_cepstrum_edges.shape)
+
+        target_spectrogram = self.scalers["target_features_spectrogram"].transform(target_spectrogram.reshape(1, -1)).reshape(target_spectrogram.shape)
+        noise_spectrogram = self.scalers["target_features_spectrogram"].transform(noise_spectrogram.reshape(1, -1)).reshape(target_spectrogram.shape)
+
+        target_spectrogram = self.logsubtract(input_spectrogram, target_spectrogram) 
+
+        # resample mfcc featues so theyre the same shape as the spectrogram and phase features
+        # Define frequency bins
+        sampling_rate = 44100  # 44.1 kHz audio
+        n_fft = 2048  # Adjust this for better resolution
+        freqs = np.linspace(0, sampling_rate / 2, n_fft // 2 + 1)  # STFT frequency bins
+
+        # Find indices corresponding to 0–4000 Hz
+        # updated bandchannels will be 5000, 1250, 500
+        min_freq, hf, mf, lf = 0, 5000, 1250, 500
+        freq_indices_hf = np.where((freqs >= min_freq) & (freqs <= hf))[0]
+        freq_indices_mf = np.where((freqs >= min_freq) & (freqs <= mf))[0]
+        freq_indices_lf = np.where((freqs >= min_freq) & (freqs <= lf))[0]
+        # input spectrogram
+        input_spectrogram_hf = self.resample_feature(input_spectrogram[freq_indices_hf, :], target_shape)
+        input_spectrogram_mf = self.resample_feature(input_spectrogram[freq_indices_mf, :], target_shape)
+        input_spectrogram_lf = self.resample_feature(input_spectrogram[freq_indices_lf, :], target_shape)
+
+        target_spectrogram_hf = self.resample_feature(target_spectrogram[freq_indices_hf, :], target_shape)
+        target_spectrogram_mf = self.resample_feature(target_spectrogram[freq_indices_mf, :], target_shape)
+        target_spectrogram_lf = self.resample_feature(target_spectrogram[freq_indices_lf, :], target_shape)
+        # edges
+        input_edges_hf = self.resample_feature(input_edges[freq_indices_hf, :], target_shape)
+        input_edges_mf = self.resample_feature(input_edges[freq_indices_mf, :], target_shape)
+        input_edges_lf = self.resample_feature(input_edges[freq_indices_lf, :], target_shape)
+
+        # now input indices for 0-1000 and 0-200 to add as channels and as freq_indicies for reconstruction
+
+        # Resample MFCC features
+        input_cepstrum = self.resample_feature(input_cepstrum, target_shape)
+
+        # Convert to tensors - input_phase, is missing,..... it's too confusing
+        inputs = torch.tensor(np.stack([
+            input_spectrogram, input_spectrogram_hf, input_spectrogram_mf, input_spectrogram_lf,
+            input_edges, input_edges_hf, input_edges_mf, input_edges_lf,
+            input_cepstrum, 
+        ], axis=0), dtype=torch.float32)  # Shape: (6, H, W)
+
+        # Output:
+        target = torch.tensor(np.stack([
+            target_spectrogram, target_spectrogram_hf, target_spectrogram_mf, target_spectrogram_lf
+        ], axis=0), dtype=torch.float32) 
+
+        # reformat to between 0 and 1
+        a = 3
+        inputs = (inputs/a) + 0.5
+        target = (target/a) + 0.5
+
+        # Extract filename correctly
+        filename = self.h5_file["filenames"][idx]
+        if isinstance(filename, bytes):  # Check if it's a bytes object
+            filename = filename.decode('utf-8')  # Convert to a string
+
+        # Extract metadata
+        metadata = {
+            "filename": filename,
+            "snr_db": self.h5_file["snr_db"][idx].item(), # Convert to Python float
+            "phase": input_phase,
+            "hf_shape": input_spectrogram[freq_indices_hf, :].shape,
+            "mf_shape": input_spectrogram[freq_indices_mf, :].shape,
+            "lf_shape": input_spectrogram[freq_indices_lf, :].shape,
+            "freq_indices_hf": freq_indices_hf,
+            "freq_indices_mf": freq_indices_mf,
+            "freq_indices_lf": freq_indices_lf
+        }
+
+        return inputs, target, metadata
+
+    def __del__(self):
+        if hasattr(self, "h5_file") and self.h5_file:
+            self.h5_file.close()
 
 import torch
 import numpy as np
