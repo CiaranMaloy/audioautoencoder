@@ -450,6 +450,8 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         # Apply dynamic range compression (clip to top_db)
         if top_db is not None:
             log_A = np.clip(log_A, a_min=log_A.max() - top_db, a_max=None)
+        else:
+            log_A = np.clip(log_A, a_min=0, a_max=None)
 
         return log_A
 
