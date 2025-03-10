@@ -452,6 +452,7 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
 
         # Load target
         target_spectrogram = self.h5_file["target_features_spectrogram"][idx]
+        target_spectrogram = self.logsubtract(input_spectrogram, target_spectrogram) 
 
         # Apply scalers
         #input_phase = self.scalers["input_features_phase"].transform(input_phase.reshape(1, -1)).reshape(input_phase.shape)
@@ -462,8 +463,6 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
 
         target_spectrogram = self.scalers["target_features_spectrogram"].transform(target_spectrogram.reshape(1, -1)).reshape(target_spectrogram.shape)
         #noise_spectrogram = self.scalers["target_features_spectrogram"].transform(noise_spectrogram.reshape(1, -1)).reshape(target_spectrogram.shape)
-
-        target_spectrogram = self.logsubtract(input_spectrogram, target_spectrogram) 
 
         # resample mfcc featues so theyre the same shape as the spectrogram and phase features
         # Define frequency bins
