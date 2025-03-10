@@ -550,7 +550,9 @@ def generate_audio_files(input_path, output_path, t=1, sr=44100, min_size=0.005)
 
                     # Save the chunk as a new .wav file
                     if calculate_rms(audio_chunk) > min_size: # 0.02 if music
-                        sf.write(output_file_path, audio_chunk, sr)
+                        if len(audio_chunk) == int(t * sr):
+                          print(len(audio_chunk))
+                          sf.write(output_file_path, audio_chunk, sr)
 
             # Update file progress
             file_bar.update(1)
