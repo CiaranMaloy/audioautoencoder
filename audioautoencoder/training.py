@@ -352,7 +352,7 @@ def train_diffusion_model(model,
                 seed=-1
                 ):
     set_seed(random.randint(0, 2**32-1)) if seed == -1 else set_seed(seed)
-    batch_size = train_loader.batch_size
+    #batch_size = train_loader.batch_size
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Training on device: {device}")
@@ -436,7 +436,7 @@ def train_diffusion_model(model,
             # diffusion maths (not 100% sure what this is)
             t = torch.randint(0,num_time_steps,(actual_batch_size,))
             e = torch.randn_like(noisy_imgs, requires_grad=False)
-            a = diffusion_scheduler.alpha[t].view(batch_size,1,1,1).cuda()
+            a = diffusion_scheduler.alpha[t].view(actual_batch_size,1,1,1).cuda()
             noisy_imgs = (torch.sqrt(a)*noisy_imgs) + (torch.sqrt(1-a)*e)
 
             # train model 
@@ -487,7 +487,7 @@ def train_diffusion_model(model,
                 # diffusion maths (not 100% sure what this is)
                 t = torch.randint(0,num_time_steps,(actual_batch_size,))
                 e = torch.randn_like(inputs, requires_grad=False)
-                a = noise_scheduler.alpha[t].view(batch_size,1,1,1).cuda()
+                a = noise_scheduler.alpha[t].view(actual_batch_size,1,1,1).cuda()
                 inputs = (torch.sqrt(a)*inputs) + (torch.sqrt(1-a)*e)
 
                 # noise profile update
