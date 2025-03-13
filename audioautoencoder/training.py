@@ -526,7 +526,7 @@ def train_diffusion_model(model,
         # saving model checkpoint
         checkpoint = {
             'model_state_dict': model.state_dict(),
-            'entire_model': model,
+            #'entire_model': model,
             'optimizer_state_dict': optimizer.state_dict(),
             'epoch': epoch,
             'loss': loss,
