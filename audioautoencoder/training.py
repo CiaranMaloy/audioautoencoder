@@ -358,7 +358,7 @@ def train_diffusion_model(model,
     print(f"Training on device: {device}")
 
     # reference loss
-    noise_scheduler = DDPM_Scheduler(num_time_steps=num_time_steps)
+    diffusion_scheduler = DDPM_Scheduler(num_time_steps=num_time_steps)
     #optimizer = optim.Adam(model.parameters(), lr=lr)
     ema = ModelEmaV3(model, decay=ema_decay)
     criterion = nn.MSELoss(reduction='mean')
@@ -433,7 +433,7 @@ def train_diffusion_model(model,
             # diffusion maths (not 100% sure what this is)
             t = torch.randint(0,num_time_steps,(batch_size,))
             e = torch.randn_like(noisy_imgs, requires_grad=False)
-            a = noise_scheduler.alpha[t].view(batch_size,1,1,1).cuda()
+            a = diffusion_scheduler.alpha[t].view(batch_size,1,1,1).cuda()
             noisy_imgs = (torch.sqrt(a)*noisy_imgs) + (torch.sqrt(1-a)*e)
 
             # train model 
