@@ -487,7 +487,7 @@ def train_diffusion_model(model,
                 # diffusion maths (not 100% sure what this is)
                 t = torch.randint(0,num_time_steps,(actual_batch_size,))
                 e = torch.randn_like(inputs, requires_grad=False)
-                a = noise_scheduler.alpha[t].view(actual_batch_size,1,1,1).cuda()
+                a = diffusion_scheduler.alpha[t].view(actual_batch_size,1,1,1).cuda()
                 inputs = (torch.sqrt(a)*inputs) + (torch.sqrt(1-a)*e)
 
                 # noise profile update
