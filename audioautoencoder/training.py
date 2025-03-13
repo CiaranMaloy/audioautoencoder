@@ -308,6 +308,238 @@ def train_model(model,
         print(f"Epoch [{epoch + 1}/{epochs}], Loss: {running_loss / len(train_loader):.4f}")
         print("-"*50)
 
+## -- Training Diffusion Model --
+import random
+
+class DDPM_Scheduler(nn.Module):
+    def __init__(self, num_time_steps: int=1000):
+        super().__init__()
+        self.beta = torch.linspace(1e-4, 0.02, num_time_steps, requires_grad=False)
+        alpha = 1 - self.beta
+        self.alpha = torch.cumprod(alpha, dim=0).requires_grad_(False)
+
+    def forward(self, t):
+        return self.beta[t], self.alpha[t] 
+   
+def set_seed(seed: int = 42):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(seed)
+    random.seed(seed)
+
+from timm.utils import ModelEmaV3
+# Training loop
+def train_diffusion_model(model, 
+                train_loader, 
+                val_loader, 
+                criterion, 
+                optimizer, 
+                scheduler, 
+                early_stopping, 
+                starting_epoch=0, 
+                epochs=5, 
+                verbose=False, 
+                checkpoint_filename='checkpoint.pth', 
+                scheduler_loss=False, 
+                ref_min_value=0.4, 
+                accumulation_steps=4, 
+                max_noise=0.1,
+                noise_epochs=10,
+                ema_decay=0.9999,
+                num_time_steps=1000,
+                seed=-1
+                ):
+    set_seed(random.randint(0, 2**32-1)) if seed == -1 else set_seed(seed)
+    batch_size = train_loader.batch_size
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Training on device: {device}")
+
+    # reference loss
+    noise_scheduler = DDPM_Scheduler(num_time_steps=num_time_steps)
+    #optimizer = optim.Adam(model.parameters(), lr=lr)
+    ema = ModelEmaV3(model, decay=ema_decay)
+    criterion = nn.MSELoss(reduction='mean')
+
+    # Extract the directory and filename for saving logs
+    checkpoint_dir = os.path.dirname(checkpoint_filename)
+    # Create the directory if it doesn't exist
+    if checkpoint_dir and not os.path.exists(checkpoint_dir):
+        os.makedirs(checkpoint_dir, exist_ok=True)
+    log_filename = os.path.join(checkpoint_dir, "training_log.csv")
+
+    # If the log file doesn't exist, create it and write headers
+    if not os.path.exists(log_filename):
+        with open(log_filename, mode='w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(["Epoch", "Learning Rate", "Train Loss", "Validation Loss", "Ref Loss", "KL Beta"])
+
+    # step scheduler to correct training schedule
+    if scheduler_loss:
+        pass
+    else:
+        if starting_epoch > 0:
+            for i in range(starting_epoch):
+                print(f'Step {i+1}')
+                scheduler.step()
+
+    # introduce noise if specified
+    noise_scheduler = NoiseScheduler(max_noise_std=max_noise, min_noise_std=0.0, total_epochs=noise_epochs, mode="linear")
+
+    model.train()
+    for epoch in range(starting_epoch, epochs):
+        # Print the current learning rate
+        current_lr = scheduler.get_last_lr()
+        print(f"Epoch {epoch + 1}, Current Learning Rate: {current_lr}")
+
+        # Train model
+        model.train()
+        progress_bar = tqdm(train_loader, desc="Training", unit="batch")
+        running_loss = 0.0
+        recon_loss = 0.0
+        ref_loss = 0.0
+
+        # set loss beta
+        beta = epoch/epochs
+        print(f'New kl loss beta: {beta}')
+
+        # get noise to add
+        noise_std = noise_scheduler.get_noise_std(epoch)  # Get noise level for this epoch
+        print('Noise Level: ', noise_std)
+
+        i = 0
+        if verbose:
+          print('starting progress....')
+        
+        optimizer.zero_grad()
+        for noisy_imgs, noise_profile, _ in progress_bar:
+            if verbose:
+              print('in loop')
+              progress_bar.set_description(f"Epoch {epoch + 1}, Batch {i}")
+            noisy_imgs = noisy_imgs.to(device, non_blocking=True)
+            noise_profile = noise_profile.to(device, non_blocking=True)
+            if verbose:
+              print('moving to device')
+            
+            if verbose:
+              print('training model')
+
+            # add noise to input
+            noise = torch.randn_like(noisy_imgs) * noise_std
+            noisy_imgs = noisy_imgs + noise
+
+            # diffusion maths (not 100% sure what this is)
+            t = torch.randint(0,num_time_steps,(batch_size,))
+            e = torch.randn_like(noisy_imgs, requires_grad=False)
+            a = noise_scheduler.alpha[t].view(batch_size,1,1,1).cuda()
+            noisy_imgs = (torch.sqrt(a)*noisy_imgs) + (torch.sqrt(1-a)*e)
+
+            # train model 
+            outputs = model(noisy_imgs, t)
+
+            # noise to predict + added noise
+            noise_profile = noise_profile + e[:, 0:4, :, :]
+
+            if verbose:
+                print(outputs.shape)
+                print(noise_profile.shape)
+
+            # update ema
+            ema.update(model)
+
+            true_loss = criterion(outputs, noise_profile).item()  # Unscaled loss
+            running_loss += true_loss
+
+            loss = criterion(outputs, noise_profile) / accumulation_steps
+            loss.backward()
+
+            if (i + 1) % accumulation_steps == 0 or i == len(train_loader) - 1:
+                optimizer.step()
+                optimizer.zero_grad()
+
+            #benchark_loss += criterion(noisy_imgs, clean_imgs).item()
+            #recon_loss += r_loss.item()
+            ref_loss += criterion(noise_profile[:, 0:4, :, :], e[:, 0:4, :, :]).item() # this has been changed from 0:1 to 0:4
+            progress_bar.set_postfix(loss=f"loss: {(running_loss) / (progress_bar.n + 1):.4f}, ref:{(ref_loss) / (progress_bar.n + 1):.4f}")
+            #progress_bar.set_postfix(loss=f"{running_loss / (progress_bar.n + 1):.4f}, bl:{benchark_loss / (progress_bar.n + 1):.4f}")
+            
+            # i++
+            i += 1
+
+        # Validation step
+        model.eval()
+        progress_bar = tqdm(val_loader, desc="Validating", unit="batch")
+        val_loss = 0.0
+        recon_loss = 0.0
+        with torch.no_grad():
+            val_batch = 0
+            for inputs, targets, _ in progress_bar:
+                inputs, targets = inputs.to(device), targets.to(device)
+
+                # diffusion maths (not 100% sure what this is)
+                t = torch.randint(0,num_time_steps,(batch_size,))
+                e = torch.randn_like(inputs, requires_grad=False)
+                a = noise_scheduler.alpha[t].view(batch_size,1,1,1).cuda()
+                inputs = (torch.sqrt(a)*inputs) + (torch.sqrt(1-a)*e)
+
+                # noise profile update
+                targets = targets + e[:, 0:4, :, :]
+
+                outputs = model(inputs, t)
+                loss = criterion(outputs, targets)
+                val_loss += loss.item()
+                #recon_loss += r_loss.item()
+                progress_bar.set_postfix(loss=f"joint loss: {(val_loss) / (progress_bar.n + 1):.4f}")
+                #progress_bar.set_postfix(loss=f"{val_loss / (progress_bar.n + 1):.4f}")
+
+        val_loss /= (len(progress_bar))
+        
+        if scheduler_loss:
+            scheduler.step(val_loss)
+        else:
+            scheduler.step()
+
+
+        print("-"*50)
+        print(f"Epoch {epoch + 1}, Validation Loss: {val_loss:.4f}")
+
+        # Save training stats to CSV
+        with open(log_filename, mode='a', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow([epoch + 1, current_lr, running_loss / len(train_loader), val_loss, ref_loss / len(train_loader), beta])
+
+        # Check early stopping
+        early_stopping(val_loss, model, optimizer, epoch, epochs, running_loss)
+        if early_stopping.early_stop:
+            print("Early stopping triggered. Stopping training.")
+            print("-"*50)
+            break
+
+        # saving model checkpoint
+        checkpoint = {
+            'model_state_dict': model.state_dict(),
+            'entire_model': model,
+            'optimizer_state_dict': optimizer.state_dict(),
+            'epoch': epoch,
+            'loss': loss,
+            'total_epochs': epochs,
+            'ema': ema.state_dict()
+        }
+        torch.save(checkpoint, checkpoint_filename)
+        print('Saved to Drive...')
+        
+        # plot loss graph
+        df = pd.read_csv(log_filename)
+        # Set the epoch column as the x-axis if it exists
+        loss_type = ['Train Loss','Validation Loss','Ref Loss']
+        losses = [df[l] for l in loss_type]
+        print_loss_graph(losses)
+
+        print(f"Epoch [{epoch + 1}/{epochs}], Loss: {running_loss / len(train_loader):.4f}")
+        print("-"*50)
+
 import os
 import torch
 import torch.nn as nn
@@ -323,10 +555,11 @@ class DenoisingTrainer:
                  epochs=30, learning_rate=1e-3, load=True, warm_start=False, 
                  train=True, verbose=True, accumulation_steps=1, load_path=None, 
                  base_lr=1e-5, max_lr=1e-3, gamma=0.8, scheduler=None, optimizer=None, 
-                 scheduler_loss=False, max_noise=0.05, noise_epochs=20
+                 scheduler_loss=False, max_noise=0.05, noise_epochs=20, train_diffusion=False
                  ):
         """Initialize the training environment with necessary parameters."""
 
+        self.train_diffusion = train_diffusion
         self.model = model
         self.train_loader = noisy_train_loader
         self.val_loader = noisy_val_loader
@@ -426,8 +659,17 @@ class DenoisingTrainer:
 
     def train_or_evaluate(self):
         """Handles the training or evaluation process based on the flag."""
-        if self.train_flag:
+        if self.train_flag and not self.train_diffusion:
             train_model(
+                self.model, self.train_loader, self.val_loader, self.criterion, 
+                self.optimizer, self.scheduler, self.early_stopping, 
+                starting_epoch=self.starting_epoch, epochs=self.epochs, verbose=self.verbose,
+                checkpoint_filename=self.checkpoint_filename, ref_min_value=self.ref_min_value, 
+                accumulation_steps=self.accumulation_steps, scheduler_loss=self.scheduler_loss, 
+                max_noise=self.max_noise, noise_epochs=self.nosie_epochs
+            )
+        elif self.train_flag and self.train_diffusion:
+            train_diffusion_model(
                 self.model, self.train_loader, self.val_loader, self.criterion, 
                 self.optimizer, self.scheduler, self.early_stopping, 
                 starting_epoch=self.starting_epoch, epochs=self.epochs, verbose=self.verbose,
