@@ -430,8 +430,11 @@ def train_diffusion_model(model,
             noise = torch.randn_like(noisy_imgs) * noise_std
             noisy_imgs = noisy_imgs + noise
 
+            # Get the actual batch size of the current batch
+            actual_batch_size = noisy_imgs.size(0)
+
             # diffusion maths (not 100% sure what this is)
-            t = torch.randint(0,num_time_steps,(batch_size,))
+            t = torch.randint(0,num_time_steps,(actual_batch_size,))
             e = torch.randn_like(noisy_imgs, requires_grad=False)
             a = diffusion_scheduler.alpha[t].view(batch_size,1,1,1).cuda()
             noisy_imgs = (torch.sqrt(a)*noisy_imgs) + (torch.sqrt(1-a)*e)
@@ -478,8 +481,11 @@ def train_diffusion_model(model,
             for inputs, targets, _ in progress_bar:
                 inputs, targets = inputs.to(device), targets.to(device)
 
+                # Get the actual batch size of the current batch
+                actual_batch_size = inputs.size(0)
+
                 # diffusion maths (not 100% sure what this is)
-                t = torch.randint(0,num_time_steps,(batch_size,))
+                t = torch.randint(0,num_time_steps,(actual_batch_size,))
                 e = torch.randn_like(inputs, requires_grad=False)
                 a = noise_scheduler.alpha[t].view(batch_size,1,1,1).cuda()
                 inputs = (torch.sqrt(a)*inputs) + (torch.sqrt(1-a)*e)
