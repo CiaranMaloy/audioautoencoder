@@ -454,7 +454,6 @@ def train_diffusion_model(model,
                 print('output: ', outputs.mean().item())
                 print('e: ', e.mean().item())
 
-
             # update ema
             ema.update(model)
 
