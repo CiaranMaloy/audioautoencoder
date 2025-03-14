@@ -414,12 +414,12 @@ def train_diffusion_model(model,
           print('starting progress....')
         
         optimizer.zero_grad()
-        for noisy_imgs, noise_profile, _ in progress_bar:
+        for _, clean_imgs, _ in progress_bar:
             if verbose:
               print('in loop')
               progress_bar.set_description(f"Epoch {epoch + 1}, Batch {i}")
-            noisy_imgs = noisy_imgs.to(device, non_blocking=True)
-            noise_profile = noise_profile.to(device, non_blocking=True)
+            #noisy_imgs = noisy_imgs.to(device, non_blocking=True)
+            clean_imgs = clean_imgs.to(device, non_blocking=True)
             if verbose:
               print('moving to device')
             
@@ -427,23 +427,26 @@ def train_diffusion_model(model,
               print('training model')
 
             # add noise to input
-            noise = torch.randn_like(noisy_imgs) * noise_std
-            noisy_imgs = noisy_imgs + noise
+            noise = torch.randn_like(clean_imgs) * noise_std
+            clean_imgs = clean_imgs + noise
+
+            # remove negatve values
+            clean_imgs = torch.clamp(clean_imgs, min=0)  # Sets all negative values to 0
 
             # Get the actual batch size of the current batch
-            actual_batch_size = noisy_imgs.size(0)
+            actual_batch_size = clean_imgs.size(0)
 
             # diffusion maths (not 100% sure what this is)
             t = torch.randint(0,num_time_steps,(actual_batch_size,))
-            e = torch.randn_like(noisy_imgs, requires_grad=False)
+            e = torch.randn_like(clean_imgs, requires_grad=False)
             a = diffusion_scheduler.alpha[t].view(actual_batch_size,1,1,1).cuda()
-            noisy_imgs = (torch.sqrt(a)*noisy_imgs) + (torch.sqrt(1-a)*e)
+            clean_imgs = (torch.sqrt(a)*clean_imgs) + (torch.sqrt(1-a)*e)
 
             # train model 
-            outputs = model(noisy_imgs, t)
+            outputs = model(clean_imgs, t)
 
             # noise to predict + added noise
-            noise_profile = noise_profile + e[:, 0:4, :, :]
+            noise_profile = e
 
             if verbose:
                 print(outputs.shape)
@@ -464,7 +467,7 @@ def train_diffusion_model(model,
 
             #benchark_loss += criterion(noisy_imgs, clean_imgs).item()
             #recon_loss += r_loss.item()
-            ref_loss += criterion(noise_profile[:, 0:4, :, :], e[:, 0:4, :, :]).item() # this has been changed from 0:1 to 0:4
+            ref_loss += criterion(e, e).item() # this has been changed from 0:1 to 0:4
             progress_bar.set_postfix(loss=f"loss: {(running_loss) / (progress_bar.n + 1):.4f}, ref:{(ref_loss) / (progress_bar.n + 1):.4f}")
             #progress_bar.set_postfix(loss=f"{running_loss / (progress_bar.n + 1):.4f}, bl:{benchark_loss / (progress_bar.n + 1):.4f}")
             
@@ -478,23 +481,23 @@ def train_diffusion_model(model,
         recon_loss = 0.0
         with torch.no_grad():
             val_batch = 0
-            for inputs, targets, _ in progress_bar:
-                inputs, targets = inputs.to(device), targets.to(device)
+            for _, targets, _ in progress_bar:
+                targets = targets.to(device)
 
                 # Get the actual batch size of the current batch
-                actual_batch_size = inputs.size(0)
+                actual_batch_size = targets.size(0)
 
                 # diffusion maths (not 100% sure what this is)
                 t = torch.randint(0,num_time_steps,(actual_batch_size,))
-                e = torch.randn_like(inputs, requires_grad=False)
+                e = torch.randn_like(targets, requires_grad=False)
                 a = diffusion_scheduler.alpha[t].view(actual_batch_size,1,1,1).cuda()
-                inputs = (torch.sqrt(a)*inputs) + (torch.sqrt(1-a)*e)
+                targets = (torch.sqrt(a)*targets) + (torch.sqrt(1-a)*e)
 
-                # noise profile update
-                targets = targets + e[:, 0:4, :, :]
+                # noise profile
+                noise_profile = e
 
-                outputs = model(inputs, t)
-                loss = criterion(outputs, targets)
+                outputs = model(targets, t)
+                loss = criterion(outputs, noise_profile)
                 val_loss += loss.item()
                 #recon_loss += r_loss.item()
                 progress_bar.set_postfix(loss=f"joint loss: {(val_loss) / (progress_bar.n + 1):.4f}")
