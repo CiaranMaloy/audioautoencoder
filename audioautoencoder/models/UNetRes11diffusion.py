@@ -230,7 +230,7 @@ class EnhancedSkipAttention(nn.Module):
 
 class UNetConv11(nn.Module):
     # Update from UnetConv6, moving to a masking model, which hopefully works better
-    def __init__(self, in_channels=9, out_channels=4, time_steps=1000):
+    def __init__(self, in_channels=4, out_channels=4, time_steps=1000):
         super().__init__()
 
         channels = 64
@@ -238,17 +238,17 @@ class UNetConv11(nn.Module):
         # Fixed input layer with proper padding calculation for given kernel size
         self.sigmoid = nn.Sigmoid()
         self.input_layer = nn.Sequential(
-            nn.Conv2d(in_channels, channels, kernel_size=3, padding=1, stride=2),
+            nn.Conv2d(in_channels, channels, kernel_size=(20, 10), padding=1, stride=2),
             nn.BatchNorm2d(channels),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(channels, channels, kernel_size=3, padding=1),
+            nn.Conv2d(channels, channels, kernel_size=(10, 5), padding=1),
             nn.BatchNorm2d(channels),
             nn.LeakyReLU(0.2, inplace=True),
         )
 
         # Encoder (Downsampling) - using standard kernel sizes with proper padding
-        self.enc1 = ResLayer(channels, kernel_size=3, downscale=True)
-        self.enc2 = ResLayer(channels * 2, kernel_size=3, downscale=True)
+        self.enc1 = ResLayer(channels, kernel_size=7, downscale=True)
+        self.enc2 = ResLayer(channels * 2, kernel_size=5, downscale=True)
         self.enc3 = ResLayer(channels * 4, kernel_size=3, downscale=True, attention=True)
         self.enc4 = ResLayer(channels * 8, kernel_size=3, downscale=True)
 
@@ -260,13 +260,13 @@ class UNetConv11(nn.Module):
         # Decoder (Upsampling) - using standard kernel sizes
         self.dec4 = ResLayer(channels * 16, kernel_size=3, upscale=True)
         self.dec3 = ResLayer(channels * 8, kernel_size=3, upscale=True, attention=True)
-        self.dec2 = ResLayer(channels * 4, kernel_size=3, upscale=True)
-        self.dec1 = ResLayer(channels * 2, kernel_size=3, upscale=True)
+        self.dec2 = ResLayer(channels * 4, kernel_size=5, upscale=True)
+        self.dec1 = ResLayer(channels * 2, kernel_size=7, upscale=True)
 
         # Final output layer
         self.output_layer = nn.Sequential(
-            nn.ConvTranspose2d(channels, out_channels, kernel_size=3, padding=1, stride=2),
-            nn.Sigmoid()
+            nn.ConvTranspose2d(channels, out_channels, kernel_size=(10, 5), padding=1, stride=2),
+            nn.LeakyReLU(0.2, inplace=True),
         )
 
         # Initialize Spatial Attention Modules
@@ -317,8 +317,8 @@ class UNetConv11(nn.Module):
         d1 = self.dec1(d1, embeddings)
 
         # Final output with bilinear interpolation to match input size
-        output = self.output_layer(d1)
-        output = F.interpolate(output, size=input_shape, mode="bilinear", align_corners=False)
+        mask = self.output_layer(d1)
+        mask = F.interpolate(mask, size=input_shape, mode="bilinear", align_corners=False)
         
         # Apply mask to the first 4 channels of input
-        return output
+        return mask

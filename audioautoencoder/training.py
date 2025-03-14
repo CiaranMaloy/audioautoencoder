@@ -451,6 +451,9 @@ def train_diffusion_model(model,
             if verbose:
                 print(outputs.shape)
                 print(noise_profile.shape)
+                print('output: ', outputs.mean().item())
+                print('e: ', e.mean().item())
+
 
             # update ema
             ema.update(model)
