@@ -250,23 +250,24 @@ class UNetConv11(nn.Module):
         self.enc1 = ResLayer(channels, kernel_size=7, downscale=True)
         self.enc2 = ResLayer(channels * 2, kernel_size=5, downscale=True)
         self.enc3 = ResLayer(channels * 4, kernel_size=3, downscale=True, attention=True)
-        self.enc4 = ResLayer(channels * 8, kernel_size=3, downscale=True)
+        self.enc4 = ResLayer(channels * 8, kernel_size=3, downscale=True, dropout_prob=0.2)
 
         # Bottleneck
-        self.bottleneck_in = ResLayer(channels * 16, kernel_size=3)
-        self.resattention = ResLayer(channels * 16, kernel_size=3, attention=True)
-        self.bottleneck_out = ResLayer(channels * 16, kernel_size=3)
+        self.bottleneck_in = ResLayer(channels * 16, kernel_size=3, dropout_prob=0.3)
+        self.resattention = ResLayer(channels * 16, kernel_size=3, attention=True, dropout_prob=0.4)
+        self.bottleneck_out = ResLayer(channels * 16, kernel_size=3, dropout_prob=0.3)
 
         # Decoder (Upsampling) - using standard kernel sizes
-        self.dec4 = ResLayer(channels * 16, kernel_size=3, upscale=True)
+        self.dec4 = ResLayer(channels * 16, kernel_size=3, upscale=True, dropout_prob=0.2)
         self.dec3 = ResLayer(channels * 8, kernel_size=3, upscale=True, attention=True)
         self.dec2 = ResLayer(channels * 4, kernel_size=5, upscale=True)
         self.dec1 = ResLayer(channels * 2, kernel_size=7, upscale=True)
 
         # Final output layer
         self.output_layer = nn.Sequential(
-            nn.ConvTranspose2d(channels, out_channels, kernel_size=(10, 5), padding=1, stride=2),
+            nn.ConvTranspose2d(channels, channels, kernel_size=(10, 5), padding=1, stride=2),
             nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(channels, out_channels, kernel_size=(20, 10), padding=1, stride=1)
         )
 
         # Initialize Spatial Attention Modules

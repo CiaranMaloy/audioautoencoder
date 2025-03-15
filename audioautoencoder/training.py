@@ -361,7 +361,7 @@ def train_diffusion_model(model,
     diffusion_scheduler = DDPM_Scheduler(num_time_steps=num_time_steps)
     #optimizer = optim.Adam(model.parameters(), lr=lr)
     ema = ModelEmaV3(model, decay=ema_decay)
-    criterion = nn.MSELoss(reduction='mean')
+    criterion = torch.nn.SmoothL1Loss()  # Huber loss#nn.MSELoss(reduction='mean')
 
     # Extract the directory and filename for saving logs
     checkpoint_dir = os.path.dirname(checkpoint_filename)
