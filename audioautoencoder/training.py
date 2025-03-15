@@ -470,7 +470,7 @@ def train_diffusion_model(model,
             #benchark_loss += criterion(noisy_imgs, clean_imgs).item()
             #recon_loss += r_loss.item()
             ref_loss += criterion(e, e).item() # this has been changed from 0:1 to 0:4
-            progress_bar.set_postfix(loss=f"loss: {(running_loss) / (progress_bar.n + 1):.4f}, ref:{(ref_loss) / (progress_bar.n + 1):.4f}, mean:{outputs.mean().item()}|{e.mean().item()}")
+            progress_bar.set_postfix(loss=f"loss: {(running_loss) / (progress_bar.n + 1):.4f}, ref:{(ref_loss) / (progress_bar.n + 1):.4f}, mean_diff:{e.mean().item()-outputs.mean().item()}")
             #progress_bar.set_postfix(loss=f"{running_loss / (progress_bar.n + 1):.4f}, bl:{benchark_loss / (progress_bar.n + 1):.4f}")
             
             # i++
