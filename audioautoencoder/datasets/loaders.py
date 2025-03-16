@@ -540,9 +540,6 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         inputs = (inputs/self.a) #+ 0.5
         target = (target/self.a) #+ 0.5
 
-        print(np.min(inputs))
-        print(np.max(inputs))
-
         # Extract filename correctly
         filename = self.h5_file["filenames"][idx]
         if isinstance(filename, bytes):  # Check if it's a bytes object
