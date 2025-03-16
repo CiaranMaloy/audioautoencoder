@@ -488,6 +488,7 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
 
         # Define target shape (use spectrogram shape as reference)
         target_shape = input_spectrogram.shape
+        print(target_shape)
 
         # Load target
         target_spectrogram = self.h5_file["target_features_spectrogram"][idx]
