@@ -311,12 +311,16 @@ def train_model(model,
 ## -- Training Diffusion Model --
 import random
 
-class DDPM_Scheduler(nn.Module):
-    def __init__(self, num_time_steps: int=1000):
-        super().__init__()
-        self.beta = torch.linspace(1e-4, 0.02, num_time_steps, requires_grad=False)
-        alpha = 1 - self.beta
-        self.alpha = torch.cumprod(alpha, dim=0).requires_grad_(False)
+class DDPM_Scheduler():
+    def __init__(self, num_time_steps: int = 1000, s: float = 0.008):
+        self.num_time_steps = num_time_steps
+        self.s = s  # Small offset to avoid zero values
+        
+        # Cosine schedule for alpha_bar
+        t = np.linspace(0, num_time_steps, num_time_steps + 1, dtype=np.float64)
+        f = np.cos((t / num_time_steps + s) / (1 + s) * (np.pi / 2))**2
+        self.alpha = f / f[0]  # Normalize to start at 1
+        self.beta = np.clip(1 - self.alpha[1:] / self.alpha[:-1], 1e-4, 0.02)  # Ensure beta values are reasonable
 
     def forward(self, t):
         return self.beta[t], self.alpha[t] 
