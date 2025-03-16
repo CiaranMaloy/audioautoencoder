@@ -535,9 +535,9 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         ], axis=0), dtype=torch.float32) 
 
         # reformat to between 0 and 1
-        #a = 3
-        #inputs = (inputs/a) + 0.5
-        #target = (target/a) + 0.5
+        a = 2
+        inputs = (inputs/a) #+ 0.5
+        target = (target/a) #+ 0.5
 
         # Extract filename correctly
         filename = self.h5_file["filenames"][idx]
