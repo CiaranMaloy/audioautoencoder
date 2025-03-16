@@ -522,7 +522,7 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         # now input indices for 0-1000 and 0-200 to add as channels and as freq_indicies for reconstruction
 
         # Resample MFCC features
-        input_cepstrum = self.resample_feature(input_cepstrum, target_shape)
+        #input_cepstrum = self.resample_feature(input_cepstrum, target_shape)
 
         # Convert to tensors - input_phase, is missing,..... it's too confusing
         inputs = torch.tensor(np.stack([
