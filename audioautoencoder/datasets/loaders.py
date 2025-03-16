@@ -393,14 +393,16 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         return resized_feature.squeeze(0).squeeze(0).numpy()  # Remove batch/channel dim and return as numpy
 
     def downsample_H_by_factor(self, inputs, scale_factor):
-        print(inputs.shape)
-        C, H, W = inputs.shape
-        new_H = int(H // scale_factor)  # Compute new height
+        B, H, W = inputs.shape
+        new_H = int(H * scale_factor)  # Compute new height
 
-        # Use interpolate to resize only height (keeping width unchanged)
-        resampled = F.interpolate(inputs, size=(C, new_H, W), mode="bilinear", align_corners=False)
+        # Unsqueeze a channel dimension -> (B, 1, H, W)
+        inputs = inputs.unsqueeze(1)
 
-        return resampled
+        # Resize only height using bilinear interpolation
+        resampled = F.interpolate(inputs, size=(new_H, W), mode="bilinear", align_corners=False)
+
+        return resampled.squeeze(1)  # Remove the channel dimension
 
     def db_to_amplitude(self, dB, ref=1.0):
         """
@@ -488,7 +490,6 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
 
         # Define target shape (use spectrogram shape as reference)
         target_shape = input_spectrogram.shape
-        print(target_shape)
 
         # Load target
         target_spectrogram = self.h5_file["target_features_spectrogram"][idx]
