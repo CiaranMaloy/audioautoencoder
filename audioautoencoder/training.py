@@ -558,7 +558,7 @@ def train_diffusion_model(model,
         losses = [df[l] for l in loss_type]
         print_loss_graph(losses)
 
-        if epoch % 10 == 0:
+        if epoch % 10 == 0 or epoch == 0:
             plot_spectrograms_at_timesteps_training_validation(model, val_loader, diffusion_scheduler)
 
         print(f"Epoch [{epoch + 1}/{epochs}], Loss: {running_loss / len(train_loader):.4f}")
