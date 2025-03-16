@@ -398,7 +398,7 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         new_H = int(H // scale_factor)  # Compute new height
 
         # Use interpolate to resize only height (keeping width unchanged)
-        resampled = F.interpolate(inputs, size=(new_H, W), mode="bilinear", align_corners=False)
+        resampled = F.interpolate(inputs, size=(C, new_H, W), mode="bilinear", align_corners=False)
 
         return resampled
 
