@@ -321,7 +321,7 @@ class DDPM_Scheduler():
         self.device = device
 
         # Cosine schedule for alpha_bar
-        t = torch.linspace(0, num_time_steps, num_time_steps + 1, dtype=torch.float64, device=device)
+        t = torch.linspace(0, num_time_steps, num_time_steps + 1, dtype=torch.float32, device=device)
         f = torch.cos((t / num_time_steps + s) / (1 + s) * (torch.pi / 2))**2
         self.alpha = f / f[0]  # Normalize to start at 1
         self.beta = torch.clamp(1 - self.alpha[1:] / self.alpha[:-1], 1e-4, 0.02)  # Ensure beta values are reasonable
