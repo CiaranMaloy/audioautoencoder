@@ -311,19 +311,24 @@ def train_model(model,
 ## -- Training Diffusion Model --
 import random
 
+import torch
+import numpy as np
+
 class DDPM_Scheduler():
-    def __init__(self, num_time_steps: int = 1000, s: float = 0.008):
+    def __init__(self, num_time_steps: int = 1000, s: float = 0.008, device="cuda"):
         self.num_time_steps = num_time_steps
         self.s = s  # Small offset to avoid zero values
-        
-        # Cosine schedule for alpha_bar
-        t = np.linspace(0, num_time_steps, num_time_steps + 1, dtype=np.float64)
-        f = np.cos((t / num_time_steps + s) / (1 + s) * (np.pi / 2))**2
-        self.alpha = f / f[0]  # Normalize to start at 1
-        self.beta = np.clip(1 - self.alpha[1:] / self.alpha[:-1], 1e-4, 0.02)  # Ensure beta values are reasonable
+        self.device = device
 
-    def forward(self, t):
-        return self.beta[t], self.alpha[t] 
+        # Cosine schedule for alpha_bar
+        t = torch.linspace(0, num_time_steps, num_time_steps + 1, dtype=torch.float64, device=device)
+        f = torch.cos((t / num_time_steps + s) / (1 + s) * (torch.pi / 2))**2
+        self.alpha = f / f[0]  # Normalize to start at 1
+        self.beta = torch.clamp(1 - self.alpha[1:] / self.alpha[:-1], 1e-4, 0.02)  # Ensure beta values are reasonable
+
+    def forward(self, t: torch.Tensor):
+        return self.beta[t], self.alpha[t]
+
    
 def set_seed(seed: int = 42):
     torch.manual_seed(seed)
