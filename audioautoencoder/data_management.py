@@ -4,7 +4,7 @@ import glob
 import random
 import pickle
 
-def create_datasets(dataset_dirs, output_dir, random_seed=42, resume_file="split_state.pkl"):
+def create_datasets(dataset_dirs, output_dir, random_seed=42, resume_file="split_state.pkl", WAV=True, MP3=True):
     """
     Collects wav files from dataset directories, removes duplicates, splits them into training, validation, and testing sets,
     and ensures reproducibility and resumption of testing.
@@ -31,8 +31,10 @@ def create_datasets(dataset_dirs, output_dir, random_seed=42, resume_file="split
     # Gather all wav files
     all_files = []
     for dataset_dir in dataset_dirs:
-        all_files.extend(glob.glob(os.path.join(dataset_dir, "**", "*.wav"), recursive=True))
-        all_files.extend(glob.glob(os.path.join(dataset_dir, "**", "*.mp3"), recursive=True))
+        if WAV == True:
+            all_files.extend(glob.glob(os.path.join(dataset_dir, "**", "*.wav"), recursive=True))
+        if MP3 == True:
+            all_files.extend(glob.glob(os.path.join(dataset_dir, "**", "*.mp3"), recursive=True))
 
     if not all_files:
         raise ValueError("No .wav files found in the provided directories.")
