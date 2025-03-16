@@ -392,6 +392,16 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         resized_feature = F.interpolate(feature_tensor, size=target_size, mode="bilinear", align_corners=False)
         return resized_feature.squeeze(0).squeeze(0).numpy()  # Remove batch/channel dim and return as numpy
 
+    def downsample_H_by_factor(self, inputs, scale_factor):
+
+        B, C, H, W = inputs.shape
+        new_H = int(H * scale_factor)  # Compute new height
+
+        # Use interpolate to resize only height (keeping width unchanged)
+        resampled = F.interpolate(inputs, size=(new_H, W), mode="bilinear", align_corners=False)
+
+        return resampled
+
     def db_to_amplitude(self, dB, ref=1.0):
         """
         Converts decibels (dB) back to amplitude in PyTorch.
@@ -539,6 +549,9 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         # reformat to between 0 and 1
         inputs = (inputs/self.a) #+ 0.5
         target = (target/self.a) #+ 0.5
+
+        inputs = self.downsample_H_by_factor(inputs, 4)
+        target = self.downsample_H_by_factor(target, 4)
 
         # Extract filename correctly
         filename = self.h5_file["filenames"][idx]

@@ -326,11 +326,9 @@ def plot_spectrograms_at_timesteps(model, train_loader, diffusion_scheduler, tim
     plt.show()
 
 # plot while training: 
-def inference(model, input_tensor, starting_timestep, scheduler, times, checkpoint_path):
-    checkpoint = torch.load(checkpoint_path)
-    model.load_state_dict(checkpoint['model_state_dict'])
-    ema = ModelEmaV3(model, decay=0.9999)
-    ema.load_state_dict(checkpoint['ema'])
+from einops import rearrange 
+
+def inference(model, ema, input_tensor, starting_timestep, scheduler, times):
 
     # Move input tensor to GPU
     z = input_tensor.cuda()
@@ -365,7 +363,7 @@ def inference(model, input_tensor, starting_timestep, scheduler, times, checkpoi
         
     return images
 
-def plot_spectrograms_at_timesteps_training_validation(model, val_loader, diffusion_scheduler):
+def plot_spectrograms_at_timesteps_training_validation(model, val_loader, diffusion_scheduler, ema):
     """
     Plot spectrograms at different diffusion timesteps.
     
@@ -412,7 +410,7 @@ def plot_spectrograms_at_timesteps_training_validation(model, val_loader, diffus
         plt.colorbar()
 
         # 1. process noisy_example
-        images = inference(model, noisy_example[0:1], t, diffusion_scheduler, reconstruction_view[i], load_path)
+        images = inference(model, ema, noisy_example[0:1], t, diffusion_scheduler, reconstruction_view[i])
 
 
         # 2. plot views
