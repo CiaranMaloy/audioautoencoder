@@ -325,6 +325,106 @@ def plot_spectrograms_at_timesteps(model, train_loader, diffusion_scheduler, tim
     plt.tight_layout()
     plt.show()
 
+# plot while training: 
+def inference(model, input_tensor, starting_timestep, scheduler, times, checkpoint_path):
+    checkpoint = torch.load(checkpoint_path)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    ema = ModelEmaV3(model, decay=0.9999)
+    ema.load_state_dict(checkpoint['ema'])
+
+    # Move input tensor to GPU
+    z = input_tensor.cuda()
+    images = []
+
+    with torch.no_grad():
+        model = ema.module.eval()
+        for t in reversed(range(1, starting_timestep)):
+            t = [t]
+            # Ensure scheduler.beta and alpha are on GPU (move them once outside the loop if possible)
+            beta_t = scheduler.beta[t].cuda()
+            alpha_t = scheduler.alpha[t].cuda()
+            
+            temp = (beta_t / (torch.sqrt(1 - alpha_t) * torch.sqrt(1 - beta_t)))
+            z = (1 / torch.sqrt(1 - beta_t)) * z - (temp * model(z, [0]))  # z is already on GPU, model output is on GPU
+            if t[0] in times:
+                images.append(z)
+            # Ensure noise tensor e is on GPU
+            e = torch.randn(1, 4, 1025, 175).cuda() #[1, 4, 1025, 175]
+            z = z + (e * torch.sqrt(beta_t))
+        
+        # Final step
+        beta_0 = scheduler.beta[0].cuda()
+        alpha_0 = scheduler.alpha[0].cuda()
+        temp = beta_0 / (torch.sqrt(1 - alpha_0) * torch.sqrt(1 - beta_0))
+        x = (1 / torch.sqrt(1 - beta_0)) * z - (temp * model(z, [0]))  # z and model output are on GPU
+        x = x.cpu()  # Move to CPU only at the end
+
+        #images.append(x)
+        x = rearrange(x.squeeze(0), 'c h w -> h w c').detach()
+        x = x.numpy()
+        
+    return images
+
+def plot_spectrograms_at_timesteps_training_validation(model, val_loader, diffusion_scheduler):
+    """
+    Plot spectrograms at different diffusion timesteps.
+    
+    Args:
+        model: Your diffusion model
+        train_loader: DataLoader for training data
+        diffusion_scheduler: DDPM_Scheduler instance
+        timesteps: List of timesteps to visualize
+    """
+    timesteps=[999, 400, 300, 200, 50] # hardcoded
+    reconstruction_view = [[500, 200, 50, 1], [300, 150, 25, 1], [200, 75, 50, 1], [100, 50, 25, 1], [30, 15, 7, 1]]
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.eval()
+    
+    # Get a batch from the dataloader
+    for _, clean_imgs, _ in val_loader:
+        clean_imgs = clean_imgs.to(device)
+        break  # Just get one batch
+    
+    # Choose a random example from the batch
+    example_idx = np.random.randint(0, clean_imgs.shape[0])
+    example = clean_imgs[example_idx:example_idx+1] 
+    
+    plt.figure(figsize=(15, 15))
+    
+    # Plot for each timestep
+    for i, t in enumerate(timesteps):
+        # Create a tensor with the same timestep for the batch
+        t_tensor = torch.tensor([t], device=device)
+        
+        # Add noise according to the scheduler
+        noise = torch.randn_like(example)
+        a = diffusion_scheduler.alpha[t]
+        a_tensor = torch.tensor(a, device=device).view(1, 1, 1, 1)
+        
+        # Apply forward diffusion process
+        noisy_example = (torch.sqrt(a_tensor) * example) + (torch.sqrt(1 - a_tensor) * noise)
+        
+        # Plot the noisy spectrogram
+        plt.subplot(len(timesteps), len(timesteps), i * len(timesteps) + 1)
+        plt.title(f'Timestep t={t}, α={a:.4f}')
+        plt.imshow(noisy_example[0, 3].cpu().detach().numpy(), aspect='auto', origin='lower', cmap='viridis')
+        plt.colorbar()
+
+        # 1. process noisy_example
+        images = inference(model, noisy_example[0:1], t, diffusion_scheduler, reconstruction_view[i], load_path)
+
+
+        # 2. plot views
+        for k, image in enumerate(images):
+            plt.subplot(len(timesteps), len(timesteps), i*len(timesteps) + k + 2)
+            plt.title(f'Timestep t={reconstruction_view[i][k]}')
+            plt.imshow(image[0, 3].cpu().detach().numpy(), aspect='auto', origin='lower', cmap='viridis')
+            plt.colorbar()
+    
+    plt.tight_layout()
+    plt.show()
+
 # Example usage
 if __name__ == '__main__':
     CHECK = False
