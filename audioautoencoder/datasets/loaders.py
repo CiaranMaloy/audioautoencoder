@@ -468,10 +468,10 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
             # this is where to combine the features into a 5 channel image after each image has been normalised
             
         # Load input features
-        input_phase = self.h5_file["input_features_phase"][idx]
+        #input_phase = self.h5_file["input_features_phase"][idx]
         input_spectrogram = self.h5_file["input_features_spectrogram"][idx]
-        input_edges = self.h5_file["input_features_edges"][idx]
-        input_cepstrum = self.h5_file["input_features_cepstrum"][idx]
+        #input_edges = self.h5_file["input_features_edges"][idx]
+        #input_cepstrum = self.h5_file["input_features_cepstrum"][idx]
         #input_cepstrum_edges= self.h5_file["input_features_cepstrum_edges"][idx]
 
         # Define target shape (use spectrogram shape as reference)
@@ -484,8 +484,8 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         # Apply scalers
         #input_phase = self.scalers["input_features_phase"].transform(input_phase.reshape(1, -1)).reshape(input_phase.shape)
         input_spectrogram = self.scalers["input_features_spectrogram"].transform(input_spectrogram.reshape(1, -1)).reshape(input_spectrogram.shape)
-        input_edges = self.scalers["input_features_edges"].transform(input_edges.reshape(1, -1)).reshape(input_edges.shape)
-        input_cepstrum = self.scalers["input_features_cepstrum"].transform(input_cepstrum.reshape(1, -1)).reshape(input_cepstrum.shape)
+        #input_edges = self.scalers["input_features_edges"].transform(input_edges.reshape(1, -1)).reshape(input_edges.shape)
+        #input_cepstrum = self.scalers["input_features_cepstrum"].transform(input_cepstrum.reshape(1, -1)).reshape(input_cepstrum.shape)
         #input_cepstrum_edges = self.scalers["input_features_cepstrum_edges"].transform(input_cepstrum_edges.reshape(1, -1)).reshape(input_cepstrum_edges.shape)
 
         target_spectrogram = self.scalers["target_features_spectrogram"].transform(target_spectrogram.reshape(1, -1)).reshape(target_spectrogram.shape)
@@ -515,9 +515,9 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         target_spectrogram_mf = self.resample_feature(target_spectrogram[freq_indices_mf, :], target_shape)
         target_spectrogram_lf = self.resample_feature(target_spectrogram[freq_indices_lf, :], target_shape)
         # edges
-        input_edges_hf = self.resample_feature(input_edges[freq_indices_hf, :], target_shape)
-        input_edges_mf = self.resample_feature(input_edges[freq_indices_mf, :], target_shape)
-        input_edges_lf = self.resample_feature(input_edges[freq_indices_lf, :], target_shape)
+        #input_edges_hf = self.resample_feature(input_edges[freq_indices_hf, :], target_shape)
+        #input_edges_mf = self.resample_feature(input_edges[freq_indices_mf, :], target_shape)
+        #input_edges_lf = self.resample_feature(input_edges[freq_indices_lf, :], target_shape)
 
         # now input indices for 0-1000 and 0-200 to add as channels and as freq_indicies for reconstruction
 
@@ -527,8 +527,6 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         # Convert to tensors - input_phase, is missing,..... it's too confusing
         inputs = torch.tensor(np.stack([
             input_spectrogram, input_spectrogram_hf, input_spectrogram_mf, input_spectrogram_lf,
-            input_edges, input_edges_hf, input_edges_mf, input_edges_lf,
-            input_cepstrum, 
         ], axis=0), dtype=torch.float32)  # Shape: (6, H, W)
 
         # Output:
@@ -537,9 +535,9 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         ], axis=0), dtype=torch.float32) 
 
         # reformat to between 0 and 1
-        a = 3
-        inputs = (inputs/a) + 0.5
-        target = (target/a) + 0.5
+        #a = 3
+        #inputs = (inputs/a) + 0.5
+        #target = (target/a) + 0.5
 
         # Extract filename correctly
         filename = self.h5_file["filenames"][idx]
@@ -550,7 +548,7 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         metadata = {
             "filename": filename,
             "snr_db": self.h5_file["snr_db"][idx].item(), # Convert to Python float
-            "phase": input_phase,
+            #"phase": input_phase,
             "hf_shape": input_spectrogram[freq_indices_hf, :].shape,
             "mf_shape": input_spectrogram[freq_indices_mf, :].shape,
             "lf_shape": input_spectrogram[freq_indices_lf, :].shape,
