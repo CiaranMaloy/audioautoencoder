@@ -271,6 +271,60 @@ def plot_training_log(csv_file_path):
   # Show plot
   plt.show()
 
+def plot_spectrograms_at_timesteps(model, train_loader, diffusion_scheduler, timesteps=[999, 300, 200, 50, 1]):
+    """
+    Plot spectrograms at different diffusion timesteps.
+    
+    Args:
+        model: Your diffusion model
+        train_loader: DataLoader for training data
+        diffusion_scheduler: DDPM_Scheduler instance
+        timesteps: List of timesteps to visualize
+    """
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.eval()
+    
+    # Get a batch from the dataloader
+    for _, clean_imgs, _ in train_loader:
+        clean_imgs = clean_imgs.to(device)
+        break  # Just get one batch
+    
+    # Choose a random example from the batch
+    example_idx = np.random.randint(0, clean_imgs.shape[0])
+    print(np.shape(clean_imgs))
+    example = clean_imgs[3:4]  # Keep batch dimension
+    print(np.shape(example))
+    
+    plt.figure(figsize=(15, 10))
+    
+    # Plot original clean spectrogram
+    plt.subplot(len(timesteps) + 1, 1, 1)
+    plt.title('Original Clean Spectrogram')
+    plt.imshow(example[0].cpu().numpy(), aspect='auto', origin='lower', cmap='viridis')
+    plt.colorbar()
+    
+    # Plot for each timestep
+    for i, t in enumerate(timesteps):
+        # Create a tensor with the same timestep for the batch
+        t_tensor = torch.tensor([t], device=device)
+        
+        # Add noise according to the scheduler
+        noise = torch.randn_like(example)
+        a = diffusion_scheduler.alpha[t]
+        a_tensor = torch.tensor(a, device=device).view(1, 1, 1, 1)
+        
+        # Apply forward diffusion process
+        noisy_example = (torch.sqrt(a_tensor) * example) + (torch.sqrt(1 - a_tensor) * noise)
+        
+        # Plot the noisy spectrogram
+        plt.subplot(len(timesteps) + 1, 1, i + 2)
+        plt.title(f'Timestep t={t}, α={a:.4f}')
+        plt.imshow(noisy_example[0, 0].cpu().detach().numpy(), aspect='auto', origin='lower', cmap='viridis')
+        plt.colorbar()
+    
+    plt.tight_layout()
+    plt.show()
+
 # Example usage
 if __name__ == '__main__':
     CHECK = False
