@@ -393,8 +393,8 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
         return resized_feature.squeeze(0).squeeze(0).numpy()  # Remove batch/channel dim and return as numpy
 
     def downsample_H_by_factor(self, inputs, scale_factor):
-
-        B, C, H, W = inputs.shape
+        print(inputs.shape)
+        C, H, W = inputs.shape
         new_H = int(H * scale_factor)  # Compute new height
 
         # Use interpolate to resize only height (keeping width unchanged)
