@@ -431,7 +431,7 @@ def train_diffusion_model(model,
             clean_imgs = clean_imgs + noise
 
             # remove negatve values
-            clean_imgs = torch.clamp(clean_imgs, min=0)  # Sets all negative values to 0
+            clean_imgs = torch.clamp(clean_imgs, min=-1)  # Sets all negative values to -1
 
             # Get the actual batch size of the current batch
             actual_batch_size = clean_imgs.size(0)
