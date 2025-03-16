@@ -394,7 +394,7 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
 
     def downsample_H_by_factor(self, inputs, scale_factor):
         B, H, W = inputs.shape
-        new_H = int(H * scale_factor)  # Compute new height
+        new_H = int(H // scale_factor)  # Compute new height
 
         # Unsqueeze a channel dimension -> (B, 1, H, W)
         inputs = inputs.unsqueeze(1)
