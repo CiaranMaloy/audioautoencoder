@@ -347,7 +347,7 @@ def inference(model, ema, input_tensor, starting_timestep, scheduler, times):
             if t[0] in times:
                 images.append(z)
             # Ensure noise tensor e is on GPU
-            e = torch.randn(1, 4, 1025, 175).cuda() #[1, 4, 1025, 175]
+            e = torch.randn(z.size).cuda() #[1, 4, 1025, 175]
             z = z + (e * torch.sqrt(beta_t))
         
         # Final step
