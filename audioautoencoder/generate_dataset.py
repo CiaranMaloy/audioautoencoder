@@ -762,6 +762,7 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1, chu
         [os.path.join(h5_folder_path, f) for f in os.listdir(h5_folder_path) if f.endswith(".h5")]
     )
     np.random.shuffle(np.array(h5_files))
+    print(h5_files[0:10])
     
     if not h5_files:
         print("No HDF5 files found in directory.")
