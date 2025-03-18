@@ -272,6 +272,9 @@ def extract_features(audio, sr, n_fft=2048, audio_length=44100*2):
     cepstrum = np.array(cepstrum).astype(np.float32)
     laplacian_ceps = np.array(laplacian_ceps).astype(np.float32)
 
+    # right here, perceptual resampling and splitting into channels may be beneficial?
+    # but it's not actually reducing the number of samples soooo? 
+
     data = {
         'phase': phase,
         'spectrogram': magnitude,
