@@ -505,7 +505,7 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
 
     print(f"Finished combining files into {current_file_index} output files in {output_folder_path}")
 
-
+import random
 def combine_h5_files_clean(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128):
     """Combines multiple HDF5 files into a few large ones, ensuring they do not exceed max_file_size_gb."""
     
