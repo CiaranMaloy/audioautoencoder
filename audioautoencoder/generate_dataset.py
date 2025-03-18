@@ -749,6 +749,8 @@ def combine_h5_files_clean(h5_folder_path, output_folder_path, max_file_size_gb=
 
     print(f"Finished combining files into {current_file_index} output files in {output_folder_path}")
 
+
+import random
 def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128):
     """Combines multiple HDF5 files into a few large ones, ensuring they do not exceed max_file_size_gb."""
     
@@ -759,6 +761,7 @@ def combine_h5_files(h5_folder_path, output_folder_path, max_file_size_gb=1, chu
     h5_files = sorted(
         [os.path.join(h5_folder_path, f) for f in os.listdir(h5_folder_path) if f.endswith(".h5")]
     )
+    random.shuffle(h5_files)
     
     if not h5_files:
         print("No HDF5 files found in directory.")
