@@ -158,8 +158,8 @@ class DiffusionDatasetLoader:
         if self.subset:
             self._apply_subset(split_rng)
         
-        self.train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers, pin_memory=True, collate_fn=custom_collate_fn)
-        self.val_loader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers, pin_memory=True, collate_fn=custom_collate_fn)
+        self.train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers, pin_memory=True, collate_fn=custom_collate_fn_diffusion)
+        self.val_loader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers, pin_memory=True, collate_fn=custom_collate_fn_diffusion)
         
         print(f"Training set size: {len(self.train_dataset)}")
         print(f"Validation set size: {len(self.val_dataset)}")
