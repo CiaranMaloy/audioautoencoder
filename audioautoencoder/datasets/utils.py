@@ -279,7 +279,7 @@ def train_scalers_diffusion(dataset_path, sample_size=1000):
         print('Training Spectrogram...')
         spec_scaler = StandardScaler()
         print('Input features')
-        spec_scaler = get_scaler_partial(source_file["input_features_spectrogram"], spec_scaler, sample_size=sample_size)
+        #spec_scaler = get_scaler_partial(source_file["input_features_spectrogram"], spec_scaler, sample_size=sample_size)
         print('Target features')
         spec_scaler = get_scaler_partial(source_file["target_features_spectrogram"], spec_scaler, sample_size=sample_size)
 
