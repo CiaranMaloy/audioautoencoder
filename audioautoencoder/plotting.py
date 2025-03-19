@@ -343,7 +343,7 @@ def inference(model, ema, input_tensor, starting_timestep, scheduler, times):
             alpha_t = scheduler.alpha[t].cuda()
             
             temp = (beta_t / (torch.sqrt(1 - alpha_t) * torch.sqrt(1 - beta_t)))
-            z = (1 / torch.sqrt(1 - beta_t)) * z - (temp * model(z, torch.tensor([t], device='cuda')))  # z is already on GPU, model output is on GPU
+            z = (1 / torch.sqrt(1 - beta_t)) * z - (temp * model(z, [t]))  # z is already on GPU, model output is on GPU
             if t[0] in times:
                 images.append(z)
             # Ensure noise tensor e is on GPU
