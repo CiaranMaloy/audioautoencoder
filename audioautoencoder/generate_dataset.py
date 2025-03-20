@@ -524,7 +524,7 @@ def combine_h5_files_clean(h5_folder_path, output_folder_path, max_file_size_gb=
         return
 
     # Open the first file to get dataset structure
-    print(h5_file[0])
+    print(h5_files[0])
     with h5py.File(h5_files[0], "r") as first_file:
 
         # features
