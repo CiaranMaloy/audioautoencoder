@@ -524,6 +524,7 @@ def combine_h5_files_clean(h5_folder_path, output_folder_path, max_file_size_gb=
         return
 
     # Open the first file to get dataset structure
+    print(h5_file[0])
     with h5py.File(h5_files[0], "r") as first_file:
 
         # features
@@ -572,6 +573,7 @@ def combine_h5_files_clean(h5_folder_path, output_folder_path, max_file_size_gb=
 
     # Ensure output directory exists
     os.makedirs(output_folder_path, exist_ok=True)
+    print('Made first file')
 
     # Variables for file management
     current_file_index = 0
@@ -657,6 +659,7 @@ def combine_h5_files_clean(h5_folder_path, output_folder_path, max_file_size_gb=
 
     break_trigger = False
     for h5_file in h5_files:
+        print(h5_file)
         with h5py.File(h5_file, "r") as source_file:
             # input
             #input_phase = source_file["input_features_phase"][:]
