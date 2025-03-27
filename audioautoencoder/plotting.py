@@ -406,7 +406,7 @@ def plot_spectrograms_at_timesteps_training_validation(model, val_loader, diffus
         # Plot the noisy spectrogram
         plt.subplot(len(timesteps), len(timesteps), i * len(timesteps) + 1)
         plt.title(f'Timestep t={t}, α={a:.4f}')
-        plt.imshow(noisy_example[0, 3].cpu().detach().numpy(), aspect='auto', origin='lower', cmap='viridis')
+        plt.imshow(np.clip(noisy_example[0, 3].cpu().detach().numpy(), -1, 1), aspect='auto', origin='lower', cmap='viridis')
         plt.colorbar()
 
         # 1. process noisy_example
@@ -417,7 +417,7 @@ def plot_spectrograms_at_timesteps_training_validation(model, val_loader, diffus
         for k, image in enumerate(images):
             plt.subplot(len(timesteps), len(timesteps), i*len(timesteps) + k + 2)
             plt.title(f'Timestep t={reconstruction_view[i][k]}')
-            plt.imshow(image[0, 3].cpu().detach().numpy(), aspect='auto', origin='lower', cmap='viridis')
+            plt.imshow(np.clip(image[0, 3].cpu().detach().numpy(), -1, 1), aspect='auto', origin='lower', cmap='viridis')
             plt.colorbar()
     
     plt.tight_layout()
