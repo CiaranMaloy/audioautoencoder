@@ -300,7 +300,7 @@ def plot_spectrograms_at_timesteps(model, train_loader, diffusion_scheduler, tim
     # Plot original clean spectrogram
     plt.subplot(len(timesteps) + 1, 1, 1)
     plt.title('Original Clean Spectrogram')
-    plt.imshow(example[0].cpu().numpy(), aspect='auto', origin='lower', cmap='viridis')
+    plt.imshow(np.clip(example[0].cpu().numpy(), -1, 1), aspect='auto', origin='lower', cmap='viridis')
     plt.colorbar()
     
     # Plot for each timestep
@@ -319,7 +319,7 @@ def plot_spectrograms_at_timesteps(model, train_loader, diffusion_scheduler, tim
         # Plot the noisy spectrogram
         plt.subplot(len(timesteps) + 1, 1, i + 2)
         plt.title(f'Timestep t={t}, α={a:.4f}')
-        plt.imshow(noisy_example[0, 0].cpu().detach().numpy(), aspect='auto', origin='lower', cmap='viridis')
+        plt.imshow(np.clip(noisy_example[0, 0].cpu().detach().numpy(), -1, 1), aspect='auto', origin='lower', cmap='viridis')
         plt.colorbar()
     
     plt.tight_layout()
