@@ -391,7 +391,7 @@ def train_diffusion_model(model,
         pass
     else:
         if starting_epoch > 0:
-            for i in range(starting_epoch):
+            for i in range(starting_epoch + 1):
                 print(f'Step {i+1}')
                 scheduler.step()
 
