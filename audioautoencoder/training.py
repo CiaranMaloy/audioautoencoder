@@ -387,11 +387,12 @@ def train_diffusion_model(model,
             writer.writerow(["Epoch", "Learning Rate", "Train Loss", "Validation Loss", "Ref Loss", "KL Beta"])
 
     # step scheduler to correct training schedule
+    starting_epoch = starting_epoch + 1
     if scheduler_loss:
         pass
     else:
         if starting_epoch > 0:
-            for i in range(starting_epoch + 1):
+            for i in range(starting_epoch):
                 print(f'Step {i+1}')
                 scheduler.step()
 
