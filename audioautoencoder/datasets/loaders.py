@@ -320,7 +320,7 @@ class HDF5Dataset_bandchannels(Dataset):
 
         # Find indices corresponding to 0–4000 Hz
         # updated bandchannels will be 5000, 1250, 500
-        min_freq, hf, mf, lf = 0, 4000, 1000, 200
+        min_freq, hf, mf, lf = 0, 5000, 1250, 500
         freq_indices_hf = np.where((freqs >= min_freq) & (freqs <= hf))[0]
         freq_indices_mf = np.where((freqs >= min_freq) & (freqs <= mf))[0]
         freq_indices_lf = np.where((freqs >= min_freq) & (freqs <= lf))[0]
