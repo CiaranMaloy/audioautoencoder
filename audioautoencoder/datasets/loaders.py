@@ -257,6 +257,7 @@ class HDF5Dataset_bandchannels(Dataset):
         self.channels = channels
         self.scalers = scalers
         self.h5_file = h5py.File(self.h5_file_path, "r")  # Open the file once
+        self.a = 2
 
         print("Dataset size:", self.h5_file["snr_db"].shape[0])
 
@@ -270,6 +271,18 @@ class HDF5Dataset_bandchannels(Dataset):
         
         resized_feature = F.interpolate(feature_tensor, size=target_size, mode="bilinear", align_corners=False)
         return resized_feature.squeeze(0).squeeze(0).numpy()  # Remove batch/channel dim and return as numpy
+
+    def downsample_H_by_factor(self, inputs, scale_factor):
+        B, H, W = inputs.shape
+        new_H = int(H // scale_factor)  # Compute new height
+
+        # Unsqueeze a channel dimension -> (B, 1, H, W)
+        inputs = inputs.unsqueeze(1)
+
+        # Resize only height using bilinear interpolation
+        resampled = F.interpolate(inputs, size=(new_H, W), mode="bilinear", align_corners=False)
+
+        return resampled.squeeze(1)  # Remove the channel dimension
 
     def __getitem__(self, idx):
         #try:
@@ -341,9 +354,15 @@ class HDF5Dataset_bandchannels(Dataset):
         ], axis=0), dtype=torch.float32) 
 
         # reformat to between 0 and 1
-        a = 3
-        inputs = (inputs/a) + 0.5
-        target = (target/a) + 0.5
+        #inputs = (inputs/a) + 0.5
+        #target = (target/a) + 0.5
+
+        # reformat to between 0 and 1
+        inputs = (inputs/self.a) #+ 0.5
+        target = (target/self.a) #+ 0.5
+
+        inputs = self.downsample_H_by_factor(inputs, 4)
+        target = self.downsample_H_by_factor(target, 4)
 
         # Extract filename correctly
         filename = self.h5_file["filenames"][idx]
