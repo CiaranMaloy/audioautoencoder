@@ -205,5 +205,5 @@ class UNetConv10(nn.Module):
         d1 = self.dec1(d1_attn)  # (batch, 64, ?, ?)
 
         # Final Convolution (output denoised spectrogram)
-        mask = F.interpolate(d1, size=(1025, 175), mode="bilinear", align_corners=False)
+        mask = F.interpolate(d1, size=(1025 // 4, 175), mode="bilinear", align_corners=False)
         return x[:, :4] * self.sigmoid(mask)
