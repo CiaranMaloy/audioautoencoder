@@ -262,14 +262,26 @@ import h5py
 import numpy as np
 import math
 
-def copy_with_retries(src, dst, retries=3, delay=5):
+import shutil
+import time
+import concurrent.futures
+
+def copy_with_retries(src, dst, retries=3, delay=5, timeout=60):
+    def copy_operation():
+        shutil.copy(src, dst)
+
     for attempt in range(retries):
         try:
-            shutil.copy(src, dst)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(copy_operation)
+                future.result(timeout=timeout)
             return
+        except concurrent.futures.TimeoutError:
+            print(f"Attempt {attempt + 1} failed: Timeout after {timeout} seconds. Retrying in {delay} seconds.")
         except OSError as e:
             print(f"Attempt {attempt + 1} failed: {e}. Retrying in {delay} seconds.")
-            time.sleep(delay)
+        time.sleep(delay)
+
     raise RuntimeError(f"Failed to copy {src} after {retries} attempts.")
 
 # usage example
