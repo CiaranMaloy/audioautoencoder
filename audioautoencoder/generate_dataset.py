@@ -262,6 +262,18 @@ import h5py
 import numpy as np
 import math
 
+def copy_with_retries(src, dst, retries=3, delay=5):
+    for attempt in range(retries):
+        try:
+            shutil.copy(src, dst)
+            return
+        except OSError as e:
+            print(f"Attempt {attempt + 1} failed: {e}. Retrying in {delay} seconds.")
+            time.sleep(delay)
+    raise RuntimeError(f"Failed to copy {src} after {retries} attempts.")
+
+# usage example
+
 def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128, dst="/content/temp_file.h5"):
     """Combines multiple HDF5 files into a few large ones, ensuring they do not exceed max_file_size_gb."""
     
@@ -414,7 +426,8 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
     for h5_file in h5_files:
 
         # as per deep research, first copy the file to disk, as a temporary file: 
-        shutil.copy(h5_file, dst)  # Copy file from Drive to local storage
+
+        copy_with_retries(h5_file, dst)
         with h5py.File(dst, "r") as source_file:
             # input
             input_phase = source_file["input_features_phase"][:]
