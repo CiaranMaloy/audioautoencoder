@@ -262,7 +262,7 @@ import h5py
 import numpy as np
 import math
 
-def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128):
+def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128, dst="/content/temp_file.h5"):
     """Combines multiple HDF5 files into a few large ones, ensuring they do not exceed max_file_size_gb."""
     
     # Convert max file size to bytes
@@ -272,7 +272,8 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
     h5_files = sorted(
         [os.path.join(h5_folder_path, f) for f in os.listdir(h5_folder_path) if f.endswith(".h5")]
     )
-    
+    random.shuffle(h5_files)
+    print(h5_files[0:10])
     if not h5_files:
         print("No HDF5 files found in directory.")
         return
@@ -411,7 +412,10 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
 
     break_trigger = False
     for h5_file in h5_files:
-        with h5py.File(h5_file, "r") as source_file:
+
+        # as per deep research, first copy the file to disk, as a temporary file: 
+        shutil.copy(h5_file, dst)  # Copy file from Drive to local storage
+        with h5py.File(dst, "r") as source_file:
             # input
             input_phase = source_file["input_features_phase"][:]
             input_spectrogram = source_file["input_features_spectrogram"][:]
@@ -505,7 +509,6 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
 
     print(f"Finished combining files into {current_file_index} output files in {output_folder_path}")
 
-import random
 def combine_h5_files_clean(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128):
     """Combines multiple HDF5 files into a few large ones, ensuring they do not exceed max_file_size_gb."""
     
