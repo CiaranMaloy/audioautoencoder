@@ -256,12 +256,12 @@ class HDF5Dataset_bandchannels(Dataset):
         self.output_time_length = output_time_length
         self.channels = channels
         self.scalers = scalers
-        self.h5_file = h5py.File(self.h5_file_path, "r")  # Open the file once
         self.a = 2
 
         print("Dataset size:", self.h5_file["snr_db"].shape[0])
 
     def __len__(self):
+        self.h5_file = h5py.File(self.h5_file_path, "r")  # Open the file once
         return self.h5_file["snr_db"].shape[0]
     
     def resample_feature(self, feature, target_shape):
@@ -285,6 +285,7 @@ class HDF5Dataset_bandchannels(Dataset):
         return resampled.squeeze(1)  # Remove the channel dimension
 
     def __getitem__(self, idx):
+        self.h5_file = h5py.File(self.h5_file_path, "r")  # Open the file per worker
         #try:
             # normalise dataset (maybe try and keep in torch language)
 

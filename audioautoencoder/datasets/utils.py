@@ -93,10 +93,10 @@ class ScalerDatasetLoader:
         self.val_dataset, _ = random_split(self.val_dataset, [int(subsample * len(self.val_dataset)), len(self.val_dataset) - int(subsample * len(self.val_dataset))], generator=split_rng)
 
 class ChannelDatasetLoader:
-    def __init__(self, dataset_path, scalers, output_time_length=175, channels=1, snr_db=None, subset=False, batch_size=32):
+    def __init__(self, dataset_path, scalers, output_time_length=175, channels=1, snr_db=None, subset=False, batch_size=32, num_workers=0):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.batch_size = batch_size
-        self.num_workers = 0
+        self.num_workers = num_workers
         self.subset = subset
         self.snr_db = snr_db
         self.dataset_path = dataset_path
