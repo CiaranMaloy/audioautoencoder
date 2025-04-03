@@ -258,7 +258,7 @@ class HDF5Dataset_bandchannels(Dataset):
         self.scalers = scalers
         self.a = 2
 
-        print("Dataset size:", self.h5_file["snr_db"].shape[0])
+        #print("Dataset size:", self.h5_file["snr_db"].shape[0])
 
     def __len__(self):
         self.h5_file = h5py.File(self.h5_file_path, "r")  # Open the file once
