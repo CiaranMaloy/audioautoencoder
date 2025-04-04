@@ -534,6 +534,132 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
 
     print(f"Finished combining files into {current_file_index} output files in {output_folder_path}")
 
+def combine_h5_files_spectrograms_metadata(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128, dst="/content/temp_file.h5"):
+    """Combines multiple HDF5 files into a few large ones, retaining only input and target spectrograms and metadata datasets."""
+
+    import os
+    import random
+    import h5py
+    import numpy as np
+    import math
+
+    max_file_size_bytes = max_file_size_gb * 1024**3
+
+    h5_files = sorted(
+        [os.path.join(h5_folder_path, f) for f in os.listdir(h5_folder_path) if f.endswith(".h5")]
+    )
+    random.shuffle(h5_files)
+
+    if not h5_files:
+        print("No HDF5 files found in directory.")
+        return
+
+    with h5py.File(h5_files[0], "r") as first_file:
+
+        input_spectrogram_shape = first_file["input_features_spectrogram"].shape[1:]
+        target_spectrogram_shape = first_file["target_features_spectrogram"].shape[1:]
+
+        filename_shape = first_file["filenames"].shape[1:]
+        snr_db_shape = first_file["snr_db"].shape[1:]
+
+        input_spectrogram_dtype = first_file["input_features_spectrogram"].dtype
+        target_spectrogram_dtype = first_file["target_features_spectrogram"].dtype
+        filename_dtype = first_file["filenames"].dtype
+        snr_db_dtype = first_file["snr_db"].dtype
+
+        sample_size_bytes = (
+            np.prod(input_spectrogram_shape) * np.dtype(input_spectrogram_dtype).itemsize +
+            np.prod(target_spectrogram_shape) * np.dtype(target_spectrogram_dtype).itemsize +
+            np.prod(filename_shape) * np.dtype(filename_dtype).itemsize +
+            np.prod(snr_db_shape) * np.dtype(snr_db_dtype).itemsize
+        )
+
+    os.makedirs(output_folder_path, exist_ok=True)
+
+    current_file_index = current_file_samples = current_file_size = previous_size = 0
+    combined_file = None
+    filename_dataset = snr_db_dataset = None
+    input_spectrogram_dataset = target_spectrogram_dataset = None
+
+    def create_new_file():
+        nonlocal current_file_index, current_file_samples, current_file_size, combined_file
+        nonlocal filename_dataset, snr_db_dataset, input_spectrogram_dataset, target_spectrogram_dataset, previous_size
+
+        if combined_file is not None:
+            combined_file.close()
+
+        file_path = os.path.join(output_folder_path, f"combined_{current_file_index:03d}.h5")
+        combined_file = h5py.File(file_path, "w")
+
+        input_spectrogram_dataset = combined_file.create_dataset(
+            "input_features_spectrogram", shape=(0, *input_spectrogram_shape), chunks=(chunk_size, *input_spectrogram_shape),
+            maxshape=(None, *input_spectrogram_shape), dtype=input_spectrogram_dtype
+        )
+
+        target_spectrogram_dataset = combined_file.create_dataset(
+            "target_features_spectrogram", shape=(0, *target_spectrogram_shape), chunks=(chunk_size, *target_spectrogram_shape),
+            maxshape=(None, *target_spectrogram_shape), dtype=target_spectrogram_dtype
+        )
+
+        filename_dataset = combined_file.create_dataset(
+            "filenames", shape=(0, *filename_shape), chunks=(chunk_size, *filename_shape),
+            maxshape=(None, *filename_shape), dtype=filename_dtype
+        )
+
+        snr_db_dataset = combined_file.create_dataset(
+            "snr_db", shape=(0, *snr_db_shape), chunks=(chunk_size, *snr_db_shape),
+            maxshape=(None, *snr_db_shape), dtype=snr_db_dtype
+        )
+
+        current_file_samples = current_file_size = previous_size = 0
+        current_file_index += 1
+
+        print(f"Created new file: {file_path}")
+
+    create_new_file()
+
+    for h5_file in h5_files:
+        copy_with_retries(h5_file, dst)
+
+        with h5py.File(dst, "r") as source_file:
+
+            input_spectrogram = source_file["input_features_spectrogram"][:]
+            target_spectrogram = source_file["target_features_spectrogram"][:]
+
+            filename = source_file["filenames"][:]
+            snr_db = source_file["snr_db"][:]
+
+            num_samples = input_spectrogram.shape[0]
+
+            for i in range(0, num_samples, chunk_size):
+
+                chunk_slice = slice(i, i+chunk_size)
+                chunk_sample_size = input_spectrogram[chunk_slice].shape[0] * sample_size_bytes
+
+                if current_file_size + chunk_sample_size > max_file_size_bytes:
+                    create_new_file()
+
+                new_size = current_file_samples + input_spectrogram[chunk_slice].shape[0]
+
+                input_spectrogram_dataset.resize((new_size, *input_spectrogram_shape))
+                target_spectrogram_dataset.resize((new_size, *target_spectrogram_shape))
+                filename_dataset.resize((new_size, *filename_shape))
+                snr_db_dataset.resize((new_size, *snr_db_shape))
+
+                input_spectrogram_dataset[current_file_samples:new_size] = input_spectrogram[chunk_slice]
+                target_spectrogram_dataset[current_file_samples:new_size] = target_spectrogram[chunk_slice]
+                filename_dataset[current_file_samples:new_size] = filename[chunk_slice]
+                snr_db_dataset[current_file_samples:new_size] = snr_db[chunk_slice]
+
+                current_file_samples = new_size
+                current_file_size += chunk_sample_size
+
+    if combined_file is not None:
+        combined_file.close()
+
+    print(f"Finished combining files into {current_file_index} output files in {output_folder_path}")
+
+
 def combine_h5_files_clean(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128):
     """Combines multiple HDF5 files into a few large ones, ensuring they do not exceed max_file_size_gb."""
     
