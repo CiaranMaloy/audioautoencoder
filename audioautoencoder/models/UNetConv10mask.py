@@ -120,8 +120,8 @@ class UNetConv10(nn.Module):
         enc_channels = [A, B, C, D]
         dec_channels = [D, C, B, A]
 
-        self.enc1 = self.conv_block(in_channels, enc_channels[0], (6, 3), 2)
-        self.enc2 = self.conv_block(enc_channels[0], enc_channels[1], 3, 2)
+        self.enc1 = self.conv_block(in_channels, enc_channels[0], (10, 3), 2)
+        self.enc2 = self.conv_block(enc_channels[0], enc_channels[1], 5, 2)
         self.enc3 = self.conv_block(enc_channels[1], enc_channels[2], 3, 2)
         self.enc4 = self.conv_block(enc_channels[2], enc_channels[3], 3, 2)
 
@@ -133,8 +133,8 @@ class UNetConv10(nn.Module):
         # Decoder (Upsampling)
         self.dec4 = self.upconv_block(dec_channels[0], dec_channels[1], 3, 2)
         self.dec3 = self.upconv_block(dec_channels[1], dec_channels[2], 3, 2)
-        self.dec2 = self.upconv_block(dec_channels[2], dec_channels[3], 3, 2)
-        self.dec1 = self.upconv_block(dec_channels[3], out_channels, (6, 3), 2)
+        self.dec2 = self.upconv_block(dec_channels[2], dec_channels[3], 5, 2)
+        self.dec1 = self.upconv_block(dec_channels[3], out_channels, (10, 3), 2)
 
         # Initialize Spatial Attention Modules
         self.attn4 = EnhancedSkipAttention(enc_channels[3], dec_channels[0])
