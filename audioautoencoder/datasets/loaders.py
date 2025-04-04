@@ -331,6 +331,149 @@ class HDF5Dataset_bandchannels(Dataset):
         input_spectrogram_lf = self.resample_feature(input_spectrogram[freq_indices_lf, :], target_shape)
         # edges
         #input_edges_hf = self.resample_feature(input_edges[freq_indices_hf, :], target_shape)
+        input_edges_mf = self.resample_feature(input_edges[freq_indices_mf, :], target_shape)
+        #input_edges_lf = self.resample_feature(input_edges[freq_indices_lf, :], target_shape)
+        # Resample MFCC features
+        input_cepstrum = self.resample_feature(input_cepstrum, target_shape)
+        input_cepstrum_hf = self.resample_feature(input_cepstrum[freq_indices_hf, :], target_shape)
+        input_cepstrum_mf = self.resample_feature(input_cepstrum[freq_indices_mf, :], target_shape)
+        input_cepstrum_lf = self.resample_feature(input_cepstrum[freq_indices_lf, :], target_shape)
+
+        # target
+        target_spectrogram_hf = self.resample_feature(target_spectrogram[freq_indices_hf, :], target_shape)
+        target_spectrogram_mf = self.resample_feature(target_spectrogram[freq_indices_mf, :], target_shape)
+        target_spectrogram_lf = self.resample_feature(target_spectrogram[freq_indices_lf, :], target_shape)
+
+
+        # Convert to tensors - input_phase, is missing,..... it's too confusing
+        inputs = torch.tensor(np.stack([
+            input_spectrogram, input_spectrogram_hf, input_spectrogram_mf, input_spectrogram_lf,
+            input_cepstrum, input_cepstrum_hf, input_cepstrum_mf, input_cepstrum_lf,
+            input_edges_mf
+        ], axis=0), dtype=torch.float32)  # Shape: (6, H, W)
+
+        # Output:
+        target = torch.tensor(np.stack([
+            target_spectrogram, target_spectrogram_hf, target_spectrogram_mf, target_spectrogram_lf
+        ], axis=0), dtype=torch.float32) 
+
+        # reformat to between 0 and 1
+        #inputs = (inputs/a) + 0.5
+        #target = (target/a) + 0.5
+
+        # reformat to between 0 and 1
+        inputs = torch.clamp((inputs/self.a) + 0.5, min=0)
+        target = torch.clamp((target/self.a) + 0.5, min=0)
+
+        inputs = self.downsample_H_by_factor(inputs, 4)
+        target = self.downsample_H_by_factor(target, 4)
+
+        # Extract filename correctly
+        filename = self.h5_file["filenames"][idx]
+        if isinstance(filename, bytes):  # Check if it's a bytes object
+            filename = filename.decode('utf-8')  # Convert to a string
+
+        # Extract metadata
+        metadata = {
+            "filename": filename,
+            "snr_db": self.h5_file["snr_db"][idx].item(), # Convert to Python float
+            "phase": input_phase,
+            "hf_shape": input_spectrogram[freq_indices_hf, :].shape,
+            "mf_shape": input_spectrogram[freq_indices_mf, :].shape,
+            "lf_shape": input_spectrogram[freq_indices_lf, :].shape,
+            "freq_indices_hf": freq_indices_hf,
+            "freq_indices_mf": freq_indices_mf,
+            "freq_indices_lf": freq_indices_lf
+        }
+
+        return inputs, target, metadata
+
+    def __del__(self):
+        if hasattr(self, "h5_file") and self.h5_file:
+            self.h5_file.close()
+
+import torch.nn.functional as F
+class HDF5Dataset_bandchannels_no_features(Dataset):
+    def __init__(self, h5_file_path, scalers, output_time_length=86, channels=2):
+        self.h5_file_path = h5_file_path
+        self.output_time_length = output_time_length
+        self.channels = channels
+        self.scalers = scalers
+        self.a = 2
+
+        #print("Dataset size:", self.h5_file["snr_db"].shape[0])
+
+    def __len__(self):
+        self.h5_file = h5py.File(self.h5_file_path, "r")  # Open the file once
+        return self.h5_file["snr_db"].shape[0]
+    
+    def resample_feature(self, feature, target_shape):
+        """Resamples a 2D numpy feature array to match target shape using torch.nn.functional.interpolate."""
+        feature_tensor = torch.tensor(feature, dtype=torch.float32).unsqueeze(0).unsqueeze(0)  # Shape: (1, 1, H, W)
+        target_size = (target_shape[0], target_shape[1])  # (new_H, new_W)
+        
+        resized_feature = F.interpolate(feature_tensor, size=target_size, mode="bilinear", align_corners=False)
+        return resized_feature.squeeze(0).squeeze(0).numpy()  # Remove batch/channel dim and return as numpy
+
+    def downsample_H_by_factor(self, inputs, scale_factor):
+        B, H, W = inputs.shape
+        new_H = int(H // scale_factor)  # Compute new height
+
+        # Unsqueeze a channel dimension -> (B, 1, H, W)
+        inputs = inputs.unsqueeze(1)
+
+        # Resize only height using bilinear interpolation
+        resampled = F.interpolate(inputs, size=(new_H, W), mode="bilinear", align_corners=False)
+
+        return resampled.squeeze(1)  # Remove the channel dimension
+
+    def __getitem__(self, idx):
+        self.h5_file = h5py.File(self.h5_file_path, "r")  # Open the file per worker
+        #try:
+            # normalise dataset (maybe try and keep in torch language)
+
+            # this is where to combine the features into a 5 channel image after each image has been normalised
+            
+        # Load input features
+        #input_phase = self.h5_file["input_features_phase"][idx]
+        input_spectrogram = self.h5_file["input_features_spectrogram"][idx]
+        #input_edges = self.h5_file["input_features_edges"][idx]
+        #input_cepstrum = self.h5_file["input_features_cepstrum"][idx]
+        #input_cepstrum_edges= self.h5_file["input_features_cepstrum_edges"][idx]
+
+        # Define target shape (use spectrogram shape as reference)
+        target_shape = input_spectrogram.shape
+
+        # Load target
+        target_spectrogram = self.h5_file["target_features_spectrogram"][idx]
+
+        # Apply scalers
+        #input_phase = self.scalers["input_features_phase"].transform(input_phase.reshape(1, -1)).reshape(input_phase.shape)
+        input_spectrogram = self.scalers["input_features_spectrogram"].transform(input_spectrogram.reshape(1, -1)).reshape(input_spectrogram.shape)
+        #input_edges = self.scalers["input_features_edges"].transform(input_edges.reshape(1, -1)).reshape(input_edges.shape)
+        #input_cepstrum = self.scalers["input_features_cepstrum"].transform(input_cepstrum.reshape(1, -1)).reshape(input_cepstrum.shape)
+        #input_cepstrum_edges = self.scalers["input_features_cepstrum_edges"].transform(input_cepstrum_edges.reshape(1, -1)).reshape(input_cepstrum_edges.shape)
+
+        target_spectrogram = self.scalers["target_features_spectrogram"].transform(target_spectrogram.reshape(1, -1)).reshape(target_spectrogram.shape)
+
+        # resample mfcc featues so theyre the same shape as the spectrogram and phase features
+        # Define frequency bins
+        sampling_rate = 44100  # 44.1 kHz audio
+        n_fft = 2048  # Adjust this for better resolution
+        freqs = np.linspace(0, sampling_rate / 2, n_fft // 2 + 1)  # STFT frequency bins
+
+        # Find indices corresponding to 0–4000 Hz
+        # updated bandchannels will be 5000, 1250, 500
+        min_freq, hf, mf, lf = 0, 5000, 1250, 500
+        freq_indices_hf = np.where((freqs >= min_freq) & (freqs <= hf))[0]
+        freq_indices_mf = np.where((freqs >= min_freq) & (freqs <= mf))[0]
+        freq_indices_lf = np.where((freqs >= min_freq) & (freqs <= lf))[0]
+        # input spectrogram
+        input_spectrogram_hf = self.resample_feature(input_spectrogram[freq_indices_hf, :], target_shape)
+        input_spectrogram_mf = self.resample_feature(input_spectrogram[freq_indices_mf, :], target_shape)
+        input_spectrogram_lf = self.resample_feature(input_spectrogram[freq_indices_lf, :], target_shape)
+        # edges
+        #input_edges_hf = self.resample_feature(input_edges[freq_indices_hf, :], target_shape)
         #input_edges_mf = self.resample_feature(input_edges[freq_indices_mf, :], target_shape)
         #input_edges_lf = self.resample_feature(input_edges[freq_indices_lf, :], target_shape)
         # Resample MFCC features

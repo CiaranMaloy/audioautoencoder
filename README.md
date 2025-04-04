@@ -1,4 +1,4 @@
-# Improving Audio Denoising Autoencoders: A Comparative Study of Models and Feature Extraction Methods
+# Improving Music Denoising Autoencoders: A Comparative Study of Models and Feature Extraction Methods
 
 ---
 

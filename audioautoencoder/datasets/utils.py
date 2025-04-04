@@ -109,7 +109,7 @@ class ChannelDatasetLoader:
         torch.manual_seed(42)
         split_rng = torch.Generator().manual_seed(42)
 
-        dataset = HDF5Dataset_bandchannels(self.dataset_path, self.scalers, output_time_length=self.output_time_length, channels=self.channels)
+        dataset = HDF5Dataset_bandchannels_no_features(self.dataset_path, self.scalers, output_time_length=self.output_time_length, channels=self.channels)
     
         total_size = len(dataset)
         train_size = int(0.8 * total_size)
@@ -262,6 +262,38 @@ def train_scalers_separation(dataset_path, sample_size=1000):
         scalers["input_features_cepstrum"] = get_scaler(source_file["input_features_cepstrum"], StandardScaler(), sample_size=sample_size)
         print('Training Cepstrum Edges...')
         scalers["input_features_cepstrum_edges"] = get_scaler(source_file["input_features_cepstrum_edges"], StandardScaler(), sample_size=sample_size)
+        # target
+        scalers["target_features_spectrogram"] = spec_scaler
+        
+    return scalers
+
+def train_scalers_no_features(dataset_path, sample_size=1000):
+    print('Training scalers for separation dataset')
+    """Trains scalers for each feature in the HDF5 dataset."""
+    scalers = {}
+    
+    with h5py.File(dataset_path, "r") as source_file:
+
+
+        # train spectrogram scaler
+        print('Training Spectrogram...')
+        spec_scaler = StandardScaler()
+        print('Input features')
+        spec_scaler = get_scaler_partial(source_file["input_features_spectrogram"], spec_scaler, sample_size=sample_size)
+        print('Target features')
+        spec_scaler = get_scaler_partial(source_file["target_features_spectrogram"], spec_scaler, sample_size=sample_size)
+
+        # Train scalers
+        # input
+        #print('Training Phase...')
+        #scalers["input_features_phase"] = get_scaler(source_file["input_features_phase"], MinMaxScaler(), sample_size=sample_size)
+        scalers["input_features_spectrogram"] = spec_scaler
+        #print('Training Edges...')
+        #scalers["input_features_edges"] = get_scaler(source_file["input_features_edges"], StandardScaler(), sample_size=sample_size)
+        #print('Training Cepstrum...')
+        #scalers["input_features_cepstrum"] = get_scaler(source_file["input_features_cepstrum"], StandardScaler(), sample_size=sample_size)
+        #print('Training Cepstrum Edges...')
+        ##scalers["input_features_cepstrum_edges"] = get_scaler(source_file["input_features_cepstrum_edges"], StandardScaler(), sample_size=sample_size)
         # target
         scalers["target_features_spectrogram"] = spec_scaler
         
