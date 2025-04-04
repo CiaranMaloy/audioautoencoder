@@ -618,7 +618,7 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
         print(f"Created new file: {file_path}")
 
     create_new_file()
-
+    break_trigger = False
     for h5_file in tqdm(h5_files):
         copy_with_retries(h5_file, dst)
 
