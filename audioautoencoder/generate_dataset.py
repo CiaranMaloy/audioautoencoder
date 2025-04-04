@@ -583,6 +583,7 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
         [os.path.join(h5_folder_path, f) for f in os.listdir(h5_folder_path) if f.endswith(".h5")]
     )
     random.shuffle(h5_files)
+    print(h5_files)
 
     if not h5_files:
         print("No HDF5 files found in directory.")
@@ -652,9 +653,10 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
 
     create_new_file()
     break_trigger = False
+    import concurrent.futures
+
     for h5_file in tqdm(h5_files):
-        #copy_h5_with_retries(h5_file, dst) # removing copy with retries as it defeats some points in downloading the data quickly
-        try:
+        def process_file(h5_file, current_file_samples, current_file_size, previous_size):
             with h5py.File(h5_file, "r") as source_file:
 
                 input_spectrogram = source_file["input_features_spectrogram"][:]
@@ -671,9 +673,7 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
                     chunk_sample_size = input_spectrogram[chunk_slice].shape[0] * sample_size_bytes
 
                     if current_file_size + chunk_sample_size > max_file_size_bytes:
-                        break_trigger = True
-                        break
-                        #create_new_file()
+                        return current_file_samples, current_file_size, previous_size, True
 
                     new_size = current_file_samples + input_spectrogram[chunk_slice].shape[0]
 
@@ -690,16 +690,24 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
                     current_file_samples = new_size
                     current_file_size += chunk_sample_size
 
-                    # Print progress every ~1GB
                     current_size_gb = current_file_size / 1024**3
                     if math.floor(previous_size) != math.floor(current_size_gb):
                         if math.floor(current_size_gb) % 5 == 0:
                             print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
                     previous_size = current_size_gb
-        except:
-            print(f'There was a problem, skipping: {h5_file}')
-        if break_trigger:
-            break
+
+            return current_file_samples, current_file_size, previous_size, False
+
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(process_file, h5_file, current_file_samples, current_file_size, previous_size)
+                current_file_samples, current_file_size, previous_size, break_trigger = future.result(timeout=30)
+                if break_trigger:
+                    break
+        except concurrent.futures.TimeoutError:
+            print(f'Timeout (30 seconds), skipping file: {h5_file}')
+        except Exception as e:
+            print(f'There was a problem ({e}), skipping: {h5_file}')
 
     if combined_file is not None:
         combined_file.close()
