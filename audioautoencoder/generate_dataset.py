@@ -535,6 +535,39 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
 
     print(f"Finished combining files into {current_file_index} output files in {output_folder_path}")
 
+import h5py
+import concurrent.futures
+import time
+
+def copy_h5_with_retries(src, dst, retries=3, delay=5, timeout=60):
+    datasets_to_copy = [
+        "input_features_spectrogram",
+        "target_features_spectrogram",
+        "filenames",
+        "snr_db"
+    ]
+    def copy_operation():
+        with h5py.File(src, "r") as source_file:
+            with h5py.File(dst, "w") as dest_file:
+                for dataset_name in datasets_to_copy:
+                    data = source_file[dataset_name][:]
+                    dest_file.create_dataset(dataset_name, data=data, compression="gzip")
+
+    for attempt in range(retries):
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(copy_operation)
+                future.result(timeout=timeout)
+            return
+        except concurrent.futures.TimeoutError:
+            print(f"Attempt {attempt + 1} failed: Timeout after {timeout} seconds. Retrying in {delay} seconds.")
+        except (OSError, KeyError) as e:
+            print(f"Attempt {attempt + 1} failed: {e}. Retrying in {delay} seconds.")
+        time.sleep(delay)
+
+    raise RuntimeError(f"Failed to copy selected datasets from {src} after {retries} attempts.")
+
+
 def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128, dst="/content/temp_file.h5"):
     """Combines multiple HDF5 files into a few large ones, retaining only input and target spectrograms and metadata datasets."""
 
@@ -620,9 +653,9 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
     create_new_file()
     break_trigger = False
     for h5_file in tqdm(h5_files):
-        #copy_with_retries(h5_file, dst) # removing copy with retries as it defeats some points in downloading the data quickly
+        copy_h5_with_retries(h5_file, dst) # removing copy with retries as it defeats some points in downloading the data quickly
 
-        with h5py.File(h5_file, "r") as source_file:
+        with h5py.File(dst, "r") as source_file:
 
             input_spectrogram = source_file["input_features_spectrogram"][:]
             target_spectrogram = source_file["target_features_spectrogram"][:]
