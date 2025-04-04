@@ -641,8 +641,8 @@ def process_h5_file_with_retry_and_timeout(
     target_spectrogram_shape,
     filename_shape,
     snr_db_shape,
-    max_retries=5,
-    timeout=60
+    max_retries=6,
+    timeout=10
 ):
     """
     Attempts to process `h5_file` in a separate thread, enforcing
@@ -679,7 +679,7 @@ def process_h5_file_with_retry_and_timeout(
             )
             try:
                 # Attempt to get the result within `timeout` seconds
-                result = future.result(timeout=timeout)
+                result = future.result(timeout=timeout*attempts)
                 # If we got here, it succeeded within the timeout
                 return result  # The updated (current_file_samples, current_file_size, previous_size)
 
