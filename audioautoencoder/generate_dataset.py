@@ -612,7 +612,8 @@ def _process_h5_file_once(
             # Print progress every ~1GB
             current_size_gb = current_file_size / (1024 ** 3)
             if math.floor(previous_size) != math.floor(current_size_gb):
-                print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
+                if math.floor(current_size_gb) % 5:
+                    print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
             previous_size = current_size_gb
 
         if break_trigger:
