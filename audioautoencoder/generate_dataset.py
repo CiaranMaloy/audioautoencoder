@@ -641,8 +641,8 @@ def process_h5_file_with_retry_and_timeout(
     target_spectrogram_shape,
     filename_shape,
     snr_db_shape,
-    max_retries=3,
-    timeout=10
+    max_retries=5,
+    timeout=60
 ):
     """
     Attempts to process `h5_file` in a separate thread, enforcing
