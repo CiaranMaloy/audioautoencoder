@@ -800,8 +800,6 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
             target_spectrogram_shape,
             filename_shape,
             snr_db_shape,
-            max_retries=3,
-            timeout=30
         )
         current_file_samples, current_file_size, previous_size, break_trigger = output
         if break_trigger:
