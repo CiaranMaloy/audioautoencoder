@@ -638,7 +638,9 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
                 chunk_sample_size = input_spectrogram[chunk_slice].shape[0] * sample_size_bytes
 
                 if current_file_size + chunk_sample_size > max_file_size_bytes:
-                    create_new_file()
+                    break_trigger = True
+                    break
+                    #create_new_file()
 
                 new_size = current_file_samples + input_spectrogram[chunk_slice].shape[0]
 
@@ -654,6 +656,14 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
 
                 current_file_samples = new_size
                 current_file_size += chunk_sample_size
+
+                # Print progress every ~1GB
+                current_size_gb = current_file_size / 1024**3
+                if math.floor(previous_size) != math.floor(current_size_gb):
+                    print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
+                previous_size = current_size_gb
+        if break_trigger:
+            break
 
     if combined_file is not None:
         combined_file.close()
