@@ -653,48 +653,51 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
     create_new_file()
     break_trigger = False
     for h5_file in tqdm(h5_files):
-        copy_h5_with_retries(h5_file, dst) # removing copy with retries as it defeats some points in downloading the data quickly
+        #copy_h5_with_retries(h5_file, dst) # removing copy with retries as it defeats some points in downloading the data quickly
+        try:
+            with h5py.File(h5_file, "r") as source_file:
 
-        with h5py.File(dst, "r") as source_file:
+                input_spectrogram = source_file["input_features_spectrogram"][:]
+                target_spectrogram = source_file["target_features_spectrogram"][:]
 
-            input_spectrogram = source_file["input_features_spectrogram"][:]
-            target_spectrogram = source_file["target_features_spectrogram"][:]
+                filename = source_file["filenames"][:]
+                snr_db = source_file["snr_db"][:]
 
-            filename = source_file["filenames"][:]
-            snr_db = source_file["snr_db"][:]
+                num_samples = input_spectrogram.shape[0]
 
-            num_samples = input_spectrogram.shape[0]
+                for i in range(0, num_samples, chunk_size):
 
-            for i in range(0, num_samples, chunk_size):
+                    chunk_slice = slice(i, i+chunk_size)
+                    chunk_sample_size = input_spectrogram[chunk_slice].shape[0] * sample_size_bytes
 
-                chunk_slice = slice(i, i+chunk_size)
-                chunk_sample_size = input_spectrogram[chunk_slice].shape[0] * sample_size_bytes
+                    if current_file_size + chunk_sample_size > max_file_size_bytes:
+                        break_trigger = True
+                        break
+                        #create_new_file()
 
-                if current_file_size + chunk_sample_size > max_file_size_bytes:
-                    break_trigger = True
-                    break
-                    #create_new_file()
+                    new_size = current_file_samples + input_spectrogram[chunk_slice].shape[0]
 
-                new_size = current_file_samples + input_spectrogram[chunk_slice].shape[0]
+                    input_spectrogram_dataset.resize((new_size, *input_spectrogram_shape))
+                    target_spectrogram_dataset.resize((new_size, *target_spectrogram_shape))
+                    filename_dataset.resize((new_size, *filename_shape))
+                    snr_db_dataset.resize((new_size, *snr_db_shape))
 
-                input_spectrogram_dataset.resize((new_size, *input_spectrogram_shape))
-                target_spectrogram_dataset.resize((new_size, *target_spectrogram_shape))
-                filename_dataset.resize((new_size, *filename_shape))
-                snr_db_dataset.resize((new_size, *snr_db_shape))
+                    input_spectrogram_dataset[current_file_samples:new_size] = input_spectrogram[chunk_slice]
+                    target_spectrogram_dataset[current_file_samples:new_size] = target_spectrogram[chunk_slice]
+                    filename_dataset[current_file_samples:new_size] = filename[chunk_slice]
+                    snr_db_dataset[current_file_samples:new_size] = snr_db[chunk_slice]
 
-                input_spectrogram_dataset[current_file_samples:new_size] = input_spectrogram[chunk_slice]
-                target_spectrogram_dataset[current_file_samples:new_size] = target_spectrogram[chunk_slice]
-                filename_dataset[current_file_samples:new_size] = filename[chunk_slice]
-                snr_db_dataset[current_file_samples:new_size] = snr_db[chunk_slice]
+                    current_file_samples = new_size
+                    current_file_size += chunk_sample_size
 
-                current_file_samples = new_size
-                current_file_size += chunk_sample_size
-
-                # Print progress every ~1GB
-                current_size_gb = current_file_size / 1024**3
-                if math.floor(previous_size) != math.floor(current_size_gb):
-                    print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
-                previous_size = current_size_gb
+                    # Print progress every ~1GB
+                    current_size_gb = current_file_size / 1024**3
+                    if math.floor(previous_size) != math.floor(current_size_gb):
+                        if math.floor(current_size_gb) % 5 == 0:
+                            print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
+                    previous_size = current_size_gb
+        except:
+            print(f'There was a problem, skipping: {h5_file}')
         if break_trigger:
             break
 
