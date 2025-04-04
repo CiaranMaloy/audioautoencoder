@@ -518,7 +518,7 @@ class HDF5Dataset_bandchannels_no_features(Dataset):
         metadata = {
             "filename": filename,
             "snr_db": self.h5_file["snr_db"][idx].item(), # Convert to Python float
-            "phase": input_phase,
+            #"phase": input_phase,
             "hf_shape": input_spectrogram[freq_indices_hf, :].shape,
             "mf_shape": input_spectrogram[freq_indices_mf, :].shape,
             "lf_shape": input_spectrogram[freq_indices_lf, :].shape,
