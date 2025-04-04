@@ -535,161 +535,6 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
 
     print(f"Finished combining files into {current_file_index} output files in {output_folder_path}")
 
-## with retries: 
-import time
-import math
-import numpy as np
-import h5py
-
-def process_h5_file_with_retry(
-    h5_file,
-    input_spectrogram_dataset,
-    target_spectrogram_dataset,
-    filename_dataset,
-    snr_db_dataset,
-    chunk_size,
-    max_file_size_bytes,
-    current_file_samples,
-    current_file_size,
-    previous_size,
-    sample_size_bytes,
-    input_spectrogram_shape,
-    target_spectrogram_shape,
-    filename_shape,
-    snr_db_shape,
-    max_retries=3,
-    timeout=30
-):
-    """
-    Reads data from an H5 file in chunks, appends it to existing datasets,
-    and keeps track of the current file size. Includes retries and timeout.
-    
-    Parameters
-    ----------
-    h5_file : str
-        Path to the H5 file to open.
-    input_spectrogram_dataset : h5py.Dataset
-        HDF5 dataset for the input spectrogram (already opened).
-    target_spectrogram_dataset : h5py.Dataset
-        HDF5 dataset for the target spectrogram (already opened).
-    filename_dataset : h5py.Dataset
-        HDF5 dataset for filenames (already opened).
-    snr_db_dataset : h5py.Dataset
-        HDF5 dataset for SNR values (already opened).
-    chunk_size : int
-        Number of samples to process per chunk.
-    max_file_size_bytes : int
-        Maximum total file size threshold in bytes before stopping.
-    current_file_samples : int
-        Current count of processed samples in the output file.
-    current_file_size : int
-        Current total size in bytes of processed data.
-    previous_size : float
-        Previously reported size (in GB) for progress printing.
-    sample_size_bytes : int
-        Approximate size (in bytes) per sample.
-    input_spectrogram_shape : tuple
-        The shape of a single input spectrogram sample (channels, height, width).
-    target_spectrogram_shape : tuple
-        The shape of a single target spectrogram sample (channels, height, width).
-    filename_shape : tuple
-        The shape of a single filename entry.
-    snr_db_shape : tuple
-        The shape of a single SNR entry.
-    max_retries : int, optional
-        Maximum number of retry attempts on failure, by default 3.
-    timeout : int, optional
-        Max time (in seconds) before giving up on all retries, by default 30.
-    
-    Returns
-    -------
-    (int, int, float)
-        Updated values of (current_file_samples, current_file_size, previous_size).
-        Useful if you need to track these values after the function finishes.
-    """
-
-    start_time = time.time()
-    attempts = 0
-    
-    while attempts < max_retries:
-        try:
-            with h5py.File(h5_file, "r") as source_file:
-                input_spectrogram = source_file["input_features_spectrogram"][:]
-                target_spectrogram = source_file["target_features_spectrogram"][:]
-                filename = source_file["filenames"][:]
-                snr_db = source_file["snr_db"][:]
-
-                num_samples = input_spectrogram.shape[0]
-                break_trigger = False
-
-                for i in range(0, num_samples, chunk_size):
-                    chunk_slice = slice(i, i + chunk_size)
-                    chunk_sample_size = (input_spectrogram[chunk_slice].shape[0] 
-                                         * sample_size_bytes)
-
-                    if current_file_size + chunk_sample_size > max_file_size_bytes:
-                        # If adding this chunk exceeds the limit, stop processing here
-                        break_trigger = True
-                        break
-
-                    # Calculate new total number of samples after appending this chunk
-                    new_size = current_file_samples + input_spectrogram[chunk_slice].shape[0]
-
-                    # Resize the datasets to accommodate the new chunk
-                    input_spectrogram_dataset.resize((new_size, *input_spectrogram_shape))
-                    target_spectrogram_dataset.resize((new_size, *target_spectrogram_shape))
-                    filename_dataset.resize((new_size, *filename_shape))
-                    snr_db_dataset.resize((new_size, *snr_db_shape))
-
-                    # Write the chunk data into the datasets
-                    input_spectrogram_dataset[current_file_samples:new_size] = \
-                        input_spectrogram[chunk_slice]
-                    target_spectrogram_dataset[current_file_samples:new_size] = \
-                        target_spectrogram[chunk_slice]
-                    filename_dataset[current_file_samples:new_size] = \
-                        filename[chunk_slice]
-                    snr_db_dataset[current_file_samples:new_size] = \
-                        snr_db[chunk_slice]
-
-                    # Update counters
-                    current_file_samples = new_size
-                    current_file_size += chunk_sample_size
-
-                    # Print progress every ~1GB
-                    current_size_gb = current_file_size / (1024 ** 3)
-                    if math.floor(previous_size) != math.floor(current_size_gb):
-                        print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
-                    previous_size = current_size_gb
-
-                # If we explicitly triggered a break due to file size,
-                # we can end here (or decide to do something else).
-                if break_trigger:
-                    print("Max file size reached; stopping further processing.")
-                
-                # If we reached here without exception, we are done!
-                return current_file_samples, current_file_size, previous_size, break_trigger
-
-        except Exception as e:
-            attempts += 1
-            elapsed_time = time.time() - start_time
-            
-            print(f"Error processing {h5_file}: {e}")
-            
-            # Check timeout
-            if elapsed_time > timeout:
-                print(f"Timeout of {timeout} seconds exceeded.")
-                raise e
-            
-            if attempts >= max_retries:
-                print(f"Max retries ({max_retries}) reached. Could not process {h5_file}.")
-                raise e
-            else:
-                print(f"Retrying... attempt {attempts}/{max_retries} within {elapsed_time:.2f}s.")
-
-    # If somehow we exit the while without returning or raising, just return the current info
-    return current_file_samples, current_file_size, previous_size, break_trigger
-
-
 def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128, dst="/content/temp_file.h5"):
     """Combines multiple HDF5 files into a few large ones, retaining only input and target spectrograms and metadata datasets."""
 
@@ -777,26 +622,46 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
     for h5_file in tqdm(h5_files):
         #copy_with_retries(h5_file, dst) # removing copy with retries as it defeats some points in downloading the data quickly
 
-        output = process_h5_file_with_retry(
-            h5_file,
-            input_spectrogram_dataset,
-            target_spectrogram_dataset,
-            filename_dataset,
-            snr_db_dataset,
-            chunk_size,
-            max_file_size_bytes,
-            current_file_samples,
-            current_file_size,
-            previous_size,
-            sample_size_bytes,
-            input_spectrogram_shape,
-            target_spectrogram_shape,
-            filename_shape,
-            snr_db_shape,
-            max_retries=3,
-            timeout=30
-        )
-        current_file_samples, current_file_size, previous_size, break_trigger = output
+        with h5py.File(h5_file, "r") as source_file:
+
+            input_spectrogram = source_file["input_features_spectrogram"][:]
+            target_spectrogram = source_file["target_features_spectrogram"][:]
+
+            filename = source_file["filenames"][:]
+            snr_db = source_file["snr_db"][:]
+
+            num_samples = input_spectrogram.shape[0]
+
+            for i in range(0, num_samples, chunk_size):
+
+                chunk_slice = slice(i, i+chunk_size)
+                chunk_sample_size = input_spectrogram[chunk_slice].shape[0] * sample_size_bytes
+
+                if current_file_size + chunk_sample_size > max_file_size_bytes:
+                    break_trigger = True
+                    break
+                    #create_new_file()
+
+                new_size = current_file_samples + input_spectrogram[chunk_slice].shape[0]
+
+                input_spectrogram_dataset.resize((new_size, *input_spectrogram_shape))
+                target_spectrogram_dataset.resize((new_size, *target_spectrogram_shape))
+                filename_dataset.resize((new_size, *filename_shape))
+                snr_db_dataset.resize((new_size, *snr_db_shape))
+
+                input_spectrogram_dataset[current_file_samples:new_size] = input_spectrogram[chunk_slice]
+                target_spectrogram_dataset[current_file_samples:new_size] = target_spectrogram[chunk_slice]
+                filename_dataset[current_file_samples:new_size] = filename[chunk_slice]
+                snr_db_dataset[current_file_samples:new_size] = snr_db[chunk_slice]
+
+                current_file_samples = new_size
+                current_file_size += chunk_sample_size
+
+                # Print progress every ~1GB
+                current_size_gb = current_file_size / 1024**3
+                if math.floor(previous_size) != math.floor(current_size_gb):
+                    print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
+                previous_size = current_size_gb
         if break_trigger:
             break
 
