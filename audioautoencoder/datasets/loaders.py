@@ -327,26 +327,29 @@ class HDF5Dataset_bandchannels(Dataset):
         freq_indices_lf = np.where((freqs >= min_freq) & (freqs <= lf))[0]
         # input spectrogram
         input_spectrogram_hf = self.resample_feature(input_spectrogram[freq_indices_hf, :], target_shape)
-        target_spectrogram_hf = self.resample_feature(target_spectrogram[freq_indices_hf, :], target_shape)
         input_spectrogram_mf = self.resample_feature(input_spectrogram[freq_indices_mf, :], target_shape)
-        target_spectrogram_mf = self.resample_feature(target_spectrogram[freq_indices_mf, :], target_shape)
         input_spectrogram_lf = self.resample_feature(input_spectrogram[freq_indices_lf, :], target_shape)
-        target_spectrogram_lf = self.resample_feature(target_spectrogram[freq_indices_lf, :], target_shape)
         # edges
-        input_edges_hf = self.resample_feature(input_edges[freq_indices_hf, :], target_shape)
+        #input_edges_hf = self.resample_feature(input_edges[freq_indices_hf, :], target_shape)
         input_edges_mf = self.resample_feature(input_edges[freq_indices_mf, :], target_shape)
-        input_edges_lf = self.resample_feature(input_edges[freq_indices_lf, :], target_shape)
-
-        # now input indices for 0-1000 and 0-200 to add as channels and as freq_indicies for reconstruction
-
+        #input_edges_lf = self.resample_feature(input_edges[freq_indices_lf, :], target_shape)
         # Resample MFCC features
         input_cepstrum = self.resample_feature(input_cepstrum, target_shape)
+        input_cepstrum_hf = self.resample_feature(input_cepstrum[freq_indices_hf, :], target_shape)
+        input_cepstrum_mf = self.resample_feature(input_cepstrum[freq_indices_mf, :], target_shape)
+        input_cepstrum_lf = self.resample_feature(input_cepstrum[freq_indices_lf, :], target_shape)
+
+        # target
+        target_spectrogram_hf = self.resample_feature(target_spectrogram[freq_indices_hf, :], target_shape)
+        target_spectrogram_mf = self.resample_feature(target_spectrogram[freq_indices_mf, :], target_shape)
+        target_spectrogram_lf = self.resample_feature(target_spectrogram[freq_indices_lf, :], target_shape)
+
 
         # Convert to tensors - input_phase, is missing,..... it's too confusing
         inputs = torch.tensor(np.stack([
             input_spectrogram, input_spectrogram_hf, input_spectrogram_mf, input_spectrogram_lf,
-            input_edges, input_edges_hf, input_edges_mf, input_edges_lf,
-            input_cepstrum, 
+            input_cepstrum, input_cepstrum_hf, input_cepstrum_mf, input_cepstrum_lf,
+            input_edges_mf, 
         ], axis=0), dtype=torch.float32)  # Shape: (6, H, W)
 
         # Output:
