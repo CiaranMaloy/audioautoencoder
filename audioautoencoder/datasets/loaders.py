@@ -359,8 +359,8 @@ class HDF5Dataset_bandchannels(Dataset):
         #target = (target/a) + 0.5
 
         # reformat to between 0 and 1
-        inputs = (inputs/self.a) #+ 0.5
-        target = (target/self.a) #+ 0.5
+        inputs = (inputs/self.a) + 0.5
+        target = (target/self.a) + 0.5
 
         inputs = self.downsample_H_by_factor(inputs, 4)
         target = self.downsample_H_by_factor(target, 4)
