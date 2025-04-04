@@ -534,7 +534,7 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
 
     print(f"Finished combining files into {current_file_index} output files in {output_folder_path}")
 
-def combine_h5_files_spectrograms_metadata(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128, dst="/content/temp_file.h5"):
+def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128, dst="/content/temp_file.h5"):
     """Combines multiple HDF5 files into a few large ones, retaining only input and target spectrograms and metadata datasets."""
 
     import os
