@@ -271,19 +271,20 @@ def copy_with_retries(src, dst, retries=4, delay=5, timeout=10):
     def copy_operation():
         shutil.copy(src, dst)
 
-    for attempt in range(retries):
-        try:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(copy_operation)
-                future.result(timeout=timeout*(attempt+1))
-            return
-        except concurrent.futures.TimeoutError:
-            print(f"Attempt {attempt + 1} failed: Timeout after {timeout} seconds. Retrying in {delay} seconds.")
-        except OSError as e:
-            print(f"Attempt {attempt + 1} failed: {e}. Retrying in {delay} seconds.")
-        time.sleep(delay)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        for attempt in range(retries):
+            future = executor.submit(copy_operation)
+            try:
+                future.result(timeout=timeout * (attempt + 1))
+                return
+            except concurrent.futures.TimeoutError:
+                print(f"Attempt {attempt + 1} failed: Timeout after {timeout * (attempt + 1)} seconds. Retrying in {delay} seconds.")
+            except OSError as e:
+                print(f"Attempt {attempt + 1} failed: {e}. Retrying in {delay} seconds.")
+            time.sleep(delay)
 
     raise RuntimeError(f"Failed to copy {src} after {retries} attempts.")
+
 
 # usage example
 
