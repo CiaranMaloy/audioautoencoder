@@ -620,8 +620,8 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
 
     create_new_file()
     break_trigger = False
-    for h5_file in tqdm(h5_files):
-        print(h5_file)
+    pbar = tqdm(h5_files, desc="Processing")
+    for h5_file in pbar:
         copy_with_retries(h5_file, dst) # removing copy with retries as it defeats some points in downloading the data quickly
         with h5py.File(dst, "r") as source_file:
 
@@ -660,9 +660,10 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
 
                 # Print progress every ~1GB
                 current_size_gb = current_file_size / 1024**3
-                if math.floor(previous_size) != math.floor(current_size_gb):
-                    if math.floor(current_size_gb) % 5 == 0:
-                        print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
+                pbar.set_postfix(size=f"{current_size_gb} GB")
+                #if math.floor(previous_size) != math.floor(current_size_gb):
+                #    if math.floor(current_size_gb) % 5 == 0:
+                #        print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
                 previous_size = current_size_gb
         if break_trigger:
             break
