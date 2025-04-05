@@ -656,11 +656,17 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
     import concurrent.futures
 
     for h5_file in tqdm(h5_files):
+<<<<<<< HEAD
         def process_file(h5_file, current_file_samples, current_file_size, previous_size):
             with h5py.File(h5_file, "r") as source_file:
 
                 input_spectrogram = source_file["input_features_spectrogram"][:]
                 target_spectrogram = source_file["target_features_spectrogram"][:]
+=======
+        copy_with_retries(h5_file, dst)
+
+        with h5py.File(dst, "r") as source_file:
+>>>>>>> parent of 4cfef68 (faster loading from h5 file with added risk)
 
                 filename = source_file["filenames"][:]
                 snr_db = source_file["snr_db"][:]
