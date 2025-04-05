@@ -267,7 +267,7 @@ import shutil
 import time
 import concurrent.futures
 
-def copy_with_retries(src, dst, retries=3, delay=5, timeout=60):
+def copy_with_retries(src, dst, retries=4, delay=5, timeout=10):
     def copy_operation():
         shutil.copy(src, dst)
 
@@ -275,7 +275,7 @@ def copy_with_retries(src, dst, retries=3, delay=5, timeout=60):
         try:
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                 future = executor.submit(copy_operation)
-                future.result(timeout=timeout)
+                future.result(timeout=timeout*(attempt+1))
             return
         except concurrent.futures.TimeoutError:
             print(f"Attempt {attempt + 1} failed: Timeout after {timeout} seconds. Retrying in {delay} seconds.")
@@ -620,9 +620,8 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
     create_new_file()
     break_trigger = False
     for h5_file in tqdm(h5_files):
-        #copy_with_retries(h5_file, dst) # removing copy with retries as it defeats some points in downloading the data quickly
-
-        with h5py.File(h5_file, "r") as source_file:
+        copy_with_retries(h5_file, dst) # removing copy with retries as it defeats some points in downloading the data quickly
+        with h5py.File(dst, "r") as source_file:
 
             input_spectrogram = source_file["input_features_spectrogram"][:]
             target_spectrogram = source_file["target_features_spectrogram"][:]
