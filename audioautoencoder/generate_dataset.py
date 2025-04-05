@@ -267,24 +267,30 @@ import shutil
 import time
 import concurrent.futures
 
+import multiprocessing
+import shutil
+
+def copy_operation(src, dst):
+    shutil.copy(src, dst)
+
 def copy_with_retries(src, dst, retries=4, delay=3, timeout=20):
-    def copy_operation():
-        shutil.copy(src, dst)
+    for attempt in range(retries):
+        process = multiprocessing.Process(target=copy_operation, args=(src, dst))
+        process.start()
+        process.join(timeout=timeout * (attempt + 1))
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        #for attempt in range(retries):
-        attempt = 0
-        future = executor.submit(copy_operation)
-        try:
-            future.result(timeout=timeout * (attempt + 1))
-            return
-        except concurrent.futures.TimeoutError:
-            print(f"\n Attempt {attempt + 1} failed: Timeout after {timeout * (attempt + 1)} seconds. Retrying in {delay} seconds.")
-        except OSError as e:
-            print(f"\n Attempt {attempt + 1} failed: {e}. Retrying in {delay} seconds.")
-        #time.sleep(delay)
+        if process.is_alive():
+            process.terminate()
+            process.join()
+            print(f"\nAttempt {attempt + 1} failed: Timeout after {timeout * (attempt + 1)} seconds. Retrying in {delay} seconds.")
+        elif process.exitcode != 0:
+            print(f"\nAttempt {attempt + 1} failed with non-zero exit code. Retrying in {delay} seconds.")
+        else:
+            return  # Success
+        
+        time.sleep(delay)
 
-    raise RuntimeError(f"\n Failed to copy {src} after {retries} attempts.")
+    raise RuntimeError(f"\nFailed to copy {src} after {retries} attempts.")
 
 
 # usage example
