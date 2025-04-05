@@ -267,7 +267,7 @@ import shutil
 import time
 import concurrent.futures
 
-def copy_with_retries(src, dst, retries=4, delay=5, timeout=20):
+def copy_with_retries(src, dst, retries=4, delay=3, timeout=20):
     def copy_operation():
         shutil.copy(src, dst)
 
@@ -661,7 +661,8 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
                 # Print progress every ~1GB
                 current_size_gb = current_file_size / 1024**3
                 if math.floor(previous_size) != math.floor(current_size_gb):
-                    print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
+                    if math.floor(current_size_gb) % 5 == 0:
+                        print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
                 previous_size = current_size_gb
         if break_trigger:
             break
