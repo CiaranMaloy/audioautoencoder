@@ -620,6 +620,7 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
     create_new_file()
     break_trigger = False
     for h5_file in tqdm(h5_files):
+        print(h5_file)
         copy_with_retries(h5_file, dst) # removing copy with retries as it defeats some points in downloading the data quickly
         with h5py.File(dst, "r") as source_file:
 
