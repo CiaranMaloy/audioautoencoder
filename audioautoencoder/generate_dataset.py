@@ -278,12 +278,12 @@ def copy_with_retries(src, dst, retries=4, delay=3, timeout=20):
                 future.result(timeout=timeout * (attempt + 1))
                 return
             except concurrent.futures.TimeoutError:
-                print(f"Attempt {attempt + 1} failed: Timeout after {timeout * (attempt + 1)} seconds. Retrying in {delay} seconds.")
+                print(f"\n Attempt {attempt + 1} failed: Timeout after {timeout * (attempt + 1)} seconds. Retrying in {delay} seconds.")
             except OSError as e:
-                print(f"Attempt {attempt + 1} failed: {e}. Retrying in {delay} seconds.")
+                print(f"\n Attempt {attempt + 1} failed: {e}. Retrying in {delay} seconds.")
             time.sleep(delay)
 
-    raise RuntimeError(f"Failed to copy {src} after {retries} attempts.")
+    raise RuntimeError(f"\n Failed to copy {src} after {retries} attempts.")
 
 
 # usage example
@@ -440,7 +440,7 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
     for h5_file in h5_files:
 
         # as per deep research, first copy the file to disk, as a temporary file: 
-
+        
         copy_with_retries(h5_file, dst)
         with h5py.File(dst, "r") as source_file:
             # input
@@ -622,51 +622,54 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
     break_trigger = False
     pbar = tqdm(h5_files, desc="Processing")
     for h5_file in pbar:
-        copy_with_retries(h5_file, dst) # removing copy with retries as it defeats some points in downloading the data quickly
-        with h5py.File(dst, "r") as source_file:
+        try:
+            copy_with_retries(h5_file, dst) # removing copy with retries as it defeats some points in downloading the data quickly
+            with h5py.File(dst, "r") as source_file:
 
-            input_spectrogram = source_file["input_features_spectrogram"][:]
-            target_spectrogram = source_file["target_features_spectrogram"][:]
+                input_spectrogram = source_file["input_features_spectrogram"][:]
+                target_spectrogram = source_file["target_features_spectrogram"][:]
 
-            filename = source_file["filenames"][:]
-            snr_db = source_file["snr_db"][:]
+                filename = source_file["filenames"][:]
+                snr_db = source_file["snr_db"][:]
 
-            num_samples = input_spectrogram.shape[0]
+                num_samples = input_spectrogram.shape[0]
 
-            for i in range(0, num_samples, chunk_size):
+                for i in range(0, num_samples, chunk_size):
 
-                chunk_slice = slice(i, i+chunk_size)
-                chunk_sample_size = input_spectrogram[chunk_slice].shape[0] * sample_size_bytes
+                    chunk_slice = slice(i, i+chunk_size)
+                    chunk_sample_size = input_spectrogram[chunk_slice].shape[0] * sample_size_bytes
 
-                if current_file_size + chunk_sample_size > max_file_size_bytes:
-                    break_trigger = True
-                    break
-                    #create_new_file()
+                    if current_file_size + chunk_sample_size > max_file_size_bytes:
+                        break_trigger = True
+                        break
+                        #create_new_file()
 
-                new_size = current_file_samples + input_spectrogram[chunk_slice].shape[0]
+                    new_size = current_file_samples + input_spectrogram[chunk_slice].shape[0]
 
-                input_spectrogram_dataset.resize((new_size, *input_spectrogram_shape))
-                target_spectrogram_dataset.resize((new_size, *target_spectrogram_shape))
-                filename_dataset.resize((new_size, *filename_shape))
-                snr_db_dataset.resize((new_size, *snr_db_shape))
+                    input_spectrogram_dataset.resize((new_size, *input_spectrogram_shape))
+                    target_spectrogram_dataset.resize((new_size, *target_spectrogram_shape))
+                    filename_dataset.resize((new_size, *filename_shape))
+                    snr_db_dataset.resize((new_size, *snr_db_shape))
 
-                input_spectrogram_dataset[current_file_samples:new_size] = input_spectrogram[chunk_slice]
-                target_spectrogram_dataset[current_file_samples:new_size] = target_spectrogram[chunk_slice]
-                filename_dataset[current_file_samples:new_size] = filename[chunk_slice]
-                snr_db_dataset[current_file_samples:new_size] = snr_db[chunk_slice]
+                    input_spectrogram_dataset[current_file_samples:new_size] = input_spectrogram[chunk_slice]
+                    target_spectrogram_dataset[current_file_samples:new_size] = target_spectrogram[chunk_slice]
+                    filename_dataset[current_file_samples:new_size] = filename[chunk_slice]
+                    snr_db_dataset[current_file_samples:new_size] = snr_db[chunk_slice]
 
-                current_file_samples = new_size
-                current_file_size += chunk_sample_size
+                    current_file_samples = new_size
+                    current_file_size += chunk_sample_size
 
-                # Print progress every ~1GB
-                current_size_gb = current_file_size / 1024**3
-                pbar.set_postfix(size=f"{current_size_gb} GB")
-                #if math.floor(previous_size) != math.floor(current_size_gb):
-                #    if math.floor(current_size_gb) % 5 == 0:
-                #        print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
-                previous_size = current_size_gb
-        if break_trigger:
-            break
+                    # Print progress every ~1GB
+                    current_size_gb = current_file_size / 1024**3
+                    pbar.set_postfix(size=f"{round(current_size_gb, 3)} GB", samples=f"{current_file_samples}")
+                    #if math.floor(previous_size) != math.floor(current_size_gb):
+                    #    if math.floor(current_size_gb) % 5 == 0:
+                    #        print(f"Progress: {np.round(current_size_gb, 2)} GB - Processing {h5_file}")
+                    previous_size = current_size_gb
+            if break_trigger:
+                break
+        except:
+            print(f'File:{h5_file} skipped...')
 
     if combined_file is not None:
         combined_file.close()
