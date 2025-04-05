@@ -267,7 +267,7 @@ import shutil
 import time
 import concurrent.futures
 
-def copy_with_retries(src, dst, retries=4, delay=5, timeout=10):
+def copy_with_retries(src, dst, retries=4, delay=5, timeout=20):
     def copy_operation():
         shutil.copy(src, dst)
 
