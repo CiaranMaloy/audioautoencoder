@@ -21,9 +21,8 @@ class UNetConv4(nn.Module):
     def __init__(self, in_channels=2, out_channels=1):
         super(UNetConv4, self).__init__()
 
-        a = 2
-        A, B, C, D = 64, 128, 256, 512
-        bottleneck_channels = 1024
+        A, B, C, D = 16, 32, 64, 128
+        bottleneck_channels = 256
 
         # Encoder (Downsampling)
         enc_channels = [in_channels, A, B, C, D]
@@ -65,7 +64,7 @@ class UNetConv4(nn.Module):
         ]
 
         # Dropout only for deeper encoder layers
-        if out_channels >= 256:
+        if out_channels >= 64:
             layers.append(nn.Dropout(dropout))
 
         return nn.Sequential(*layers)
@@ -78,7 +77,7 @@ class UNetConv4(nn.Module):
         ]
 
         # Dropout only for first few decoder layers
-        if in_channels >= 256:
+        if in_channels >= 64:
             layers.append(nn.Dropout(dropout))
 
         return nn.Sequential(*layers)
