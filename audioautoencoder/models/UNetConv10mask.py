@@ -175,6 +175,7 @@ class UNetConv10(nn.Module):
 
 
     def forward(self, x, return_mask_only=False):
+        input_shape = x.shape[2:]  # Remember original input spatial dimensions
         """Forward pass with skip connections"""
         # Encoding
         e1 = self.enc1(x)  # (batch, 64, 1028, 175)
@@ -205,7 +206,7 @@ class UNetConv10(nn.Module):
         d1 = self.dec1(d1_attn)  # (batch, 64, ?, ?)
 
         # Final Convolution (output denoised spectrogram)
-        mask = F.interpolate(d1, size=(1025 // 4, 175), mode="bilinear", align_corners=False)
+        mask = F.interpolate(d1, size=input_shape, mode="bilinear", align_corners=False)
 
         if return_mask_only:
             return self.sigmoid(mask)

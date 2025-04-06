@@ -83,6 +83,7 @@ class UNetConv4(nn.Module):
 
 
     def forward(self, x, return_mask_only=False):
+        input_shape = x.shape[2:]  # Remember original input spatial dimensions
         """Forward pass with skip connections"""
         # Encoding
         e1 = self.enc1(x)  # (batch, 64, 1028, 175)
@@ -115,7 +116,7 @@ class UNetConv4(nn.Module):
         d1 = torch.cat([d1, e1_attn], dim=1)
 
         # Final Convolution (output denoised spectrogram)
-        mask = F.interpolate(self.final(d1), size=(1025, 175), mode="bilinear", align_corners=False)
+        mask = F.interpolate(self.final(d1), size=input_shape, mode="bilinear", align_corners=False)
 
         if return_mask_only:
             return self.sigmoid(mask)
