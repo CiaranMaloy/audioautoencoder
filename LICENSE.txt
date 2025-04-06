@@ -2,7 +2,7 @@ LICENSE
 
 Intellectual Property Rights License
 
-This software and its accompanying documentation (collectively referred to as the "Software") are the intellectual property of [Your Name or Organization], hereinafter referred to as the "Licensor."
+This software and its accompanying documentation (collectively referred to as the "Software") are the intellectual property of Ciaran Maloy, hereinafter referred to as the "Licensor."
 
 ---
 
@@ -21,7 +21,7 @@ You may not:
 
 4. Attribution
 If you use the Software in a published work, research paper, or product, you must provide appropriate credit to the Licensor by citing:
-[Your Name or Organization]. [Software Name]. Available at [URL or Repository].
+Ciaran Maloy. MusicDenoisingAutoencoder. Available at https://github.com/CiaranMaloy/audioautoencoder.
 
 5. Disclaimer of Warranty
 The Software is provided "AS IS," without warranty of any kind, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, and non-infringement. In no event shall the Licensor be liable for any claim, damages, or other liability arising from the use of the Software.
