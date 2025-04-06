@@ -51,6 +51,8 @@ class UNetConv4(nn.Module):
         self.spatial_attn2 = SpatialAttention()
         self.spatial_attn1 = SpatialAttention()
 
+        self.sigmoid = nn.Sigmoid()
+
     def conv_block(self, in_channels, out_channels, kernel_size, dropout=0.2):
         """Convolutional Block with Dropout in Deeper Layers Only"""
         layers = [
