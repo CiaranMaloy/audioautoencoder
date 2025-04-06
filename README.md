@@ -20,11 +20,33 @@ Summarize existing research and methods relevant to your work. Highlight gaps in
 ---
 
 ## Methodology
-Explain your approach clearly, including:
+
+### Datasets 
 - Datasets Used: 
     - MUSDB18
     - ESC-50
     - Some Custom Noise and Music samples
+
+Dataset Synthesis and/or labeling is primarily the most important part of any supervised learning task. There are no large, commonly used datasets for music denoising which come pre-noised and so multiple datasets are used in this study as music and noise and then mixed together to augment each dataset. 
+
+Datasets are separated into training and testing instances from the get go with a split of 80:20. MUSDB18 comes preallocated as training and testing, all other datasets are split randomly on a whole sample basis (before any preprocessing)
+
+After data has been separated into folders of music training, music testing, noise training and noise testing, training and testing data is synthesised on a basis of a signal to noise ratio (SNR) range, in this case -10 dB to 10 dB of SNR is selected. 
+
+Music instances and noise instances are then mixed such that each mixing has a signal to noise ratio chosen at random within a pre-determined range. After mixing, features are extracted from training data as input (noisy) and target (clean) along with metadata and saved as .h5 files in google drive. 
+
+### Features and metadata
+One novel aspect of this research is the use of perceptual band filtering as input channels. 
+Each spectrogram is split into 4 bands as: 
+1. Full signal 
+2. 5kHz and below
+3. 1.25kHz and below
+4. 500 Hz and below
+
+All resampled to have the same height and with as images. This is to encourage the loss function to perceptually weight the importance of each frequency band. This also introduces oversampling in the lower frequency bands and undersampling within higher frequency bands, where the perceptual difference between two frequencies is less, even if it is weighted equally in the fourier transform. 
+
+
+### Models and Training
 - Model architectures used
 - Training setup and hyperparameters
 - Evaluation criteria and metrics
