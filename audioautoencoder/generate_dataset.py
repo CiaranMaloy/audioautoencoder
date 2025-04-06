@@ -273,7 +273,7 @@ import shutil
 def copy_operation(src, dst):
     shutil.copy(src, dst)
 
-def copy_with_retries(src, dst, retries=4, delay=3, timeout=20):
+def copy_with_retries(src, dst, retries=3, delay=3, timeout=20):
     for attempt in range(retries):
         process = multiprocessing.Process(target=copy_operation, args=(src, dst))
         process.start()

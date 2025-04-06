@@ -33,7 +33,7 @@ class UNetConv4(nn.Module):
         self.enc4 = self.conv_block(enc_channels[3], enc_channels[4], 3)
 
         # Bottleneck
-        self.bottleneck = self.conv_block(enc_channels[4], bottleneck_channels, 3)
+        self.bottleneck = self.conv_block(enc_channels[4], bottleneck_channels, 3, dropout=0.4)
 
         # Decoder (Upsampling)
         dec_channels = [bottleneck_channels, D, C, B, A]
@@ -82,7 +82,7 @@ class UNetConv4(nn.Module):
         return nn.Sequential(*layers)
 
 
-    def forward(self, x):
+    def forward(self, x, return_mask_only=False):
         """Forward pass with skip connections"""
         # Encoding
         e1 = self.enc1(x)  # (batch, 64, 1028, 175)
@@ -115,4 +115,9 @@ class UNetConv4(nn.Module):
         d1 = torch.cat([d1, e1_attn], dim=1)
 
         # Final Convolution (output denoised spectrogram)
-        return F.interpolate(self.final(d1), size=(1025, 175), mode="bilinear", align_corners=False)
+        mask = F.interpolate(self.final(d1), size=(1025, 175), mode="bilinear", align_corners=False)
+
+        if return_mask_only:
+            return self.sigmoid(mask)
+        else:
+            return x[:, :4] * self.sigmoid(mask)
