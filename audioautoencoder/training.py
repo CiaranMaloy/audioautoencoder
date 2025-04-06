@@ -670,7 +670,7 @@ class DenoisingTrainer:
         """Loads the latest checkpoint if available."""
 
         print(f'Loading model from: {self.load_path}')
-        checkpoint = torch.load(self.load_path, map_location=self.device)
+        checkpoint = torch.load(self.load_path, map_location=self.device, weights_only=False)
 
         print(f"Checkpoint keys: {checkpoint.keys()}")
         print(f"Loss: {checkpoint['loss']}, Epoch: {checkpoint['epoch']}, Total epochs: {checkpoint['total_epochs']}")

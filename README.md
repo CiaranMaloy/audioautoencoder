@@ -3,7 +3,10 @@
 ---
 
 ## Introduction
-Briefly introduce your project here. Outline your main motivation, objectives, and clearly state the research question or problem you aim to address.
+Source Separation has been a forefront of music AI research for the last 10 years. 
+What makes music denoising a tricky problem is that it is difficult to define exactly what is music and what is noise, since there is a large amount of overlap between the two. E.g, a filter sweep in electronic music is normally based on uniform random noise, within context, this is music, or maybe some birds tweeting in the background of recodring an acoustic guitarist playing, although pleasant, within context, this would be noise. 
+This is presented within the same space as source separation as the solution to the problem is very similar, and hence similar models are used. 
+What is presented here is a comparison of several solutions to one problem within the source separation space, Music denoising. 
 
 ---
 
@@ -18,7 +21,10 @@ Summarize existing research and methods relevant to your work. Highlight gaps in
 
 ## Methodology
 Explain your approach clearly, including:
-- Data collection and preprocessing
+- Datasets Used: 
+    - MUSDB18
+    - ESC-50
+    - Some Custom Noise and Music samples
 - Model architectures used
 - Training setup and hyperparameters
 - Evaluation criteria and metrics
