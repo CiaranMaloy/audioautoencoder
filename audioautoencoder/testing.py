@@ -59,7 +59,7 @@ class Evaluation:
         for i in range(batch_size):
             filename = metadata[i]["filename"]
             snr_db = metadata[i]["snr_db"]
-            phase = metadata[i]["phase"]
+            #phase = metadata[i]["phase"]
             lf_shape = metadata[i]["lf_shape"]
 
             input = inputs[i]
