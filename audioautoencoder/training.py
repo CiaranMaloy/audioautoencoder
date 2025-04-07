@@ -339,7 +339,7 @@ def set_seed(seed: int = 42):
     np.random.seed(seed)
     random.seed(seed)
 
-from timm.utils import ModelEmaV3
+#from timm.utils import ModelEmaV3
 # Training loop
 def train_diffusion_model(model, 
                 train_loader, 
