@@ -93,7 +93,7 @@ def process_and_save_separation_dataset(
 
         if mix_only:
             wav_files = [file for file in wav_files if 'mixture' in file]
-            total_files = len(wav_files)
+            total_files = len(wav_files) 
             print('Mix files:', total_files)
 
         # get noise files
@@ -107,9 +107,9 @@ def process_and_save_separation_dataset(
           start_batch_idx = load_checkpoint(checkpoint_file)
         print(f"Resuming from batch index: {start_batch_idx}")
 
-        # 
-        for i in tqdm(range(start_batch_idx, total_files, batch_size), desc="Processing batches", unit="batch"):
-            batch_files = wav_files[i:i + batch_size]
+        # made checkpoint_file_size instead of total files
+        for i in tqdm(range(start_batch_idx, checkpoint_file_size, batch_size), desc="Processing batches", unit="batch"):
+            batch_files = random.sample(wav_files, batch_size)#wav_files[i:i + batch_size]
             noise_files = random.sample(noise_wav_files, batch_size)
 
             # Initialize lists to store input and target images for the batch
