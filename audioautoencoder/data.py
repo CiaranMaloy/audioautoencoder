@@ -250,7 +250,14 @@ def process_audio_extract_features(audio, noise, sr, plot=False, random_noise_le
     plt.xlim((4000, 8000))
     plt.show()
 
-  #noisy_audio = bandpass_filter(noisy_audio, 80, 16000, sr, order=1)
+  ## Scale and normalise by level - to decouple snr from overall signal level
+  normalisation_factor = np.max(np.stack((noisy_audio, audio, scaled_noise)))
+  # devide by max value - make max 1
+  noisy_audio, audio, scaled_noise = noisy_audio/normalisation_factor, audio/normalisation_factor, scaled_noise/normalisation_factor
+  # randomise signal level between 0 and -6 dB
+  signal_level_db = random.uniform(-6, 0)
+  signal_level_amp = 10**((signal_level_db) / 20)
+  noisy_audio, audio, scaled_noise = noisy_audio*signal_level_amp, audio*signal_level_amp, scaled_noise*signal_level_amp
 
   # extract features
   input_features = extract_features(noisy_audio, sr, audio_length=audio_length)
