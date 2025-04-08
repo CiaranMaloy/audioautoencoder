@@ -68,7 +68,7 @@ def process_and_save_separation_dataset(
       SNRdB=None, 
       verbose=False, 
       checkpoint_file_size=50000, 
-      max_file_size_gb=60, 
+      max_file_size_gb=200, 
       mix_only=False, 
       folder="/content/", 
       min_free_gb=20):
