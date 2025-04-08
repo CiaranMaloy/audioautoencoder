@@ -223,7 +223,7 @@ def process_and_save_separation_dataset(
                     time.sleep(20)
                     break
 
-            if (i + batch_size > checkpoint_file_size) or (i + batch_size > total_files):
+            if (i + batch_size > checkpoint_file_size): #or (i + batch_size > total_files):
                 LOGIC = False
                 print('File maximum samples file......')
                 time.sleep(20)
