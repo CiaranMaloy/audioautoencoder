@@ -3,6 +3,26 @@ from tqdm import tqdm
 from loss import *
 
 # Testing loop
+def test_model_gpu(model, test_loader, criterion, scalers):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.eval()
+    with torch.no_grad():
+        test_loss = 0.0
+        progress_bar = tqdm(test_loader, desc="Testing", unit="batch")
+        for inputs, targets, _ in progress_bar:
+
+          inputs, targets = inputs.to(device), targets.to(device)
+
+          outputs = model(inputs)
+          loss = criterion(outputs, targets)
+          progress_bar.set_postfix(loss=f"{loss.item():.4f}")
+          test_loss += loss.item()
+
+        test_loss /= len(test_loader)
+
+    return test_loss
+
+# Testing loop
 def test_model(model, test_loader, criterion, scalers):
     evaluation = Evaluation(scalers)
 
