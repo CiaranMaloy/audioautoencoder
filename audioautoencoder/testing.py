@@ -52,6 +52,7 @@ import torch.nn.functional as F
 import pandas as pd
 from tqdm import tqdm
 from torchmetrics.audio import SignalDistortionRatio
+import numpy as np
 
 class Evaluation:
     def __init__(self, scalers, device="cuda" if torch.cuda.is_available() else "cpu"):
@@ -144,6 +145,134 @@ class Evaluation:
                 "metadata": metadata[i],
             })
 
+    def evaluate_dataset(self, inputs, targets, metadata):
+        """
+        Compute SDR and L1 loss for input vs. target and input vs. output.
+        """
+        batch_size = inputs.shape[0]
+
+        # Convert tensors to NumPy
+        inputs = inputs.detach().cpu().numpy()
+        targets = targets.detach().cpu().numpy()
+
+        for i in range(batch_size):
+            filename = metadata[i]["filename"]
+            snr_db = metadata[i]["snr_db"]
+
+            input = inputs[i]
+            target = targets[i]
+
+            # Basic stats
+            in_max = np.max(input)
+            tar_max = np.max(target)
+
+            in_min = np.min(input)
+            tar_min = np.min(target)
+
+            in_mean = np.mean(input)
+            tar_mean = np.mean(target)
+
+            in_std = np.std(input)
+            tar_std = np.std(target)
+
+            in_var = np.var(input)
+            tar_var = np.var(target)
+
+            in_median = np.median(input)
+            tar_median = np.median(target)
+
+            # Additional insights
+            in_range = in_max - in_min
+            tar_range = tar_max - tar_min
+
+            in_iqr = np.percentile(input, 75) - np.percentile(input, 25)
+            tar_iqr = np.percentile(target, 75) - np.percentile(target, 25)
+
+            in_skew = (np.mean((input - in_mean)**3)) / (in_std**3 + 1e-8)
+            tar_skew = (np.mean((target - tar_mean)**3)) / (tar_std**3 + 1e-8)
+
+            in_kurtosis = (np.mean((input - in_mean)**4)) / (in_std**4 + 1e-8)
+            tar_kurtosis = (np.mean((target - tar_mean)**4)) / (tar_std**4 + 1e-8)
+
+            # Sparsity
+            in_sparsity = np.sum(input == 0) / input.size
+            tar_sparsity = np.sum(target == 0) / target.size
+
+            # Energy
+            in_energy = np.sum(np.square(input))
+            tar_energy = np.sum(np.square(target))
+
+            # Entropy
+            def entropy(x, bins=100):
+                hist, _ = np.histogram(x, bins=bins, density=True)
+                hist = hist[hist > 0]
+                return -np.sum(hist * np.log(hist))
+
+            in_entropy = entropy(input)
+            tar_entropy = entropy(target)
+
+            # Move back to torch
+            input = torch.from_numpy(input).to(self.device).float()
+            target = torch.from_numpy(target).to(self.device).float()
+
+            # Compute L1 loss
+            l1_invstar = F.l1_loss(input, target).item()
+
+            # Store results
+            self.results.append({
+                "instance": len(self.results),
+                "l1_invstar": l1_invstar,
+                "filename": filename,
+                "snr_db": snr_db,
+                "metadata": metadata[i],
+
+                # Input metrics
+                "in_max": in_max,
+                "in_min": in_min,
+                "in_mean": in_mean,
+                "in_std": in_std,
+                "in_var": in_var,
+                "in_median": in_median,
+                "in_range": in_range,
+                "in_iqr": in_iqr,
+                "in_skew": in_skew,
+                "in_kurtosis": in_kurtosis,
+                "in_sparsity": in_sparsity,
+                "in_energy": in_energy,
+                "in_entropy": in_entropy,
+
+                # Target metrics
+                "tar_max": tar_max,
+                "tar_min": tar_min,
+                "tar_mean": tar_mean,
+                "tar_std": tar_std,
+                "tar_var": tar_var,
+                "tar_median": tar_median,
+                "tar_range": tar_range,
+                "tar_iqr": tar_iqr,
+                "tar_skew": tar_skew,
+                "tar_kurtosis": tar_kurtosis,
+                "tar_sparsity": tar_sparsity,
+                "tar_energy": tar_energy,
+                "tar_entropy": tar_entropy,
+            })
+
+
     def process(self):
         """Return the stored evaluation results as a Pandas DataFrame."""
         return pd.DataFrame(self.results)
+    
+def test_dataset(test_loader, scalers):
+    evaluation = Evaluation(scalers)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    with torch.no_grad():
+        progress_bar = tqdm(test_loader, desc="Testing", unit="batch")
+        for inputs, targets, metadata in progress_bar:
+
+          inputs, targets = inputs.to(device), targets.to(device)
+
+          # evaluation
+          evaluation.evaluate_dataset(inputs, targets, metadata)
+
+    return evaluation.process()
