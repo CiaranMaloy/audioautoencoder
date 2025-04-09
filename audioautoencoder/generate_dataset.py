@@ -543,7 +543,7 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
 
     print(f"Finished combining files into {current_file_index} output files in {output_folder_path}")
 
-def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128, dst="/content/temp_file.h5"):
+def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_size_gb=1, chunk_size=128, dst="/content/temp_file.h5", timeout=20):
     """Combines multiple HDF5 files into a few large ones, retaining only input and target spectrograms and metadata datasets."""
 
     import os
@@ -630,7 +630,7 @@ def combine_h5_files_spectrograms(h5_folder_path, output_folder_path, max_file_s
     pbar = tqdm(h5_files, desc="Processing")
     for h5_file in pbar:
         try:
-            copy_with_retries(h5_file, dst) # removing copy with retries as it defeats some points in downloading the data quickly
+            copy_with_retries(h5_file, dst, timeout=timeout) # removing copy with retries as it defeats some points in downloading the data quickly
             with h5py.File(dst, "r") as source_file:
 
                 input_spectrogram = source_file["input_features_spectrogram"][:]
