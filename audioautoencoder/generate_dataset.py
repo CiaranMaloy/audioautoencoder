@@ -273,11 +273,18 @@ import shutil
 def copy_operation(src, dst):
     shutil.copy(src, dst)
 
-def copy_with_retries(src, dst, retries=3, delay=3, timeout=20):
+def copy_with_retries(src, dst, retries=3, delay=3, timeout=20, initial_timeout=5):
     for attempt in range(retries):
-        process = multiprocessing.Process(target=copy_operation, args=(src, dst))
-        process.start()
-        process.join(timeout=timeout * (attempt + 1))
+        if attempt == 0:
+            # try quickly as every instace is timeing out and then working the 2nd time
+            timeout = initial_timeout
+            process = multiprocessing.Process(target=copy_operation, args=(src, dst))
+            process.start()
+            process.join(timeout=timeout * (attempt + 1))
+        else:
+            process = multiprocessing.Process(target=copy_operation, args=(src, dst))
+            process.start()
+            process.join(timeout=timeout * (attempt + 1))
 
         if process.is_alive():
             process.terminate()
