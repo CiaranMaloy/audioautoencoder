@@ -277,19 +277,20 @@ def copy_with_retries(src, dst, retries=3, delay=3, timeout=20, initial_timeout=
     for attempt in range(retries):
         if attempt == 0:
             # try quickly as every instace is timeing out and then working the 2nd time
-            timeout = initial_timeout
+            working_timeout = initial_timeout
             process = multiprocessing.Process(target=copy_operation, args=(src, dst))
             process.start()
-            process.join(timeout=timeout * (attempt + 1))
+            process.join(timeout=working_timeout * (attempt + 1))
         else:
+            working_timeout = timeout
             process = multiprocessing.Process(target=copy_operation, args=(src, dst))
             process.start()
-            process.join(timeout=timeout * (attempt + 1))
+            process.join(timeout=working_timeout * (attempt + 1))
 
         if process.is_alive():
             process.terminate()
             process.join()
-            print(f"\nAttempt {attempt + 1} failed: Timeout after {timeout * (attempt + 1)} seconds. Retrying in {delay} seconds.")
+            print(f"\nAttempt {attempt + 1} failed: Timeout after {working_timeout * (attempt + 1)} seconds. Retrying in {delay} seconds.")
         elif process.exitcode != 0:
             print(f"\nAttempt {attempt + 1} failed with non-zero exit code. Retrying in {delay} seconds.")
         else:
