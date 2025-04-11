@@ -128,12 +128,12 @@ class EnhancedSkipAttention(nn.Module):
 
         return result
 
-class UNetConv12masking(nn.Module):
+class UNetRes12(nn.Module):
     # Update from UnetConv6, moving to a masking model, which hopefully works better
     def __init__(self, in_channels=9, out_channels=4, num_groups=16):
         super().__init__()
 
-        channels = 16
+        channels = 32
 
         # Fixed input layer with proper padding calculation for given kernel size
         self.sigmoid = nn.Sigmoid()
@@ -176,7 +176,7 @@ class UNetConv12masking(nn.Module):
         self.attn2 = EnhancedSkipAttention(channels * 4, channels * 4)
         self.attn1 = EnhancedSkipAttention(channels * 2, channels * 2)
 
-    def forward(self, x):
+    def forward(self, x, return_mask_only=False):
         """Forward pass with skip connections"""
         input_shape = x.shape[2:]  # Remember original input spatial dimensions
 
@@ -217,5 +217,7 @@ class UNetConv12masking(nn.Module):
         mask = self.output_layer(d1)
         mask = F.interpolate(mask, size=input_shape, mode="bilinear", align_corners=False)
 
-        # Apply mask to the first 4 channels of input
-        return mask
+        if return_mask_only:
+            return self.sigmoid(mask)
+        else:
+            return x * self.sigmoid(mask)
