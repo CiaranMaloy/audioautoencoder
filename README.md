@@ -75,17 +75,15 @@ Below is a table of extracted features, and their correlation with the signal to
 
 #### UNetConv4
 
-<pre> ``` Input (4x256x175) │ Encoder Path ├── Conv2D (16) → Conv2D (16) ├── Conv2D (32) → Conv2D (32) ├── Conv2D (64) → Conv2D (64) → Dropout ├── Conv2D (128) → Conv2D (128) → Dropout ├── Conv2D (256) → Conv2D (256) → Dropout ↓ Decoder Path ├── TransConv (128) ← Attention(Enc-128) ├── TransConv (64) ← Attention(Enc-64) ├── TransConv (32) ← Attention(Enc-32) ├── TransConv (16) ← Attention(Enc-16) ↓ Output Conv2D → Sigmoid → Reconstructed (4x256x175) ``` </pre>
+Total params: 1,815,004 \\
+Trainable params: 1,815,004 \\
+Non-trainable params: 0 \\
+Total mult-adds (Units.GIGABYTES): 2.52 \\
 
-Total params: 1,815,004
-Trainable params: 1,815,004
-Non-trainable params: 0
-Total mult-adds (Units.GIGABYTES): 2.52
-
-Input size (MB): 1.43
-Forward/backward pass size (MB): 25.21
-Params size (MB): 7.26
-Estimated Total Size (MB): 33.91
+Input size (MB): 1.43 \\
+Forward/backward pass size (MB): 25.21 \\
+Params size (MB): 7.26 \\
+Estimated Total Size (MB): 33.91 \\
 
 ## Results
 Present and compare your model results. Consider structuring this into two subsections:
