@@ -47,6 +47,7 @@ All resampled to have the same height and with as images. This is to encourage t
 
 ### Dataset Suitability
 The long and short of how suitable the dataset is for training an autoencoder for denoising, is that it isn't inadvertently learning any sort of relationship that may simplify the task or encourage any non-ideal behaviour. 
+Below is a table of extracted features, and their correlation with the signal to noise ratio (SNR) with the intention of validating the suitability of the dataset as a training and testing dataset. 
 
 | Feature       | Correlation |
 |---------------|-------------|
