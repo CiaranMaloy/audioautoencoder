@@ -45,6 +45,27 @@ Each spectrogram is split into 4 bands as:
 
 All resampled to have the same height and with as images. This is to encourage the loss function to perceptually weight the importance of each frequency band. This also introduces oversampling in the lower frequency bands and undersampling within higher frequency bands, where the perceptual difference between two frequencies is less, even if it is weighted equally in the fourier transform. 
 
+### Dataset Suitability
+The long and short of how suitable the dataset is for training an autoencoder for denoising, is that it isn't inadvertently learning any sort of relationship that may simplify the task or encourage any non-ideal behaviour. 
+
+| Feature       | Correlation |
+|---------------|-------------|
+| in_entropy    |  0.074   |
+| in_energy     | -0.064  |
+| in_sparsity   | -0.062  |
+| in_kurtosis   | -0.051 |
+| in_var        | -0.038   |
+| in_skew       |  0.032   |
+| in_mean       | -0.031   |
+| in_median     | -0.027   |
+| in_std        | -0.023   |
+| instance      | -0.005   |
+| in_iqr        | -0.001   |
+| in_range      | -0.001   |
+| in_max        | -0.001   |
+| in_min        | NaN         |
+| tar_min       | NaN         |
+
 
 ### Models and Training
 - Model architectures used
