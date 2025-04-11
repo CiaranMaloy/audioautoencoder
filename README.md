@@ -57,10 +57,10 @@ All resampled to have the same height and with as images. This is to encourage t
 Present and compare your model results. Consider structuring this into two subsections:
 
 ### Model Comparison
-
-| Model Name | Metric 1 | Metric 2 | Metric 3 |
+Models are trained on 100 GB of data and tested on 50 GB of data. 
+| Model Name | Train Loss | Val Loss | Test Loss |
 |------------|----------|----------|----------|
-| Model A    |          |          |          |
+| UNetConv4  |          |          |          |
 | Model B    |          |          |          |
 | Model C    |          |          |          |
 | Model D    |          |          |          |
