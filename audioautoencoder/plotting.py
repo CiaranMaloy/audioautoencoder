@@ -271,7 +271,7 @@ def plot_training_log(csv_file_path):
   # Show plot
   plt.show()
 
-  print(df.iloc[:, -1].plot())
+  print(df.iloc[:, -1])
 
 def plot_spectrograms_at_timesteps(model, train_loader, diffusion_scheduler, timesteps=[999, 300, 200, 50, 1]):
     """
