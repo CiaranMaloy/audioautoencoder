@@ -58,6 +58,7 @@ Present and compare your model results. Consider structuring this into two subse
 
 ### Model Comparison
 Models are trained on 100 GB of data and tested on 50 GB of data. 
+L1 loss is being used as a metric.
 | Model Name | Train Loss | Val Loss | Test Loss |
 |------------|----------|----------|----------|
 | UNetConv4  |          |          |          |
