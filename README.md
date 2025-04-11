@@ -75,15 +75,15 @@ Below is a table of extracted features, and their correlation with the signal to
 
 #### UNetConv4
 
-Total params: 1,815,004 \\
-Trainable params: 1,815,004 \\
-Non-trainable params: 0 \\
-Total mult-adds (Units.GIGABYTES): 2.52 \\
+Total params: 1,815,004 //
+Trainable params: 1,815,004 //
+Non-trainable params: 0 //
+Total mult-adds (Units.GIGABYTES): 2.52 //
 
-Input size (MB): 1.43 \\
-Forward/backward pass size (MB): 25.21 \\
-Params size (MB): 7.26 \\
-Estimated Total Size (MB): 33.91 \\
+Input size (MB): 1.43 //
+Forward/backward pass size (MB): 25.21 //
+Params size (MB): 7.26 //
+Estimated Total Size (MB): 33.91 //
 
 ## Results
 Present and compare your model results. Consider structuring this into two subsections:
