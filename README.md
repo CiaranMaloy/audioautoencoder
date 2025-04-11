@@ -61,7 +61,7 @@ Models are trained on 100 GB of data and tested on 50 GB of data.
 L1 loss is being used as a metric.
 | Model Name | Train Loss | Val Loss | Test Loss |
 |------------|----------|----------|----------|
-| UNetConv4  |          |          |          |
+| UNetConv4  | 0.134    | 0.139    |  0.158   |
 | Model B    |          |          |          |
 | Model C    |          |          |          |
 | Model D    |          |          |          |
