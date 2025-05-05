@@ -219,8 +219,8 @@ def transform_features(features, scalers):
     # Apply scalers
         #input_phase = self.scalers["input_features_phase"].transform(input_phase.reshape(1, -1)).reshape(input_phase.shape)
     input_spectrogram = scalers["input_features_spectrogram"].transform(input_spectrogram.reshape(1, -1)).reshape(input_spectrogram.shape)
-    input_edges = scalers["input_features_edges"].transform(input_edges.reshape(1, -1)).reshape(input_edges.shape)
-    input_cepstrum = scalers["input_features_cepstrum"].transform(input_cepstrum.reshape(1, -1)).reshape(input_cepstrum.shape)
+    #input_edges = scalers["input_features_edges"].transform(input_edges.reshape(1, -1)).reshape(input_edges.shape)
+    #input_cepstrum = scalers["input_features_cepstrum"].transform(input_cepstrum.reshape(1, -1)).reshape(input_cepstrum.shape)
     #input_cepstrum_edges = self.scalers["input_features_cepstrum_edges"].transform(input_cepstrum_edges.reshape(1, -1)).reshape(input_cepstrum_edges.shape)
 
     # resample mfcc featues so theyre the same shape as the spectrogram and phase features
@@ -230,7 +230,7 @@ def transform_features(features, scalers):
     freqs = np.linspace(0, sampling_rate / 2, n_fft // 2 + 1)  # STFT frequency bins
 
     # Find indices corresponding to 0–4000 Hz
-    min_freq, hf, mf, lf = 0, 4000, 1000, 200 
+    min_freq, hf, mf, lf = 0, 5000, 1250, 500 
     freq_indices_hf = np.where((freqs >= min_freq) & (freqs <= hf))[0]
     freq_indices_mf = np.where((freqs >= min_freq) & (freqs <= mf))[0]
     freq_indices_lf = np.where((freqs >= min_freq) & (freqs <= lf))[0]
@@ -239,20 +239,18 @@ def transform_features(features, scalers):
     input_spectrogram_mf = resample_feature(input_spectrogram[freq_indices_mf, :], target_shape)
     input_spectrogram_lf = resample_feature(input_spectrogram[freq_indices_lf, :], target_shape)
     # edges
-    input_edges_hf = resample_feature(input_edges[freq_indices_hf, :], target_shape)
-    input_edges_mf = resample_feature(input_edges[freq_indices_mf, :], target_shape)
-    input_edges_lf = resample_feature(input_edges[freq_indices_lf, :], target_shape)
+    #input_edges_hf = resample_feature(input_edges[freq_indices_hf, :], target_shape)
+    #input_edges_mf = resample_feature(input_edges[freq_indices_mf, :], target_shape)
+    #input_edges_lf = resample_feature(input_edges[freq_indices_lf, :], target_shape)
 
     # now input indices for 0-1000 and 0-200 to add as channels and as freq_indicies for reconstruction
 
     # Resample MFCC features
-    input_cepstrum = resample_feature(input_cepstrum, target_shape)
+    #input_cepstrum = resample_feature(input_cepstrum, target_shape)
     
     # Convert to tensors - input_phase, is missing,..... it's too confusing
     inputs = torch.tensor(np.stack([
         input_spectrogram, input_spectrogram_hf, input_spectrogram_mf, input_spectrogram_lf,
-        input_edges, input_edges_hf, input_edges_mf, input_edges_lf,
-        input_cepstrum
     ], axis=0), dtype=torch.float32)  # Shape: (6, H, W)
 
     a = 3
