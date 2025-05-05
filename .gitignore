@@ -62,5 +62,5 @@ dist/
 build/
 
 # audio files (for now)
-*.mp3
-*.wav
+#*.mp3
+#*.wav
