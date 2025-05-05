@@ -269,18 +269,21 @@ def transform_features(features, scalers):
 
     return inputs, metadata
 
-def reconstruct_spectrogram(outputs, metadata, scalers):
+def reconstruct_spectrogram(outputs, metadata):
     # lets evaluate this from a l1 loss perspective
     # reconstruct spectrogram
     out_spectrogram = np.array(outputs[0])
-    out_spec_shape = out_spectrogram.shape
     out_spectrogram[metadata["freq_indices_hf"], :] = resample_feature(outputs[1], metadata["hf_shape"])
     out_spectrogram[metadata["freq_indices_mf"], :] = resample_feature(outputs[2], metadata["mf_shape"])
     out_spectrogram[metadata["freq_indices_lf"], :] = resample_feature(outputs[3], metadata["lf_shape"])
-    
-    # transform back to 0 centred and 
-    out_spectrogram = (out_spectrogram - 0.5) * 3
+    return out_spectrogram
+
+def inverse_scale(out_spectrogram, scalers):
+    # inverse scale the
+    # transform back to 0 centred and
+    out_spectrogram = (out_spectrogram - 0.5) * 2
+    out_spec_shape = out_spectrogram.shape
 
     # undo scaler
-    out_spectrogram = scalers["target_features_spectrogram"].inverse_transform(out_spectrogram.reshape(1, -1)).reshape(out_spec_shape)
+    out_spectrogram = scalers["input_features_spectrogram"].inverse_transform(np.array([out_spectrogram]).reshape(1, -1)).reshape(out_spec_shape)
     return out_spectrogram
