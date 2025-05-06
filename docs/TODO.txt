@@ -1,0 +1,5 @@
+To Do List:
+
+1. Train new model of UNetRes12
+2. Evaluate Model
+3. Generate some audio examples
