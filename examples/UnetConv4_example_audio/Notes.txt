@@ -1,1 +1,4 @@
-Notes on
+Notes on UnetConv4
+
+From the spectrograms, it looks like there are clear lines at the bottom of each segment (500, 1.25k, 5k and 20k). 
+Initial thoughts are that this could be solved by stitching each resampled section on top of eachother, instead of as different channels. 
