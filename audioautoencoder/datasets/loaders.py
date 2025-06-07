@@ -821,6 +821,7 @@ class HDF5Dataset_no_features_resampled(Dataset):
         arrays_target = []
         for i in range(0, len(octave_edge_frequencies)-1):
             freq_indices = np.where((freqs >= octave_edge_frequencies[i]) & (freqs <= octave_edge_frequencies[i+1]))[0]
+            print(freq_indices[0], freq_indices[-1])
             arrays_input.append(self.resample_feature(input_spectrogram[freq_indices, :], [target_shape[0], resamle_constant]))
             arrays_target.append(self.resample_feature(target_spectrogram[freq_indices, :], [target_shape[0], resamle_constant]))
 
