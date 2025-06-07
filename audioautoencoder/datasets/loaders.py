@@ -772,7 +772,8 @@ class HDF5Dataset_no_features_resampled(Dataset):
         new_H = int(H // scale_factor)  # Compute new height
 
         # Unsqueeze a channel dimension -> (B, 1, H, W)
-        inputs = inputs.unsqueeze(1)
+        if inputs.ndim == 3:
+            inputs = inputs.unsqueeze(1)
 
         # Resize only height using bilinear interpolation
         resampled = F.interpolate(inputs, size=(new_H, W), mode="bilinear", align_corners=False)
