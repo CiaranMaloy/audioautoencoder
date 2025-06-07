@@ -324,15 +324,15 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
 
         # features
         # input
-        input_phase_shape = first_file["input_features_phase"].shape[1:]
+        #input_phase_shape = first_file["input_features_phase"].shape[1:]
         input_spectrogram_shape = first_file["input_features_spectrogram"].shape[1:]
-        input_edges_shape = first_file["input_features_edges"].shape[1:]
+        #input_edges_shape = first_file["input_features_edges"].shape[1:]
         input_cepstrum_shape = first_file["input_features_cepstrum"].shape[1:]
-        input_cepstrum_edges_shape = first_file["input_features_cepstrum_edges"].shape[1:]
+        #input_cepstrum_edges_shape = first_file["input_features_cepstrum_edges"].shape[1:]
 
         # output
         target_spectrogram_shape = first_file["target_features_spectrogram"].shape[1:]
-        noise_spectrogram_shape = first_file["noise_features_spectrogram"].shape[1:]
+        #noise_spectrogram_shape = first_file["noise_features_spectrogram"].shape[1:]
 
         # metadata
         filename_shape = first_file["filenames"].shape[1:]
@@ -340,11 +340,11 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
 
         # dtypes
         # input
-        input_phase_dtype = first_file["input_features_phase"].dtype
+        #input_phase_dtype = first_file["input_features_phase"].dtype
         input_spectrogram_dtype = first_file["input_features_spectrogram"].dtype
-        input_edges_dtype = first_file["input_features_edges"].dtype
+        #input_edges_dtype = first_file["input_features_edges"].dtype
         input_cepstrum_dtype = first_file["input_features_cepstrum"].dtype
-        input_cepstrum_edges_dtype = first_file["input_features_cepstrum_edges"].dtype
+        #input_cepstrum_edges_dtype = first_file["input_features_cepstrum_edges"].dtype
 
         # output
         target_spectrogram_dtype = first_file["target_features_spectrogram"].dtype
@@ -355,13 +355,13 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
         snr_db_dtype = first_file["snr_db"].dtype
 
         sample_size_bytes = (
-            np.prod(input_phase_shape) * np.dtype(input_phase_dtype).itemsize +
+            #np.prod(input_phase_shape) * np.dtype(input_phase_dtype).itemsize +
             np.prod(input_spectrogram_shape) * np.dtype(input_spectrogram_dtype).itemsize +
-            np.prod(input_edges_shape) * np.dtype(input_edges_dtype).itemsize +
+            #np.prod(input_edges_shape) * np.dtype(input_edges_dtype).itemsize +
             np.prod(input_cepstrum_shape) * np.dtype(input_cepstrum_dtype).itemsize +
-            np.prod(input_cepstrum_edges_shape) * np.dtype(input_cepstrum_edges_dtype).itemsize +
+            #np.prod(input_cepstrum_edges_shape) * np.dtype(input_cepstrum_edges_dtype).itemsize +
             np.prod(target_spectrogram_shape) * np.dtype(target_spectrogram_dtype).itemsize +
-            np.prod(noise_spectrogram_shape) * np.dtype(noise_spectrogram_dtype).itemsize +
+            #np.prod(noise_spectrogram_shape) * np.dtype(noise_spectrogram_dtype).itemsize +
             np.prod(filename_shape) * np.dtype(filename_dtype).itemsize +
             np.prod(snr_db_shape) * np.dtype(snr_db_dtype).itemsize
         )
@@ -395,40 +395,40 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
         combined_file = h5py.File(file_path, "w")
 
         # Input datasets
-        input_phase_dataset = combined_file.create_dataset(
-            "input_features_phase", shape=(0, *input_phase_shape), chunks=(chunk_size, *input_phase_shape),
-            maxshape=(None, *input_phase_shape), dtype=input_phase_dtype
-        )
+        #input_phase_dataset = combined_file.create_dataset(
+        #    "input_features_phase", shape=(0, *input_phase_shape), chunks=(chunk_size, *input_phase_shape),
+        #    maxshape=(None, *input_phase_shape), dtype=input_phase_dtype
+        #)
 
         input_spectrogram_dataset = combined_file.create_dataset(
             "input_features_spectrogram", shape=(0, *input_spectrogram_shape), chunks=(chunk_size, *input_spectrogram_shape),
             maxshape=(None, *input_spectrogram_shape), dtype=input_spectrogram_dtype
         )
 
-        input_edges_dataset = combined_file.create_dataset(
-            "input_features_edges", shape=(0, *input_edges_shape), chunks=(chunk_size, *input_edges_shape),
-            maxshape=(None, *input_edges_shape), dtype=input_edges_dtype
-        )
+        #input_edges_dataset = combined_file.create_dataset(
+        #    "input_features_edges", shape=(0, *input_edges_shape), chunks=(chunk_size, *input_edges_shape),
+        #    maxshape=(None, *input_edges_shape), dtype=input_edges_dtype
+        #)
 
         input_cepstrum_dataset = combined_file.create_dataset(
             "input_features_cepstrum", shape=(0, *input_cepstrum_shape), chunks=(chunk_size, *input_cepstrum_shape),
             maxshape=(None, *input_cepstrum_shape), dtype=input_cepstrum_dtype
         )
 
-        input_cepstrum_edges_dataset = combined_file.create_dataset(
-            "input_features_cepstrum_edges", shape=(0, *input_cepstrum_edges_shape), chunks=(chunk_size, *input_cepstrum_edges_shape),
-            maxshape=(None, *input_cepstrum_edges_shape), dtype=input_cepstrum_edges_dtype
-        )
+        #input_cepstrum_edges_dataset = combined_file.create_dataset(
+        #    "input_features_cepstrum_edges", shape=(0, *input_cepstrum_edges_shape), chunks=(chunk_size, *input_cepstrum_edges_shape),
+        #    maxshape=(None, *input_cepstrum_edges_shape), dtype=input_cepstrum_edges_dtype
+        #)
 
         # Output dataset
         target_spectrogram_dataset = combined_file.create_dataset(
             "target_features_spectrogram", shape=(0, *target_spectrogram_shape), chunks=(chunk_size, *target_spectrogram_shape),
             maxshape=(None, *target_spectrogram_shape), dtype=target_spectrogram_dtype
         )
-        noise_spectrogram_dataset = combined_file.create_dataset(
-            "noise_features_spectrogram", shape=(0, *noise_spectrogram_shape), chunks=(chunk_size, *noise_spectrogram_shape),
-            maxshape=(None, *noise_spectrogram_shape), dtype=noise_spectrogram_dtype
-        )
+        #noise_spectrogram_dataset = combined_file.create_dataset(
+        #    "noise_features_spectrogram", shape=(0, *noise_spectrogram_shape), chunks=(chunk_size, *noise_spectrogram_shape),
+        #    maxshape=(None, *noise_spectrogram_shape), dtype=noise_spectrogram_dtype
+        #)
 
         # Metadata datasets
         filename_dataset = combined_file.create_dataset(
@@ -459,41 +459,41 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
         copy_with_retries(h5_file, dst)
         with h5py.File(dst, "r") as source_file:
             # input
-            input_phase = source_file["input_features_phase"][:]
+            #input_phase = source_file["input_features_phase"][:]
             input_spectrogram = source_file["input_features_spectrogram"][:]
-            input_edges = source_file["input_features_edges"][:]
+            #input_edges = source_file["input_features_edges"][:]
             input_cepstrum = source_file["input_features_cepstrum"][:]
-            input_cepstrum_edges = source_file["input_features_cepstrum_edges"][:]
+            #input_cepstrum_edges = source_file["input_features_cepstrum_edges"][:]
 
             # output
             target_spectrogram = source_file["target_features_spectrogram"][:]
-            noise_spectrogram = source_file["noise_features_spectrogram"]
+            #noise_spectrogram = source_file["noise_features_spectrogram"]
 
             # metadata
             filename = source_file["filenames"][:]
             snr_db = source_file["snr_db"][:]
 
             # number samples
-            num_samples = input_phase.shape[0]
+            num_samples = input_spectrogram.shape[0]
 
             for i in range(0, num_samples, chunk_size):
                 # input
-                chunk_input_phase = input_phase[i:i+chunk_size]
+                #chunk_input_phase = input_phase[i:i+chunk_size]
                 chunk_input_spectrogram = input_spectrogram[i:i+chunk_size]
-                chunk_input_edges = input_edges[i:i+chunk_size]
+                #chunk_input_edges = input_edges[i:i+chunk_size]
                 chunk_input_cepstrum = input_cepstrum[i:i+chunk_size]
-                chunk_input_cepstrum_edges = input_cepstrum_edges[i:i+chunk_size]
+                #chunk_input_cepstrum_edges = input_cepstrum_edges[i:i+chunk_size]
 
                 # output
                 chunk_target_spectrogram = target_spectrogram[i:i+chunk_size]
-                chunk_noise_spectrogram = noise_spectrogram[i:i+chunk_size]
+                #chunk_noise_spectrogram = noise_spectrogram[i:i+chunk_size]
 
                 # metadata
                 chunk_filename = filename[i:i+chunk_size]
                 chunk_snr_db = snr_db[i:i+chunk_size]
 
                 # sample size
-                chunk_sample_size = chunk_input_phase.shape[0] * sample_size_bytes
+                chunk_sample_size = chunk_input_spectrogram.shape[0] * sample_size_bytes
 
                 # Check if new file is needed
                 if current_file_size + chunk_sample_size > max_file_size_bytes:
@@ -502,18 +502,18 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
                     create_new_file()
 
                 # Resize datasets| hi u farted
-                new_size = current_file_samples + chunk_input_phase.shape[0]
+                new_size = current_file_samples + chunk_input_spectrogram.shape[0]
 
                 # input
-                input_phase_dataset.resize((new_size, *input_phase_shape))
+                #input_phase_dataset.resize((new_size, *input_phase_shape))
                 input_spectrogram_dataset.resize((new_size, *input_spectrogram_shape))
-                input_edges_dataset.resize((new_size, *input_edges_shape))
+                #input_edges_dataset.resize((new_size, *input_edges_shape))
                 input_cepstrum_dataset.resize((new_size, *input_cepstrum_shape)) 
-                input_cepstrum_edges_dataset.resize((new_size, *input_cepstrum_edges_shape)) 
+                #input_cepstrum_edges_dataset.resize((new_size, *input_cepstrum_edges_shape)) 
 
                 # target
                 target_spectrogram_dataset.resize((new_size, *target_spectrogram_shape))
-                noise_spectrogram_dataset.resize((new_size, *noise_spectrogram_shape))
+                #noise_spectrogram_dataset.resize((new_size, *noise_spectrogram_shape))
 
                 # metadata
                 filename_dataset.resize((new_size, *filename_shape))
@@ -521,15 +521,15 @@ def combine_h5_files_features(h5_folder_path, output_folder_path, max_file_size_
 
                 # Append data
                 # input
-                input_phase_dataset[current_file_samples:new_size] = chunk_input_phase
+                #input_phase_dataset[current_file_samples:new_size] = chunk_input_phase
                 input_spectrogram_dataset[current_file_samples:new_size] = chunk_input_spectrogram
-                input_edges_dataset[current_file_samples:new_size] = chunk_input_edges
+                #input_edges_dataset[current_file_samples:new_size] = chunk_input_edges
                 input_cepstrum_dataset[current_file_samples:new_size] = chunk_input_cepstrum
-                input_cepstrum_edges_dataset[current_file_samples:new_size] = chunk_input_cepstrum_edges
+                #input_cepstrum_edges_dataset[current_file_samples:new_size] = chunk_input_cepstrum_edges
 
                 # target
                 target_spectrogram_dataset[current_file_samples:new_size] = chunk_target_spectrogram
-                noise_spectrogram_dataset[current_file_samples:new_size] = chunk_noise_spectrogram
+                #noise_spectrogram_dataset[current_file_samples:new_size] = chunk_noise_spectrogram
 
                 # metadata
                 filename_dataset[current_file_samples:new_size] = chunk_filename
