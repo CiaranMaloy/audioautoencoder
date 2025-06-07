@@ -813,7 +813,7 @@ class HDF5Dataset_no_features_resampled(Dataset):
 
         # Find indices corresponding to 0–4000 Hz
         # updated bandchannels will be 5000, 1250, 500
-        octave_base = [0, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
+        octave_base = [0, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
         octave_edge_frequencies = [f * np.sqrt(2) for f in octave_base]
         resamle_constant = round((n_fft/2)/(len(octave_edge_frequencies)-1)) * 2
 
