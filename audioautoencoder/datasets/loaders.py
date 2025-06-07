@@ -821,25 +821,21 @@ class HDF5Dataset_no_features_resampled(Dataset):
         arrays_target = []
         for i in range(0, len(octave_edge_frequencies)-1):
             freq_indices = np.where((freqs >= octave_edge_frequencies[i]) & (freqs <= octave_edge_frequencies[i+1]))[0]
-            print(freq_indices[0], freq_indices[-1])
             arrays_input.append(self.resample_feature(input_spectrogram[freq_indices, :], [target_shape[0], resamle_constant]))
             arrays_target.append(self.resample_feature(target_spectrogram[freq_indices, :], [target_shape[0], resamle_constant]))
 
         resampled_input = np.vstack(arrays_input)
         resampled_target = np.vstack(arrays_target)
 
-        # input spectrogram
-        input_spectrogram = self.resample_feature(resampled_input, target_shape)
-
-        # target
-        target_spectrogram = self.resample_feature(resampled_target, target_shape)
-
-
         # Convert to tensors - input_phase, is missing,..... it's too confusing
-        inputs = torch.tensor([input_spectrogram], dtype=torch.float32)  # Shape: (6, H, W)
+        inputs = torch.tensor(
+            [self.resample_feature(resampled_input, target_shape)],
+             dtype=torch.float32)  # Shape: (6, H, W)
 
         # Output:
-        target = torch.tensor([target_spectrogram], dtype=torch.float32) 
+        target = torch.tensor(
+            [self.resample_feature(resampled_target, target_shape)],
+             dtype=torch.float32) 
 
         # reformat to between 0 and 1
         #inputs = (inputs/a) + 0.5
@@ -861,6 +857,7 @@ class HDF5Dataset_no_features_resampled(Dataset):
         metadata = {
             "filename": filename,
             "snr_db": self.h5_file["snr_db"][idx].item(), # Convert to Python float
+            "orig_spectrograms":[input_spectrogram, target_spectrogram]
         }
 
         return inputs, target, metadata
