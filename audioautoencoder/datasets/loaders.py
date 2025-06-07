@@ -767,7 +767,8 @@ class HDF5Dataset_no_features_resampled(Dataset):
         return resized_feature.squeeze(0).squeeze(0).numpy()  # Remove batch/channel dim and return as numpy
 
     def downsample_H_by_factor(self, inputs, scale_factor):
-        B, H, W = inputs.shape
+        #B, H, W = inputs.shape
+        H, W = inputs.shape
         new_H = int(H // scale_factor)  # Compute new height
 
         # Unsqueeze a channel dimension -> (B, 1, H, W)
