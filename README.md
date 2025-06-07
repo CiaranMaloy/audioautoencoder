@@ -161,7 +161,7 @@ L1 loss is being used as a metric.
 | Model Name | Train Loss | Val Loss | Test Loss |
 |------------|----------|----------|----------|
 | UNetConv4  | 0.134    | 0.139    |  0.158   |
-| Model B    |          |          |          |
+| UNetRes12  | 0.146    | 0.148    |  0.172   |
 | Model C    |          |          |          |
 | Model D    |          |          |          |
 
