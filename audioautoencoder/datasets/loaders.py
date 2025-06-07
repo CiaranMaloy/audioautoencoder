@@ -292,11 +292,8 @@ class HDF5Dataset_bandchannels(Dataset):
             # this is where to combine the features into a 5 channel image after each image has been normalised
             
         # Load input features
-        input_phase = self.h5_file["input_features_phase"][idx]
         input_spectrogram = self.h5_file["input_features_spectrogram"][idx]
-        #input_edges = self.h5_file["input_features_edges"][idx]
         input_cepstrum = self.h5_file["input_features_cepstrum"][idx]
-        #input_cepstrum_edges= self.h5_file["input_features_cepstrum_edges"][idx]
 
         # Define target shape (use spectrogram shape as reference)
         target_shape = input_spectrogram.shape
@@ -305,11 +302,8 @@ class HDF5Dataset_bandchannels(Dataset):
         target_spectrogram = self.h5_file["target_features_spectrogram"][idx]
 
         # Apply scalers
-        #input_phase = self.scalers["input_features_phase"].transform(input_phase.reshape(1, -1)).reshape(input_phase.shape)
         input_spectrogram = self.scalers["input_features_spectrogram"].transform(input_spectrogram.reshape(1, -1)).reshape(input_spectrogram.shape)
-        #input_edges = self.scalers["input_features_edges"].transform(input_edges.reshape(1, -1)).reshape(input_edges.shape)
         input_cepstrum = self.scalers["input_features_cepstrum"].transform(input_cepstrum.reshape(1, -1)).reshape(input_cepstrum.shape)
-        #input_cepstrum_edges = self.scalers["input_features_cepstrum_edges"].transform(input_cepstrum_edges.reshape(1, -1)).reshape(input_cepstrum_edges.shape)
 
         target_spectrogram = self.scalers["target_features_spectrogram"].transform(target_spectrogram.reshape(1, -1)).reshape(target_spectrogram.shape)
 
@@ -376,7 +370,6 @@ class HDF5Dataset_bandchannels(Dataset):
         metadata = {
             "filename": filename,
             "snr_db": self.h5_file["snr_db"][idx].item(), # Convert to Python float
-            "phase": input_phase,
             "hf_shape": input_spectrogram[freq_indices_hf, :].shape,
             "mf_shape": input_spectrogram[freq_indices_mf, :].shape,
             "lf_shape": input_spectrogram[freq_indices_lf, :].shape,
