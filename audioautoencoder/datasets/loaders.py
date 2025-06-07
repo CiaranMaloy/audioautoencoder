@@ -767,8 +767,9 @@ class HDF5Dataset_no_features_resampled(Dataset):
         return resized_feature.squeeze(0).squeeze(0).numpy()  # Remove batch/channel dim and return as numpy
 
     def downsample_H_by_factor(self, inputs, scale_factor):
-        #B, H, W = inputs.shape
-        H, W = inputs.shape
+        B, H, W = inputs.shape
+        #print(inputs.shape)
+        #H, W = inputs.shape
         new_H = int(H // scale_factor)  # Compute new height
 
         # Unsqueeze a channel dimension -> (B, 1, H, W)
@@ -834,10 +835,10 @@ class HDF5Dataset_no_features_resampled(Dataset):
 
 
         # Convert to tensors - input_phase, is missing,..... it's too confusing
-        inputs = torch.tensor(input_spectrogram, dtype=torch.float32)  # Shape: (6, H, W)
+        inputs = torch.tensor([input_spectrogram], dtype=torch.float32)  # Shape: (6, H, W)
 
         # Output:
-        target = torch.tensor(target_spectrogram, dtype=torch.float32) 
+        target = torch.tensor([target_spectrogram], dtype=torch.float32) 
 
         # reformat to between 0 and 1
         #inputs = (inputs/a) + 0.5
