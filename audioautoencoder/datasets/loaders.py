@@ -440,12 +440,7 @@ class HDF5Dataset_bandchannels_no_features(Dataset):
         target_spectrogram = self.h5_file["target_features_spectrogram"][idx]
 
         # Apply scalers
-        #input_phase = self.scalers["input_features_phase"].transform(input_phase.reshape(1, -1)).reshape(input_phase.shape)
         input_spectrogram = self.scalers["input_features_spectrogram"].transform(input_spectrogram.reshape(1, -1)).reshape(input_spectrogram.shape)
-        #input_edges = self.scalers["input_features_edges"].transform(input_edges.reshape(1, -1)).reshape(input_edges.shape)
-        #input_cepstrum = self.scalers["input_features_cepstrum"].transform(input_cepstrum.reshape(1, -1)).reshape(input_cepstrum.shape)
-        #input_cepstrum_edges = self.scalers["input_features_cepstrum_edges"].transform(input_cepstrum_edges.reshape(1, -1)).reshape(input_cepstrum_edges.shape)
-
         target_spectrogram = self.scalers["target_features_spectrogram"].transform(target_spectrogram.reshape(1, -1)).reshape(target_spectrogram.shape)
 
         # resample mfcc featues so theyre the same shape as the spectrogram and phase features
@@ -735,6 +730,186 @@ class HDF5Dataset_bandchannels_diffusion(Dataset):
     def __del__(self):
         if hasattr(self, "h5_file") and self.h5_file:
             self.h5_file.close()
+
+import numpy as np
+from scipy.interpolate import interp1d
+class HDF5Dataset_mel_warp(Dataset):
+    def __init__(self, h5_file_path, scalers, output_time_length=86, channels=2):
+        self.h5_file_path = h5_file_path
+        self.output_time_length = output_time_length
+        self.channels = channels
+        self.scalers = scalers
+        self.a = 2
+
+        #print("Dataset size:", self.h5_file["snr_db"].shape[0])
+
+    def __len__(self):
+        self.h5_file = h5py.File(self.h5_file_path, "r")  # Open the file once
+        return self.h5_file["snr_db"].shape[0]
+    
+    def resample_feature(self, feature, target_shape):
+        """Resamples a 2D numpy feature array to match target shape using torch.nn.functional.interpolate."""
+        feature_tensor = torch.tensor(feature, dtype=torch.float32).unsqueeze(0).unsqueeze(0)  # Shape: (1, 1, H, W)
+        target_size = (target_shape[0], target_shape[1])  # (new_H, new_W)
+        
+        resized_feature = F.interpolate(feature_tensor, size=target_size, mode="bilinear", align_corners=False)
+        return resized_feature.squeeze(0).squeeze(0).numpy()  # Remove batch/channel dim and return as numpy
+
+    def downsample_H_by_factor(self, inputs, scale_factor):
+        B, H, W = inputs.shape
+        new_H = int(H // scale_factor)  # Compute new height
+
+        # Unsqueeze a channel dimension -> (B, 1, H, W)
+        inputs = inputs.unsqueeze(1)
+
+        # Resize only height using bilinear interpolation
+        resampled = F.interpolate(inputs, size=(new_H, W), mode="bilinear", align_corners=False)
+
+        return resampled.squeeze(1)  # Remove the channel dimension
+
+    def __getitem__(self, idx):
+        self.h5_file = h5py.File(self.h5_file_path, "r")  # Open the file per worker
+        #try:
+            # normalise dataset (maybe try and keep in torch language)
+
+            # this is where to combine the features into a 5 channel image after each image has been normalised
+            
+        # Load input features
+        #input_phase = self.h5_file["input_features_phase"][idx]
+        input_spectrogram = self.h5_file["input_features_spectrogram"][idx]
+
+        # Define target shape (use spectrogram shape as reference)
+        target_shape = input_spectrogram.shape
+
+        # Load target
+        target_spectrogram = self.h5_file["target_features_spectrogram"][idx]
+
+        # Apply scalers
+        input_spectrogram = self.scalers["input_features_spectrogram"].transform(input_spectrogram.reshape(1, -1)).reshape(input_spectrogram.shape)
+        target_spectrogram = self.scalers["target_features_spectrogram"].transform(target_spectrogram.reshape(1, -1)).reshape(target_spectrogram.shape)
+
+        # resample features so they are now on the MEL scale instead of linear scale
+        input_spectrogram = self.warp_spectrogram(input_spectrogram)
+        target_spectrogram = self.warp_spectrogram(target_spectrogram)
+
+        # Convert to tensors - input_phase, is missing,..... it's too confusing
+        inputs = torch.tensor(np.stack([
+            input_spectrogram
+        ], axis=0), dtype=torch.float32)  # Shape: (6, H, W)
+
+        # Output:
+        target = torch.tensor(np.stack([
+            target_spectrogram
+        ], axis=0), dtype=torch.float32) 
+
+        # reformat to between 0 and 1
+        inputs = torch.clamp((inputs/self.a) + 0.5, min=0)
+        target = torch.clamp((target/self.a) + 0.5, min=0)
+
+        inputs = self.downsample_H_by_factor(inputs, 4)
+        target = self.downsample_H_by_factor(target, 4)
+
+        # Extract filename correctly
+        filename = self.h5_file["filenames"][idx]
+        if isinstance(filename, bytes):  # Check if it's a bytes object
+            filename = filename.decode('utf-8')  # Convert to a string
+
+        # Extract metadata
+        metadata = {
+            "filename": filename,
+            "snr_db": self.h5_file["snr_db"][idx].item(), # Convert to Python float
+        }
+
+        return inputs, target, metadata
+
+    def __del__(self):
+        if hasattr(self, "h5_file") and self.h5_file:
+            self.h5_file.close()
+
+    # functions for interpolating to mel scale
+    def hz_to_mel(self, hz):
+        """Convert frequency in Hz to the mel scale."""
+        return 2595.0 * np.log10(1.0 + hz / 700.0)
+
+    def mel_to_hz(self, mel):
+        """Convert mel-scale frequency back to Hz."""
+        return 700.0 * (10**(mel / 2595.0) - 1.0)
+
+    def _make_warp_map(self, sr, n_bins):
+        """
+        Compute the original linear-frequency bin centers and their warped positions.
+        
+        Parameters
+        ----------
+        sr : int
+            Sample rate of the original audio.
+        n_bins : int
+            Number of frequency bins (e.g. n_fft//2+1).
+        
+        Returns
+        -------
+        freqs : np.ndarray, shape=(n_bins,)
+            Linearly spaced frequencies from 0 to sr/2.
+        warped_freqs : np.ndarray, shape=(n_bins,)
+            Those same points, remapped via mel->hz.
+        """
+        freqs = np.linspace(0, sr/2, n_bins)
+        mel_max = self.hz_to_mel(sr/2)
+        # Equally spaced points on the mel axis
+        mel_points = np.linspace(0, mel_max, n_bins)
+        # Map them back to Hz
+        warped_freqs = self.mel_to_hz(mel_points)
+        return freqs, warped_freqs
+
+    def warp_spectrogram(self, S, sr):
+        """
+        Warp a linear-frequency spectrogram into a mel-like axis.
+        
+        Parameters
+        ----------
+        S : np.ndarray, shape=(n_bins, n_frames)
+            Input spectrogram (e.g. magnitude or power) with linear-frequency bins.
+        sr : int
+            Sample rate (Hz) of the audio that generated S.
+        
+        Returns
+        -------
+        S_warp : np.ndarray, shape=(n_bins, n_frames)
+            The spectrogram remapped so that low frequencies are oversampled
+            and high frequencies undersampled, following the mel warping.
+        """
+        n_bins, n_frames = S.shape
+        freqs, warped_freqs = self._make_warp_map(sr, n_bins)
+        # interpolator along the frequency axis for each time frame
+        interp = interp1d(freqs, S, axis=0, kind='linear',
+                        bounds_error=False, fill_value=0.0)
+        S_warp = interp(warped_freqs)
+        return S_warp
+
+    def unwarp_spectrogram(self, S_warp, sr):
+        """
+        Invert the warp and recover the original linear-frequency spectrogram.
+        
+        Parameters
+        ----------
+        S_warp : np.ndarray, shape=(n_bins, n_frames)
+            Warped spectrogram from `warp_spectrogram`.
+        sr : int
+            Sample rate (Hz) used to warp it.
+        
+        Returns
+        -------
+        S_rec : np.ndarray, shape=(n_bins, n_frames)
+            Approximate reconstruction of the original linear-frequency spectrogram.
+        """
+        n_bins, n_frames = S_warp.shape
+        freqs, warped_freqs = self._make_warp_map(sr, n_bins)
+        # inverse interpolate: sample the warped spectrogram at the original freqs
+        interp_inv = interp1d(warped_freqs, S_warp, axis=0, kind='linear',
+                            bounds_error=False, fill_value=0.0)
+        S_rec = interp_inv(freqs)
+        return S_rec
+
 
 import torch
 import numpy as np

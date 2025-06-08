@@ -109,8 +109,10 @@ class ChannelDatasetLoader:
         torch.manual_seed(42)
         split_rng = torch.Generator().manual_seed(42)
 
+        ## -- Choose the Dataset Loader
         #dataset = HDF5Dataset_bandchannels_no_features(self.dataset_path, self.scalers, output_time_length=self.output_time_length, channels=self.channels)
-        dataset = HDF5Dataset_bandchannels(self.dataset_path, self.scalers, output_time_length=self.output_time_length, channels=self.channels)
+        #dataset = HDF5Dataset_bandchannels(self.dataset_path, self.scalers, output_time_length=self.output_time_length, channels=self.channels)
+        dataset = HDF5Dataset_mel_warp(self.dataset_path, self.scalers, output_time_length=self.output_time_length, channels=self.channels)
 
         total_size = len(dataset)
         train_size = int(0.8 * total_size)
@@ -233,7 +235,6 @@ def get_scaler_partial(data, scaler, sample_size=1000):
 
           # Fit scaler
           return scaler.partial_fit(sampled_data.reshape(sampled_data.shape[0], -1))  # Flatten for scaler
-
 
 def train_scalers_separation(dataset_path, sample_size=1000):
     print('Training scalers for separation dataset')
