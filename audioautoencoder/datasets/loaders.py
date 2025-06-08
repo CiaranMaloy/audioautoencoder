@@ -789,8 +789,8 @@ class HDF5Dataset_mel_warp(Dataset):
         target_spectrogram = self.scalers["target_features_spectrogram"].transform(target_spectrogram.reshape(1, -1)).reshape(target_spectrogram.shape)
 
         # resample features so they are now on the MEL scale instead of linear scale
-        input_spectrogram = self.warp_spectrogram(input_spectrogram)
-        target_spectrogram = self.warp_spectrogram(target_spectrogram)
+        input_spectrogram = self.warp_spectrogram(input_spectrogram, 44100)
+        target_spectrogram = self.warp_spectrogram(target_spectrogram, 44100)
 
         # Convert to tensors - input_phase, is missing,..... it's too confusing
         inputs = torch.tensor(np.stack([
