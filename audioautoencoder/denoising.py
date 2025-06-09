@@ -277,7 +277,7 @@ def transform_features_mel_scale(features, scalers):
     input_spectrogram = scalers["input_features_spectrogram"].transform(input_spectrogram.reshape(1, -1)).reshape(input_spectrogram.shape)
 
     # Find indices corresponding to 0–4000 Hz
-    input_spectrogram = HDF5Dataset_mel_warp.warp_spectrogram(input_spectrogram)
+    input_spectrogram = HDF5Dataset_mel_warp.warp_spectrogram(input_spectrogram, sr=44100)
     
     # Convert to tensors 
     inputs = torch.tensor(np.stack([
@@ -293,6 +293,9 @@ def transform_features_mel_scale(features, scalers):
     }
 
     return inputs, metadata
+
+def unwarp_mask(mask):
+    return HDF5Dataset_mel_warp.unwarp_spectrogram(mask, sr=44100)
 
 def reconstruct_spectrogram(outputs, metadata):
     # lets evaluate this from a l1 loss perspective
