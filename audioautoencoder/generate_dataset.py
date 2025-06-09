@@ -70,6 +70,7 @@ def process_and_save_separation_dataset(
       checkpoint_file_size=50000, 
       max_file_size_gb=200, 
       mix_only=False, 
+      crowd_only=False,
       folder="/content/", 
       min_free_gb=20):
     """
@@ -99,6 +100,27 @@ def process_and_save_separation_dataset(
         # get noise files
         print('Gathering noise files....')
         noise_wav_files, _ = gather_wav_files_and_report(noise_data_dir)
+
+        if crowd_only:
+            keywords = [
+                "Crowd", "crowd",
+                "background",
+                "Robocup",
+                "Street",
+                "passengers",
+                "chee",
+                "boo",
+                "appn",
+                "appl",
+            ]
+
+            noise_wav_files = [
+                fname
+                for fname in noise_wav_files
+                if any(kw in fname for kw in keywords)
+            ]
+            total_files = len(noise_wav_files) 
+            print('Crowd files:', total_files)
 
         # Load checkpoint to resume processing
         if manual_checkpoint is not None:
@@ -1088,7 +1110,7 @@ class DatasetProcessor:
                  random_noise_level=0.0005,
                  background_noise_level=0.4, process_pool=True, verbose=False,
                  audio_length=int(44100 * 2), process_train=True, process_test=True,
-                 mix_only=False):
+                 mix_only=False, crowd_only=False):
         
         self.train_music_dir = train_music_dir
         self.train_noise_dir = train_noise_dir
@@ -1106,6 +1128,7 @@ class DatasetProcessor:
         self.process_train = process_train
         self.process_test = process_test
         self.mix_only = mix_only
+        self.crowd_only = crowd_only
 
         print('Output Dir:', self.output_dir)
         
@@ -1137,7 +1160,7 @@ class DatasetProcessor:
                 random_noise_level=self.random_noise_level, SNRdB=self.SNRdB,
                 process_pool=self.process_pool, verbose=self.verbose,
                 checkpoint_file_size=self.checkpoint_file_size, 
-                mix_only=self.mix_only
+                mix_only=self.mix_only, crowd_only=self.crowd_only
             )
 
         if self.process_test:
@@ -1149,7 +1172,7 @@ class DatasetProcessor:
                 random_noise_level=self.random_noise_level, SNRdB=self.SNRdB,
                 process_pool=self.process_pool, verbose=self.verbose,
                 checkpoint_file_size=self.checkpoint_file_size,
-                mix_only=self.mix_only
+                mix_only=self.mix_only, crowd_only=self.crowd_only
             )
 
 # Example usage

@@ -243,6 +243,12 @@ def process_audio_extract_features(audio, noise, sr, plot=False, random_noise_le
   else:
      noise = noise + s
      target_snr_db = random.uniform(SNRdB[0], SNRdB[1])
+
+     # implement a flat percentage as clean audio
+     random_number = random.uniform(0, 1)
+     if random_number < 0.10:
+        target_snr_db = 50
+
      noisy_audio, scaled_noise, _ = combine_signal_noise(audio, noise, target_snr_db)
      
   if plot:

@@ -154,7 +154,7 @@ Estimated Total Size (MB): 33.91
 ## Results
 Present and compare your model results. Consider structuring this into two subsections:
 
-### Model Comparison
+### Model Comparison (Generic Noise)
 
 Models are trained on 100 GB of data and tested on 50 GB of data. 
 L1 loss is being used as a metric. (SDR loss will be added in the future)
@@ -174,6 +174,9 @@ L1 loss is being used as a metric. (SDR loss will be added in the future)
 | UNetRes12   (resampled to mel-scale)|     |   |    |
 
 Models are shown as multi-channel (with different bands sampled as different channels) and mel-scale as one image resampled to be mel scale to be used with a 
+
+### Model Comparison (Crowd Noise Specific)
+
 
 ### Feature Combination Comparison (Best Model)
 
