@@ -269,7 +269,6 @@ def transform_features_bandchannels(features, scalers):
 
     return inputs, metadata
 
-from audioautoencoder.datasets.loaders import HDF5Dataset_mel_warp
 def transform_features_mel_scale(features, scalers):
     input_spectrogram = features['spectrogram']
 
@@ -277,7 +276,7 @@ def transform_features_mel_scale(features, scalers):
     input_spectrogram = scalers["input_features_spectrogram"].transform(input_spectrogram.reshape(1, -1)).reshape(input_spectrogram.shape)
 
     # Find indices corresponding to 0–4000 Hz
-    input_spectrogram = HDF5Dataset_mel_warp.warp_spectrogram(input_spectrogram, sr=44100)
+    input_spectrogram = warp_spectrogram(input_spectrogram, sr=44100)
     
     # Convert to tensors 
     inputs = torch.tensor(np.stack([
@@ -295,7 +294,95 @@ def transform_features_mel_scale(features, scalers):
     return inputs, metadata
 
 def unwarp_mask(mask):
-    return HDF5Dataset_mel_warp.unwarp_spectrogram(mask, sr=44100)
+    return unwarp_spectrogram(mask, sr=44100)
+
+# functions for interpolating to mel scale
+#### -- Lazy repeat of functions (start)
+def hz_to_mel(hz):
+    """Convert frequency in Hz to the mel scale."""
+    return 2595.0 * np.log10(1.0 + hz / 700.0)
+
+def mel_to_hz(mel):
+    """Convert mel-scale frequency back to Hz."""
+    return 700.0 * (10**(mel / 2595.0) - 1.0)
+
+import numpy as np
+from scipy.interpolate import interp1d
+def _make_warp_map(sr, n_bins):
+    """
+    Compute the original linear-frequency bin centers and their warped positions.
+    
+    Parameters
+    ----------
+    sr : int
+        Sample rate of the original audio.
+    n_bins : int
+        Number of frequency bins (e.g. n_fft//2+1).
+    
+    Returns
+    -------
+    freqs : np.ndarray, shape=(n_bins,)
+        Linearly spaced frequencies from 0 to sr/2.
+    warped_freqs : np.ndarray, shape=(n_bins,)
+        Those same points, remapped via mel->hz.
+    """
+    freqs = np.linspace(0, sr/2, n_bins)
+    mel_max = self.hz_to_mel(sr/2)
+    # Equally spaced points on the mel axis
+    mel_points = np.linspace(0, mel_max, n_bins)
+    # Map them back to Hz
+    warped_freqs = self.mel_to_hz(mel_points)
+    return freqs, warped_freqs
+
+def warp_spectrogram(S, sr):
+    """
+    Warp a linear-frequency spectrogram into a mel-like axis.
+    
+    Parameters
+    ----------
+    S : np.ndarray, shape=(n_bins, n_frames)
+        Input spectrogram (e.g. magnitude or power) with linear-frequency bins.
+    sr : int
+        Sample rate (Hz) of the audio that generated S.
+    
+    Returns
+    -------
+    S_warp : np.ndarray, shape=(n_bins, n_frames)
+        The spectrogram remapped so that low frequencies are oversampled
+        and high frequencies undersampled, following the mel warping.
+    """
+    n_bins, n_frames = S.shape
+    freqs, warped_freqs = _make_warp_map(sr, n_bins)
+    # interpolator along the frequency axis for each time frame
+    interp = interp1d(freqs, S, axis=0, kind='linear',
+                    bounds_error=False, fill_value=0.0)
+    S_warp = interp(warped_freqs)
+    return S_warp
+
+def unwarp_spectrogram(S_warp, sr):
+    """
+    Invert the warp and recover the original linear-frequency spectrogram.
+    
+    Parameters
+    ----------
+    S_warp : np.ndarray, shape=(n_bins, n_frames)
+        Warped spectrogram from `warp_spectrogram`.
+    sr : int
+        Sample rate (Hz) used to warp it.
+    
+    Returns
+    -------
+    S_rec : np.ndarray, shape=(n_bins, n_frames)
+        Approximate reconstruction of the original linear-frequency spectrogram.
+    """
+    n_bins, n_frames = S_warp.shape
+    freqs, warped_freqs = _make_warp_map(sr, n_bins)
+    # inverse interpolate: sample the warped spectrogram at the original freqs
+    interp_inv = interp1d(warped_freqs, S_warp, axis=0, kind='linear',
+                        bounds_error=False, fill_value=0.0)
+    S_rec = interp_inv(freqs)
+    return S_rec
+#### -- Lazy repeat of functions (end)
 
 def reconstruct_spectrogram(outputs, metadata):
     # lets evaluate this from a l1 loss perspective
