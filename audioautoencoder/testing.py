@@ -81,7 +81,6 @@ class Evaluation:
             filename = metadata[i]["filename"]
             snr_db = metadata[i]["snr_db"]
             #phase = metadata[i]["phase"]
-            lf_shape = metadata[i]["lf_shape"]
 
             input = inputs[i]
             output = outputs[i]
@@ -117,14 +116,14 @@ class Evaluation:
             #sdr_outvstar = self.sdr(output_chunk, target_chunk).item()
 
             # Compute L1 loss
-            l1_invstar = F.l1_loss(input[0:4, :, :], target[0:4, :, :]).item()
-            l1_outvstar = F.l1_loss(output[0:4, :, :], target[0:4, :, :]).item()
+            l1_invstar = F.l1_loss(input, target).item()
+            l1_outvstar = F.l1_loss(output, target).item()
 
-            l1_invstar_4k = F.l1_loss(input[1:2, :, :], target[1:2, :, :]).item()
-            l1_outvstar_4k = F.l1_loss(output[1:2, :, :], target[1:2, :, :]).item()
+            #l1_invstar_4k = F.l1_loss(input[1:2, :, :], target[1:2, :, :]).item()
+            #l1_outvstar_4k = F.l1_loss(output[1:2, :, :], target[1:2, :, :]).item()
 
-            l1_invstar_full = F.l1_loss(input[0:1, :, :], target[0:1, :, :]).item()
-            l1_outvstar_full = F.l1_loss(output[0:1, :, :], target[0:1, :, :]).item()
+            #l1_invstar_full = F.l1_loss(input[0:1, :, :], target[0:1, :, :]).item()
+            #l1_outvstar_full = F.l1_loss(output[0:1, :, :], target[0:1, :, :]).item()
 
             # Store results
             self.results.append({
@@ -133,10 +132,10 @@ class Evaluation:
                 #"sdr_outvstar": sdr_outvstar,
                 "l1_invstar": l1_invstar,
                 "l1_outvstar": l1_outvstar,
-                "l1_invstar_4k": l1_invstar_4k,
-                "l1_outvstar_4k": l1_outvstar_4k,
-                "l1_invstar_full": l1_invstar_full,
-                "l1_outvstar_full": l1_outvstar_full,
+                #"l1_invstar_4k": l1_invstar_4k,
+                #"l1_outvstar_4k": l1_outvstar_4k,
+                #"l1_invstar_full": l1_invstar_full,
+                #"l1_outvstar_full": l1_outvstar_full,
                 "filename": filename,
                 "snr_db": snr_db,
                 "in_track":in_track,
