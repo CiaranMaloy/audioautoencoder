@@ -327,11 +327,11 @@ def _make_warp_map(sr, n_bins):
         Those same points, remapped via mel->hz.
     """
     freqs = np.linspace(0, sr/2, n_bins)
-    mel_max = self.hz_to_mel(sr/2)
+    mel_max = hz_to_mel(sr/2)
     # Equally spaced points on the mel axis
     mel_points = np.linspace(0, mel_max, n_bins)
     # Map them back to Hz
-    warped_freqs = self.mel_to_hz(mel_points)
+    warped_freqs = mel_to_hz(mel_points)
     return freqs, warped_freqs
 
 def warp_spectrogram(S, sr):
