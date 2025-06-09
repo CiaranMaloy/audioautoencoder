@@ -209,7 +209,7 @@ def resample_feature(feature, target_shape):
     resized_feature = F.interpolate(feature_tensor, size=target_size, mode="bilinear", align_corners=False)
     return resized_feature.squeeze(0).squeeze(0).numpy()  # Remove batch/channel dim and return as numpy
 
-def transform_features(features, scalers):
+def transform_features_bandchannels(features, scalers):
     input_spectrogram = features['spectrogram']
     input_edges = features['edges']
     input_cepstrum = features['cepstrum']
@@ -265,6 +265,31 @@ def transform_features(features, scalers):
         "freq_indices_hf": freq_indices_hf,
         "freq_indices_mf": freq_indices_mf,
         "freq_indices_lf": freq_indices_lf
+    }
+
+    return inputs, metadata
+
+from datasets.loaders import HDF5Dataset_mel_warp
+def transform_features_mel_scale(features, scalers):
+    input_spectrogram = features['spectrogram']
+
+    # function to transform the extracted features to an input to the 
+    input_spectrogram = scalers["input_features_spectrogram"].transform(input_spectrogram.reshape(1, -1)).reshape(input_spectrogram.shape)
+
+    # Find indices corresponding to 0–4000 Hz
+    input_spectrogram = HDF5Dataset_mel_warp.warp_spectrogram(input_spectrogram)
+    
+    # Convert to tensors 
+    inputs = torch.tensor(np.stack([
+        input_spectrogram
+    ], axis=0), dtype=torch.float32)  # Shape: (6, H, W)
+
+    a = 2
+    inputs = (inputs/a) + 0.5
+
+    # metadata
+    # Extract metadata
+    metadata = {
     }
 
     return inputs, metadata

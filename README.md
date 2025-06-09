@@ -157,13 +157,21 @@ Present and compare your model results. Consider structuring this into two subse
 ### Model Comparison
 
 Models are trained on 100 GB of data and tested on 50 GB of data. 
-L1 loss is being used as a metric.
+L1 loss is being used as a metric. (SDR loss will be added in the future)
+
+## Masking Models
 | Model Name | Train Loss | Val Loss | Test Loss |
 |------------|----------|----------|----------|
 | UNetConv4 (multi-channel)  | 0.134    | 0.139    |  0.158   |
 | UNetRes12 (multi-channel) | 0.146    | 0.148    |  0.172   |
 | UNetConv4 (resampled to mel-scale)  |  0.122    |  0.117  |  0.152  |
-| Model D   (resampled to mel-scale)|          |          |          |
+| UNetRes12   (resampled to mel-scale)|          |          |          |
+
+## Reconstruction Models
+| Model Name | Train Loss | Val Loss | Test Loss |
+|------------|----------|----------|----------|
+| UNetConv4 (resampled to mel-scale)  |     |   |    |
+| UNetRes12   (resampled to mel-scale)|     |   |    |
 
 Models are shown as multi-channel (with different bands sampled as different channels) and mel-scale as one image resampled to be mel scale to be used with a 
 
