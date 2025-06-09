@@ -130,7 +130,16 @@ def process_and_save_separation_dataset(
         print(f"Resuming from batch index: {start_batch_idx}")
 
         # made checkpoint_file_size instead of total files
-        for i in tqdm(range(start_batch_idx, checkpoint_file_size, batch_size), desc="Processing batches", unit="batch"):
+        # Create the tqdm instance
+        pbar = tqdm(range(start_batch_idx, checkpoint_file_size, batch_size),
+                    desc="Processing batches",
+                    unit="batch",
+                    leave=True)  # leave bar on-screen when done
+
+        # Initial “end‐of‐bar” message
+        pbar.set_postfix_str("waiting...")
+
+        for i in pbar:
             batch_files = random.sample(wav_files, batch_size)#wav_files[i:i + batch_size]
             noise_files = random.sample(noise_wav_files, batch_size)
 
@@ -144,6 +153,7 @@ def process_and_save_separation_dataset(
 
             # Process files in parallel
             if process_pool:
+                pbar.set_postfix({'message':'Processing stage'})
                 with ProcessPoolExecutor() as executor:
                     futures = [
                     executor.submit(process_file, audio_file, noise_file, background_noise_level, random_noise_level, SNRdB, audio_length) 
@@ -156,6 +166,7 @@ def process_and_save_separation_dataset(
                     del executor
                     gc.collect()
 
+                pbar.set_postfix({'message':'Saving stage'})
                 # Collect batch results
                 for input_features, target_features, noise_features, file_path, noise_file, target_snr_db in results:
                     # features 
