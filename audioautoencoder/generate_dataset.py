@@ -159,7 +159,11 @@ def process_and_save_separation_dataset(
                     executor.submit(process_file, audio_file, noise_file, background_noise_level, random_noise_level, SNRdB, audio_length) 
                     for audio_file, noise_file in zip(batch_files, noise_files)
                     ]
-                    results = [future.result() for future in futures if future.result() is not None]
+                    results = []
+                    for future in futures:
+                        res = future.result()           # blocks only once per future
+                        if res is not None:
+                            results.append(res)
 
                     # ensure executor shutdown 
                     executor.shutdown(wait=True)
