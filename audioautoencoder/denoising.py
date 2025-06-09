@@ -269,7 +269,7 @@ def transform_features_bandchannels(features, scalers):
 
     return inputs, metadata
 
-from datasets.loaders import HDF5Dataset_mel_warp
+from audioautoencoder.datasets.loaders import HDF5Dataset_mel_warp
 def transform_features_mel_scale(features, scalers):
     input_spectrogram = features['spectrogram']
 
