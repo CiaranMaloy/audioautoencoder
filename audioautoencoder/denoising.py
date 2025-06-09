@@ -276,11 +276,11 @@ def transform_features_mel_scale(features, scalers):
     input_spectrogram = scalers["input_features_spectrogram"].transform(input_spectrogram.reshape(1, -1)).reshape(input_spectrogram.shape)
 
     # Find indices corresponding to 0–4000 Hz
-    input_spectrogram = warp_spectrogram(input_spectrogram, sr=44100)
+    output_spectrogram = warp_spectrogram(input_spectrogram, sr=44100)
     
     # Convert to tensors 
     inputs = torch.tensor(np.stack([
-        input_spectrogram
+        output_spectrogram
     ], axis=0), dtype=torch.float32)  # Shape: (6, H, W)
 
     a = 2
@@ -291,7 +291,7 @@ def transform_features_mel_scale(features, scalers):
     metadata = {
     }
 
-    return inputs, metadata
+    return inputs, output_spectrogram, metadata
 
 def unwarp_mask(mask):
     return unwarp_spectrogram(mask, sr=44100)
